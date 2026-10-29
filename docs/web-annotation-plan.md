@@ -66,19 +66,19 @@ Release 1.0 is done when all of the following hold:
 | Sidebar | Vue 3 with Vite, single-page app | "Sidebar" |
 | Management site | Nuxt, as an ordinary API client with no business logic in server routes | "Management site" |
 | Anchoring failures | Keep original selectors; never silently regenerate | "Selectors and the text model" |
+| Guest base | Hypothesis client anchoring code, vendored and ported to the text model; quote matching with a minimum score | ADR 0017, Phase 2 trial |
+| Highlight rendering | CSS Custom Highlight API, overlay elements as the fallback; never wrap text | ADR 0017, Phase 2 trial |
 
 ### Open, with owner phase
 
 | Decision | Options | Decide in |
 |---|---|---|
-| Guest base | Recogito plus quote-matching fallback; copied Hypothesis guest code | Phase 2 trial |
 | Offset unit in stored selectors | Unicode code points (W3C spec, Apache Annotator); UTF-16 code units (Hypothesis, Recogito) | Phase 1. Proposed: code points in storage, converted at the guest boundary, since we're writing the text model fresh and want interoperability with the spec |
 | Rules for `<br>`, hidden content and excluded elements in the text model | Define and fix in the text-model spec | Phase 1 |
 | Document identity | Which URL normalizations apply; how `rel=canonical`, `dc.identifier` and PDF fingerprints are stored and searched | Phase 1 |
 | Container structure | One container per user, per group, per document, or a single container with search as the main entry point | Phase 1 |
 | Route binding mechanism | `fastify-openapi-glue`; or hand-registered routes with schemas loaded from the spec | Phase 3, by spike in Phase 0 |
 | Hypothesis-compatible layer | Build to test end to end early, or skip and rely on the bookmarklet | End of Phase 3, based on sidebar progress |
-| Highlight rendering | Wrapped elements; overlay spans; CSS Custom Highlight API | Phase 2 trial |
 
 Each decision, once made, is recorded as an architecture decision record under `docs/adr/`.
 

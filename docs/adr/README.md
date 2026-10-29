@@ -23,3 +23,4 @@ An architecture decision record (ADR) captures one decision that shapes the syst
 | [0009](0009-vue-sidebar-nuxt-management-site.md) | Vue for the sidebar, Nuxt for the management site                   | Accepted |
 | [0010](0010-keep-original-selectors.md)          | Keep original selectors and represent anchoring failures explicitly | Accepted |
 | [0011](0011-route-binding.md)                    | Bind routes to the OpenAPI document with fastify-openapi-glue       | Accepted |
+| [0017](0017-guest-base-and-highlight-rendering.md) | Build the guest's anchoring on the Hypothesis client's code and render highlights with the CSS Custom Highlight API | Accepted |
