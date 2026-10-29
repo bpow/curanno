@@ -68,14 +68,15 @@ Release 1.0 is done when all of the following hold:
 | Anchoring failures | Keep original selectors; never silently regenerate | "Selectors and the text model" |
 | Offset unit | Unicode code points of NFC text, converted at the guest boundary | [ADR 0012](adr/0012-code-point-offsets.md) |
 | Text normalization | Collapse whitespace, `<br>` is a line feed, no block separators, hidden and excluded content omitted, selectors scoped to body or the refined element | [ADR 0013](adr/0013-text-normalization-rules.md) |
+| Document identity | A set of normalized URIs per document; canonical, DOI, Dublin Core, `og:url`, shortlink and PDF fingerprint identifiers with guards; overlapping sets merge | [ADR 0014](adr/0014-document-identity.md) |
+| Container structure | One container `/annotations/`, with `/x/search` as the main query path | [ADR 0015](adr/0015-single-container.md) |
+| Structured bodies | Embedded `StructuredBody` with a `profile` IRI, validated against a registry of JSON Schemas | [ADR 0016](adr/0016-structured-bodies.md) |
 
 ### Open, with owner phase
 
 | Decision | Options | Decide in |
 |---|---|---|
 | Guest base | Recogito plus quote-matching fallback; copied Hypothesis guest code | Phase 2 trial |
-| Document identity | Which URL normalizations apply; how `rel=canonical`, `dc.identifier` and PDF fingerprints are stored and searched | Phase 1 |
-| Container structure | One container per user, per group, per document, or a single container with search as the main entry point | Phase 1 |
 | Route binding mechanism | `fastify-openapi-glue`; or hand-registered routes with schemas loaded from the spec | Phase 3, by spike in Phase 0 |
 | Hypothesis-compatible layer | Build to test end to end early, or skip and rely on the bookmarklet | End of Phase 3, based on sidebar progress |
 | Highlight rendering | Wrapped elements; overlay spans; CSS Custom Highlight API | Phase 2 trial |

@@ -25,3 +25,6 @@ An architecture decision record (ADR) captures one decision that shapes the syst
 | [0011](0011-route-binding.md)                    | Bind routes to the OpenAPI document with fastify-openapi-glue       | Accepted |
 | [0012](0012-code-point-offsets.md)               | Text offsets count Unicode code points                              | Accepted |
 | [0013](0013-text-normalization-rules.md)         | Text normalization rules: whitespace, `br`, hidden content, scoping | Accepted |
+| [0014](0014-document-identity.md)                | Document identity by a set of normalized URIs, with guarded canonical links and merging | Accepted |
+| [0015](0015-single-container.md)                 | One annotation container, with search as the main query path        | Accepted |
+| [0016](0016-structured-bodies.md)                | Structured bodies as an embedded `StructuredBody` validated by a profile registry | Accepted |
