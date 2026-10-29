@@ -18,10 +18,11 @@ function withDatabase(url: string, name: string): string {
 
 describe.skipIf(!adminUrl)('migrations', () => {
   const url = adminUrl ?? '';
-  const testUrl = withDatabase(url, dbName);
+  let testUrl = '';
   let admin: pg.Client;
 
   beforeAll(async () => {
+    testUrl = withDatabase(url, dbName);
     admin = new pg.Client({ connectionString: url });
     await admin.connect();
     await admin.query(`create database ${dbName}`);
