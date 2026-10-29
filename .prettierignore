@@ -2,3 +2,4 @@ pnpm-lock.yaml
 dist/
 coverage/
 *.md
+packages/api-client/src/schema.ts

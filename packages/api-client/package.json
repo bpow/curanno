@@ -15,6 +15,9 @@
   "files": [
     "dist"
   ],
+  "scripts": {
+    "generate": "openapi-typescript ../../apps/api/openapi.yaml -o src/schema.ts --root-types --root-types-no-schema-prefix --empty-objects-unknown --additional-properties"
+  },
   "dependencies": {
     "openapi-fetch": "^0.17.0"
   },
