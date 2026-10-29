@@ -1,0 +1,33 @@
+# Third-party code and licenses
+
+This document tracks code we copy from other projects or depend on heavily enough that its license terms shape what we must do. It is kept current at every release. Copied code also keeps its original license notice in the copied files.
+
+## Inventory
+
+| Project                                                                  | Version or commit reviewed                    | License                                         | Obligations                                                                                 | Status         |
+| ------------------------------------------------------------------------ | --------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------- |
+| [Hypothesis client](https://github.com/hypothesis/client)                | `main` at `a7b7400d0d70`, reviewed 2026-10-29 | BSD-2-Clause; Annotator-derived parts under MIT | Keep both the BSD-2-Clause and MIT notices in any copied files. Note the copyright holders. | Not yet copied |
+| [Recogito Text Annotator](https://github.com/recogito/text-annotator-js) | v4.3.7                                        | BSD-3-Clause                                    | Keep the notice. Do not use contributor names to endorse or promote derived work.           | Not yet copied |
+| [Apache Annotator](https://github.com/apache/incubator-annotator)        | Final source before retirement in 2025        | Apache-2.0                                      | Keep the LICENSE and NOTICE files. Mark changed files as modified. Patent terms apply.      | Not yet copied |
+| [Annotator](https://github.com/openannotation/annotator)                 | 2.0.0-alpha                                   | MIT or GPL-3.0-or-later (dual)                  | If ever copied, take it under the MIT option and keep that notice.                          | Not yet copied |
+
+Dependencies installed through pnpm are not listed individually here; CI checks their licenses against the allowed list below.
+
+## Allowed licenses for dependencies
+
+The following licenses are allowed for dependencies without further discussion:
+
+- MIT
+- BSD-2-Clause
+- BSD-3-Clause
+- Apache-2.0
+- ISC
+- 0BSD
+- Unlicense
+- CC0-1.0
+- Python-2.0
+- BlueOak-1.0.0
+
+Copyleft licenses (GPL, LGPL, AGPL, MPL) require an accepted ADR before a dependency using one is added. Dependencies with no declared license or with a custom license need the same.
+
+This list is the policy. The authoritative allowlist that CI enforces lives in `scripts/check-licenses.mjs`, and any change here must be mirrored there.
