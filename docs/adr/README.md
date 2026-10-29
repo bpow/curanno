@@ -23,3 +23,5 @@ An architecture decision record (ADR) captures one decision that shapes the syst
 | [0009](0009-vue-sidebar-nuxt-management-site.md) | Vue for the sidebar, Nuxt for the management site                   | Accepted |
 | [0010](0010-keep-original-selectors.md)          | Keep original selectors and represent anchoring failures explicitly | Accepted |
 | [0011](0011-route-binding.md)                    | Bind routes to the OpenAPI document with fastify-openapi-glue       | Accepted |
+| [0012](0012-code-point-offsets.md)               | Text offsets count Unicode code points                              | Accepted |
+| [0013](0013-text-normalization-rules.md)         | Text normalization rules: whitespace, `br`, hidden content, scoping | Accepted |

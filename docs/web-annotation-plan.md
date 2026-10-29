@@ -66,14 +66,14 @@ Release 1.0 is done when all of the following hold:
 | Sidebar | Vue 3 with Vite, single-page app | "Sidebar" |
 | Management site | Nuxt, as an ordinary API client with no business logic in server routes | "Management site" |
 | Anchoring failures | Keep original selectors; never silently regenerate | "Selectors and the text model" |
+| Offset unit | Unicode code points of NFC text, converted at the guest boundary | [ADR 0012](adr/0012-code-point-offsets.md) |
+| Text normalization | Collapse whitespace, `<br>` is a line feed, no block separators, hidden and excluded content omitted, selectors scoped to body or the refined element | [ADR 0013](adr/0013-text-normalization-rules.md) |
 
 ### Open, with owner phase
 
 | Decision | Options | Decide in |
 |---|---|---|
 | Guest base | Recogito plus quote-matching fallback; copied Hypothesis guest code | Phase 2 trial |
-| Offset unit in stored selectors | Unicode code points (W3C spec, Apache Annotator); UTF-16 code units (Hypothesis, Recogito) | Phase 1. Proposed: code points in storage, converted at the guest boundary, since we're writing the text model fresh and want interoperability with the spec |
-| Rules for `<br>`, hidden content and excluded elements in the text model | Define and fix in the text-model spec | Phase 1 |
 | Document identity | Which URL normalizations apply; how `rel=canonical`, `dc.identifier` and PDF fingerprints are stored and searched | Phase 1 |
 | Container structure | One container per user, per group, per document, or a single container with search as the main entry point | Phase 1 |
 | Route binding mechanism | `fastify-openapi-glue`; or hand-registered routes with schemas loaded from the spec | Phase 3, by spike in Phase 0 |
