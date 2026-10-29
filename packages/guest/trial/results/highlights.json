@@ -1,0 +1,309 @@
+{
+  "generated": "2026-10-29",
+  "rows": [
+    {
+      "caseId": "react-rerender",
+      "technique": "wrap",
+      "steps": [
+        {
+          "step": "drawn",
+          "visible": 6,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0,
+          "elementsAdded": 9
+        },
+        {
+          "step": "after-patch",
+          "visible": 2,
+          "of": 6,
+          "textIntact": false,
+          "consoleErrors": 0
+        },
+        {
+          "step": "after-remount",
+          "visible": 1,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        },
+        {
+          "step": "after-redraw",
+          "visible": 6,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        }
+      ]
+    },
+    {
+      "caseId": "react-rerender",
+      "technique": "overlay",
+      "steps": [
+        {
+          "step": "drawn",
+          "visible": 6,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0,
+          "elementsAdded": 1
+        },
+        {
+          "step": "after-patch",
+          "visible": 1,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        },
+        {
+          "step": "after-remount",
+          "visible": 1,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        },
+        {
+          "step": "after-redraw",
+          "visible": 6,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        }
+      ]
+    },
+    {
+      "caseId": "react-rerender",
+      "technique": "css-highlight",
+      "steps": [
+        {
+          "step": "drawn",
+          "visible": 6,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0,
+          "elementsAdded": 0
+        },
+        {
+          "step": "after-patch",
+          "visible": 1,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        },
+        {
+          "step": "after-remount",
+          "visible": 1,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        },
+        {
+          "step": "after-redraw",
+          "visible": 6,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        }
+      ]
+    },
+    {
+      "caseId": "synth-scroll",
+      "technique": "wrap",
+      "steps": [
+        {
+          "step": "drawn",
+          "visible": 3,
+          "of": 3,
+          "textIntact": true,
+          "consoleErrors": 0,
+          "elementsAdded": 5
+        },
+        {
+          "step": "after-scroll",
+          "visible": 3,
+          "of": 3,
+          "textIntact": null,
+          "consoleErrors": 0
+        },
+        {
+          "step": "after-resize",
+          "visible": 3,
+          "of": 3,
+          "textIntact": null,
+          "consoleErrors": 0
+        }
+      ]
+    },
+    {
+      "caseId": "synth-scroll",
+      "technique": "overlay",
+      "steps": [
+        {
+          "step": "drawn",
+          "visible": 2,
+          "of": 3,
+          "textIntact": true,
+          "consoleErrors": 0,
+          "elementsAdded": 1
+        },
+        {
+          "step": "after-scroll",
+          "visible": 2,
+          "of": 3,
+          "textIntact": null,
+          "consoleErrors": 0,
+          "overlayOffsets": [
+            1683,
+            766,
+            179
+          ]
+        },
+        {
+          "step": "after-resize",
+          "visible": 0,
+          "of": 3,
+          "textIntact": null,
+          "consoleErrors": 0,
+          "overlayOffsets": [
+            2102,
+            1185,
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "caseId": "synth-scroll",
+      "technique": "css-highlight",
+      "steps": [
+        {
+          "step": "drawn",
+          "visible": 3,
+          "of": 3,
+          "textIntact": true,
+          "consoleErrors": 0,
+          "elementsAdded": 0
+        },
+        {
+          "step": "after-scroll",
+          "visible": 3,
+          "of": 3,
+          "textIntact": null,
+          "consoleErrors": 0
+        },
+        {
+          "step": "after-resize",
+          "visible": 3,
+          "of": 3,
+          "textIntact": null,
+          "consoleErrors": 0
+        }
+      ]
+    },
+    {
+      "caseId": "vue-rerender",
+      "technique": "wrap",
+      "steps": [
+        {
+          "step": "drawn",
+          "visible": 6,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0,
+          "elementsAdded": 7
+        },
+        {
+          "step": "after-patch",
+          "visible": 2,
+          "of": 6,
+          "textIntact": false,
+          "consoleErrors": 0
+        },
+        {
+          "step": "after-remount",
+          "visible": 1,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        },
+        {
+          "step": "after-redraw",
+          "visible": 6,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        }
+      ]
+    },
+    {
+      "caseId": "vue-rerender",
+      "technique": "overlay",
+      "steps": [
+        {
+          "step": "drawn",
+          "visible": 6,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0,
+          "elementsAdded": 1
+        },
+        {
+          "step": "after-patch",
+          "visible": 1,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        },
+        {
+          "step": "after-remount",
+          "visible": 1,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        },
+        {
+          "step": "after-redraw",
+          "visible": 6,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        }
+      ]
+    },
+    {
+      "caseId": "vue-rerender",
+      "technique": "css-highlight",
+      "steps": [
+        {
+          "step": "drawn",
+          "visible": 6,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0,
+          "elementsAdded": 0
+        },
+        {
+          "step": "after-patch",
+          "visible": 1,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        },
+        {
+          "step": "after-remount",
+          "visible": 1,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        },
+        {
+          "step": "after-redraw",
+          "visible": 6,
+          "of": 6,
+          "textIntact": true,
+          "consoleErrors": 0
+        }
+      ]
+    }
+  ]
+}
