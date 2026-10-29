@@ -1,0 +1,34 @@
+# Local development stack. Postgres is the only stateful dependency of the
+# platform itself; Keycloak stands in for the external OpenID Connect
+# provider (ADR 0005). Run with `podman compose up -d` (or docker compose).
+services:
+  postgres:
+    image: docker.io/library/postgres:17-alpine
+    environment:
+      POSTGRES_USER: annotations
+      POSTGRES_PASSWORD: annotations
+      POSTGRES_DB: annotations
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U annotations -d annotations']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4
+    command: ['start-dev', '--import-realm', '--http-port=8080']
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: 'true'
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./deploy/keycloak/realm-dev.json:/opt/keycloak/data/import/realm-dev.json:ro,Z
+
+volumes:
+  postgres-data:
