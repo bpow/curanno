@@ -14,5 +14,25 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "devDependencies": {
+    "@recogito/text-annotator": "4.3.7",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "approx-string-match": "2.0.1",
+    "esbuild": "0.28.2",
+    "pdfjs-dist": "6.4.299",
+    "playwright": "1.64.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "vue": "3.5.44"
+  },
+  "scripts": {
+    "trial": "node trial/src/run.ts",
+    "trial:build": "node trial/src/build.ts",
+    "trial:highlights": "node trial/src/highlights.ts",
+    "trial:a11y": "node trial/src/a11y.ts",
+    "corpus:describe": "node trial/src/describe.ts",
+    "corpus:pdf": "node trial/src/make-pdf.ts"
+  }
 }
