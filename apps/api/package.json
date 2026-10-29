@@ -19,7 +19,8 @@
     "dev": "node --watch --experimental-strip-types src/index.ts",
     "start": "node dist/index.js",
     "spike:glue": "node --experimental-strip-types spike/glue.ts",
-    "spike:manual": "node --experimental-strip-types spike/manual.ts"
+    "spike:manual": "node --experimental-strip-types spike/manual.ts",
+    "migrate": "node --experimental-strip-types src/db/migrate.ts"
   },
   "dependencies": {
     "@scale/model": "workspace:*",
