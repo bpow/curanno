@@ -1,0 +1,20 @@
+{
+  "name": "comment-ignored",
+  "description": "Comments contribute nothing and do not break a run of text.",
+  "html": "<p>before<!-- comment -->⟦r1⟧after⟦/r1⟧</p>",
+  "text": "beforeafter",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "after",
+        "prefix": "before"
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 6,
+        "end": 11
+      }
+    }
+  }
+}

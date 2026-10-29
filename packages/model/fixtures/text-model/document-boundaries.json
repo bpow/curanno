@@ -1,0 +1,32 @@
+{
+  "name": "document-boundaries",
+  "description": "Ranges at the start and end of the text have no prefix or suffix. Leading and trailing collapsible whitespace is dropped.",
+  "html": "<p>  ⟦r1⟧Start⟦/r1⟧ middle ⟦r2⟧end⟦/r2⟧  </p>",
+  "text": "Start middle end",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "Start",
+        "suffix": " middle end"
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 0,
+        "end": 5
+      }
+    },
+    "r2": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "end",
+        "prefix": "Start middle "
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 13,
+        "end": 16
+      }
+    }
+  }
+}

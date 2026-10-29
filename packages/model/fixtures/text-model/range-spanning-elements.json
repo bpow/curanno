@@ -1,0 +1,20 @@
+{
+  "name": "range-spanning-elements",
+  "description": "A range across list items. No separator is inserted between blocks.",
+  "html": "<ul><li>⟦r1⟧one</li><li>two</li><li>thr⟦/r1⟧ee</li></ul>",
+  "text": "onetwothree",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "onetwothr",
+        "suffix": "ee"
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 0,
+        "end": 9
+      }
+    }
+  }
+}

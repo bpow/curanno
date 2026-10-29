@@ -1,0 +1,21 @@
+{
+  "name": "br-whitespace",
+  "description": "Collapsible whitespace next to a <br> is dropped, on both sides, like spaces at a line end and start in CSS.",
+  "html": "<p>first ⟦r1⟧line⟦/r1⟧ <br> second line</p>",
+  "text": "first line\nsecond line",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "line",
+        "prefix": "first ",
+        "suffix": "\nsecond line"
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 6,
+        "end": 10
+      }
+    }
+  }
+}

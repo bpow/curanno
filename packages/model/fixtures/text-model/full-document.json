@@ -1,0 +1,20 @@
+{
+  "name": "full-document",
+  "description": "For a whole document the scope is the body element. Head content, including the title, is excluded. Block elements add no separators.",
+  "html": "<!DOCTYPE html><html><head><title>Title text</title><script>x()</script></head><body><h1>⟦r1⟧Heading⟦/r1⟧</h1><p>Para</p></body></html>",
+  "text": "HeadingPara",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "Heading",
+        "suffix": "Para"
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 0,
+        "end": 7
+      }
+    }
+  }
+}

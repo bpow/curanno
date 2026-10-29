@@ -1,0 +1,21 @@
+{
+  "name": "emoji-zwj-sequence",
+  "description": "A family emoji is three astral code points joined by two zero-width joiners: five code points.",
+  "html": "<p>Family: ⟦r1⟧👨‍👩‍👧⟦/r1⟧ here</p>",
+  "text": "Family: 👨‍👩‍👧 here",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "👨‍👩‍👧",
+        "prefix": "Family: ",
+        "suffix": " here"
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 8,
+        "end": 13
+      }
+    }
+  }
+}

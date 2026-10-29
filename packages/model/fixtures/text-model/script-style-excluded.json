@@ -1,0 +1,19 @@
+{
+  "name": "script-style-excluded",
+  "description": "script, style, template and noscript never contribute text.",
+  "html": "<div><style>p{color:red}</style><script>var x = 1;</script><p>⟦r1⟧Shown⟦/r1⟧</p><template><p>never</p></template><noscript>no js</noscript></div>",
+  "text": "Shown",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "Shown"
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 0,
+        "end": 5
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "hidden-attribute",
+  "description": "The hidden attribute excludes an element and its descendants, even when a descendant's own style would show it.",
+  "html": "<div>One <div hidden><b style=\"display:inline\">two</b></div> ⟦r1⟧three⟦/r1⟧</div>",
+  "text": "One three",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "three",
+        "prefix": "One "
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 4,
+        "end": 9
+      }
+    }
+  }
+}

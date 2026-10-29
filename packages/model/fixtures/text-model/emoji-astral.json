@@ -1,0 +1,20 @@
+{
+  "name": "emoji-astral",
+  "description": "Characters outside the Basic Multilingual Plane count as one code point each (they are two UTF-16 code units).",
+  "html": "<p>A😀B ⟦r1⟧C🎉D⟦/r1⟧</p>",
+  "text": "A😀B C🎉D",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "C🎉D",
+        "prefix": "A😀B "
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 4,
+        "end": 7
+      }
+    }
+  }
+}

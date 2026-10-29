@@ -1,0 +1,20 @@
+{
+  "name": "whitespace-collapse",
+  "description": "Runs of collapsible whitespace (space, tab, LF, CR, FF) become one space across text nodes and element boundaries; runs at the start and end of the text are dropped. Elements add no separators of their own.",
+  "html": "<div>\n  <p>\n    Alpha   ⟦r1⟧beta\n  </p>\n  <p>gamma⟦/r1⟧</p>\n</div>",
+  "text": "Alpha beta gamma",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "beta gamma",
+        "prefix": "Alpha "
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 6,
+        "end": 16
+      }
+    }
+  }
+}

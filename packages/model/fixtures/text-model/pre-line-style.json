@@ -1,0 +1,20 @@
+{
+  "name": "pre-line-style",
+  "description": "An inline style of white-space: pre-line keeps line feeds as hard breaks and collapses other whitespace.",
+  "html": "<div style=\"white-space: pre-line\">a   ⟦r1⟧b\n   c⟦/r1⟧</div>",
+  "text": "a b\nc",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "b\nc",
+        "prefix": "a "
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 2,
+        "end": 5
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "basic",
+  "description": "A single word inside one text node.",
+  "html": "<p>Hello ⟦r1⟧world⟦/r1⟧</p>",
+  "text": "Hello world",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "world",
+        "prefix": "Hello "
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 6,
+        "end": 11
+      }
+    }
+  }
+}

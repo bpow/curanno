@@ -1,10 +1,10 @@
 /**
- * Shared model package. Phase 1 fills this in with the annotation types,
- * the text model, selector utilities, document identity rules and the
- * guest/sidebar RPC message types. Until then it only carries the version
- * of the text model specification, so that every package can declare which
- * version it implements.
+ * Shared model package: annotation types and schemas, the text model,
+ * document identity rules and the body profile registry. Everything here is
+ * free of DOM, server and framework dependencies so that the guest, the
+ * sidebar, the server and import tooling share one implementation.
  */
-export const TEXT_MODEL_VERSION = '0.0.0';
-
-export const WEB_ANNOTATION_CONTEXT = 'http://www.w3.org/ns/anno.jsonld';
+export * from './annotation/index.js';
+export * from './text-model/index.js';
+export * from './document-identity/index.js';
+export * from './profiles/index.js';

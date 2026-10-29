@@ -1,0 +1,21 @@
+{
+  "name": "nbsp-preserved",
+  "description": "A no-break space (U+00A0) is not collapsible whitespace and is kept as is.",
+  "html": "<p>10&nbsp;⟦r1⟧km⟦/r1⟧   away</p>",
+  "text": "10 km away",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "km",
+        "prefix": "10 ",
+        "suffix": " away"
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 3,
+        "end": 5
+      }
+    }
+  }
+}

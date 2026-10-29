@@ -1,0 +1,21 @@
+{
+  "name": "arabic-rtl",
+  "description": "Right-to-left text. Offsets follow logical order, not display order.",
+  "html": "<p dir=\"rtl\">هذا ⟦r1⟧نص⟦/r1⟧ عربي</p>",
+  "text": "هذا نص عربي",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "نص",
+        "prefix": "هذا ",
+        "suffix": " عربي"
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 4,
+        "end": 6
+      }
+    }
+  }
+}

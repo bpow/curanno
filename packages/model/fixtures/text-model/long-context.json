@@ -1,0 +1,21 @@
+{
+  "name": "long-context",
+  "description": "Prefix and suffix are limited to 32 code points each.",
+  "html": "<p>The quick brown fox jumps over the lazy dog and ⟦r1⟧runs⟦/r1⟧ far away into the forest where nobody can find it.</p>",
+  "text": "The quick brown fox jumps over the lazy dog and runs far away into the forest where nobody can find it.",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "runs",
+        "prefix": "fox jumps over the lazy dog and ",
+        "suffix": " far away into the forest where "
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 48,
+        "end": 52
+      }
+    }
+  }
+}

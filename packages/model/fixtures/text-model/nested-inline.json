@@ -1,0 +1,21 @@
+{
+  "name": "nested-inline",
+  "description": "A range that starts inside a nested inline element and ends in its parent. Inline elements add nothing to the text.",
+  "html": "<p>The <em>quick <strong>⟦r1⟧brown</strong> fox⟦/r1⟧</em> jumps.</p>",
+  "text": "The quick brown fox jumps.",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "brown fox",
+        "prefix": "The quick ",
+        "suffix": " jumps."
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 10,
+        "end": 19
+      }
+    }
+  }
+}

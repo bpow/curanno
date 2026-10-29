@@ -1,0 +1,21 @@
+{
+  "name": "non-latin-cjk",
+  "description": "Japanese text without spaces; each character is one code point.",
+  "html": "<p>日本語の⟦r1⟧テキスト⟦/r1⟧を注釈する</p>",
+  "text": "日本語のテキストを注釈する",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "テキスト",
+        "prefix": "日本語の",
+        "suffix": "を注釈する"
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 4,
+        "end": 8
+      }
+    }
+  }
+}

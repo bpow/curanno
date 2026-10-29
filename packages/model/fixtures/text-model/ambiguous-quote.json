@@ -1,0 +1,21 @@
+{
+  "name": "ambiguous-quote",
+  "description": "The quoted text occurs twice; prefix and suffix identify the marked occurrence, and a quote search must rank it first.",
+  "html": "<p>the cat sat on the ⟦r1⟧mat⟦/r1⟧. the dog sat on the mat.</p>",
+  "text": "the cat sat on the mat. the dog sat on the mat.",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "mat",
+        "prefix": "the cat sat on the ",
+        "suffix": ". the dog sat on the mat."
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 19,
+        "end": 22
+      }
+    }
+  }
+}

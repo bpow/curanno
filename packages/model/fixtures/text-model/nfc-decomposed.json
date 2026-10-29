@@ -1,0 +1,33 @@
+{
+  "name": "nfc-decomposed",
+  "description": "Text is normalized to NFC. The source has decomposed accents (e + U+0301); the normalized text and the quote use the composed forms, and a point at the edge of a combining sequence maps to the composed character's edge.",
+  "html": "<p>café ⟦r1⟧cr⟦r2⟧è⟦/r2⟧me⟦/r1⟧</p>",
+  "text": "café crème",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "crème",
+        "prefix": "café "
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 5,
+        "end": 10
+      }
+    },
+    "r2": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "è",
+        "prefix": "café cr",
+        "suffix": "me"
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 7,
+        "end": 8
+      }
+    }
+  }
+}

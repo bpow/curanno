@@ -1,0 +1,21 @@
+{
+  "name": "display-none",
+  "description": "Content with an inline display: none contributes no text. A range inside it cannot be described.",
+  "html": "<p>Visible <span style=\"display:none\">hidden ⟦r2⟧secret⟦/r2⟧</span>⟦r1⟧text⟦/r1⟧</p>",
+  "text": "Visible text",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "text",
+        "prefix": "Visible "
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 8,
+        "end": 12
+      }
+    },
+    "r2": null
+  }
+}

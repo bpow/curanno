@@ -1,0 +1,20 @@
+{
+  "name": "not-annotatable",
+  "description": "data-annotatable=\"false\" excludes an element and its descendants.",
+  "html": "<article><nav data-annotatable=\"false\">Skip to content</nav><p>⟦r1⟧Body⟦/r1⟧ text</p></article>",
+  "text": "Body text",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "Body",
+        "suffix": " text"
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 0,
+        "end": 4
+      }
+    }
+  }
+}

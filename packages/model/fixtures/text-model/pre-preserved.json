@@ -1,0 +1,21 @@
+{
+  "name": "pre-preserved",
+  "description": "Inside <pre> every character is kept, including spaces and tabs. Line feeds are hard breaks.",
+  "html": "<p>Intro</p><pre>  ⟦r1⟧code  line⟦/r1⟧\n\tnext</pre><p>After</p>",
+  "text": "Intro  code  line\n\tnextAfter",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "code  line",
+        "prefix": "Intro  ",
+        "suffix": "\n\tnextAfter"
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 7,
+        "end": 17
+      }
+    }
+  }
+}

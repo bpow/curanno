@@ -1,0 +1,21 @@
+{
+  "name": "br-line-break",
+  "description": "A <br> element counts as one line feed (U+000A). The range includes it.",
+  "html": "<p>line one⟦r1⟧<br>line⟦/r1⟧ two</p>",
+  "text": "line one\nline two",
+  "ranges": {
+    "r1": {
+      "quote": {
+        "type": "TextQuoteSelector",
+        "exact": "\nline",
+        "prefix": "line one",
+        "suffix": " two"
+      },
+      "position": {
+        "type": "TextPositionSelector",
+        "start": 8,
+        "end": 13
+      }
+    }
+  }
+}
