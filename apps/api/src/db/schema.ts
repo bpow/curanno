@@ -5,6 +5,7 @@
  */
 import type { ColumnType, Generated, JSONColumnType } from 'kysely';
 import type {
+  DocumentUriRelation,
   AnchoringRepair,
   AnchoringState,
   Body,
@@ -68,17 +69,6 @@ export interface DocumentsTable {
   updated_at: Timestamp;
   title_search: ColumnType<string, never, never>;
 }
-
-export type DocumentUriRelation =
-  | 'self'
-  | 'canonical'
-  | 'shortlink'
-  | 'alternate'
-  | 'og_url'
-  | 'dc_identifier'
-  | 'doi'
-  | 'pdf_fingerprint'
-  | 'pdf_url';
 
 export interface DocumentUrisTable {
   document_id: string;
