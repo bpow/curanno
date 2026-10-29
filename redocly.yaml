@@ -1,0 +1,8 @@
+extends:
+  - recommended
+rules:
+  # The W3C Web Annotation Protocol names the container `/annotations/` with a
+  # trailing slash, and clients discover it through that IRI.
+  no-path-trailing-slash: off
+  # The repository has no license file yet; add `info.license` when it does.
+  info-license: off

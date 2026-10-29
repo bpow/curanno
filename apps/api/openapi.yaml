@@ -1,0 +1,2335 @@
+openapi: 3.1.0
+info:
+  title: Web annotation platform API
+  version: 0.1.0
+  description: |
+    The API of the web annotation platform.
+
+    Paths without a prefix implement the [W3C Web Annotation Protocol](https://www.w3.org/TR/annotation-protocol/):
+    one annotation container at `/annotations/` with paging and `Prefer` handling, and annotation
+    resources with ETags and conditional requests. Annotations are JSON-LD documents using the
+    [W3C Web Annotation Data Model](https://www.w3.org/TR/annotation-model/) with two extensions:
+    `StructuredBody` bodies validated against registered profiles, and anchoring state on targets.
+
+    Paths under `/x/` are this platform's own extensions: search, access control, body profiles,
+    documents, the event stream, and the user and group endpoints the management site needs.
+    They are not part of the W3C protocol and may change between minor versions until 1.0.
+
+    `HEAD` and `OPTIONS` are served for every resource (`OPTIONS` answers with `Allow`) and are not
+    listed separately. Errors use `application/problem+json` (RFC 9457).
+servers:
+  - url: /
+    description: Same origin as the sidebar
+tags:
+  - name: protocol
+    description: W3C Web Annotation Protocol
+  - name: search
+    description: Search over annotations, filtered by the caller's read permission
+  - name: acl
+    description: Per-annotation access control (ADR 0006)
+  - name: profiles
+    description: Body profile registry
+  - name: documents
+    description: Document identity and equivalent URIs
+  - name: events
+    description: Server-sent events
+  - name: users
+    description: Users and principals
+  - name: groups
+    description: Groups and memberships
+security:
+  - bearerAuth: []
+paths:
+  /annotations/:
+    get:
+      operationId: listContainer
+      tags: [protocol]
+      summary: Retrieve the annotation container
+      description: |
+        The single annotation container (ADR 0015). Without `page` the response is the
+        `AnnotationCollection`; with `page` it is one `AnnotationPage`. The caller sees only
+        annotations it may read, so `total` differs between callers.
+
+        `Prefer: return=representation; include="<IRI>"` selects the representation, with IRI one of
+        `http://www.w3.org/ns/ldp#PreferMinimalContainer` (no items),
+        `http://www.w3.org/ns/ldp#PreferContainedIRIs` (item IRIs only, the default) or
+        `http://www.w3.org/ns/ldp#PreferContainedDescriptions` (full annotations). The `iris`
+        query parameter is the protocol's way to request the same for a page.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/iris'
+        - $ref: '#/components/parameters/prefer'
+        - name: target
+          in: query
+          description: >-
+            Extension: restrict the container to annotations on the document identified by this
+            URI or any of its equivalent URIs (docs/document-identity.md).
+          schema:
+            type: string
+            format: uri
+      responses:
+        '200':
+          description: The container or one of its pages
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Link:
+              $ref: '#/components/headers/Link'
+            Vary:
+              $ref: '#/components/headers/Vary'
+            Allow:
+              $ref: '#/components/headers/Allow'
+          content:
+            application/ld+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AnnotationCollection'
+                  - $ref: '#/components/schemas/AnnotationPage'
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AnnotationCollection'
+                  - $ref: '#/components/schemas/AnnotationPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: The requested page is out of range
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    post:
+      operationId: createAnnotation
+      tags: [protocol]
+      summary: Create an annotation
+      description: |
+        Creates an annotation in the container. The server assigns `id`, `creator`, `created` and
+        `modified`, grants the creator all four permissions, validates every `StructuredBody`
+        against its registered profile, and records the document from the targets' sources
+        (register the page's equivalent URIs first with `registerDocument`).
+      parameters:
+        - name: Slug
+          in: header
+          description: A suggested name for the annotation. The server may ignore it.
+          schema:
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/AnnotationInput'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              description: The new annotation's IRI
+              schema:
+                type: string
+                format: uri
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Allow:
+              $ref: '#/components/headers/Allow'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Annotation'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Annotation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+  /annotations/{id}:
+    parameters:
+      - $ref: '#/components/parameters/annotationId'
+    get:
+      operationId: getAnnotation
+      tags: [protocol]
+      summary: Retrieve an annotation
+      security:
+        - {}
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The annotation
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Link:
+              $ref: '#/components/headers/Link'
+            Allow:
+              $ref: '#/components/headers/Allow'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Annotation'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Annotation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Gone'
+    put:
+      operationId: updateAnnotation
+      tags: [protocol]
+      summary: Replace an annotation
+      description: |
+        Replaces the annotation. `If-Match` with the current ETag is required. Requires the
+        `update` permission. The original `selector` of each target is immutable (ADR 0010); a
+        change to where an annotation anchors goes in the target's `anchoring.repair`. Structured
+        bodies are validated against their profiles.
+      parameters:
+        - $ref: '#/components/parameters/ifMatch'
+      requestBody:
+        $ref: '#/components/requestBodies/AnnotationInput'
+      responses:
+        '200':
+          description: The updated annotation
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Annotation'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Annotation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '428':
+          $ref: '#/components/responses/PreconditionRequired'
+    delete:
+      operationId: deleteAnnotation
+      tags: [protocol]
+      summary: Delete an annotation
+      description: >-
+        Deletes the annotation. `If-Match` is required. Requires the `delete` permission. Later
+        requests for the IRI answer 410.
+      parameters:
+        - $ref: '#/components/parameters/ifMatch'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '428':
+          $ref: '#/components/responses/PreconditionRequired'
+
+  /x/search:
+    get:
+      operationId: searchAnnotations
+      tags: [search]
+      summary: Search annotations
+      description: >-
+        Searches annotations by document, text, body and anchoring properties. Results contain
+        only annotations the caller may read.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: uri
+          in: query
+          description: >-
+            Any URI of a document. Matches annotations on the document that URI identifies,
+            including through its equivalent URIs (docs/document-identity.md).
+          schema:
+            type: string
+            format: uri
+        - name: document
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: text
+          in: query
+          description: Full-text query over textual bodies and quoted text.
+          schema:
+            type: string
+        - name: motivation
+          in: query
+          schema:
+            $ref: '#/components/schemas/Motivation'
+        - name: purpose
+          in: query
+          description: Body purpose.
+          schema:
+            $ref: '#/components/schemas/Motivation'
+        - name: profile
+          in: query
+          description: Profile IRI of a `StructuredBody`.
+          schema:
+            type: string
+            format: uri
+        - name: creator
+          in: query
+          description: User identifier.
+          schema:
+            type: string
+            format: uuid
+        - name: state
+          in: query
+          description: Anchoring state of at least one target.
+          schema:
+            $ref: '#/components/schemas/AnchoringState'
+        - name: parent
+          in: query
+          description: Replies to this annotation.
+          schema:
+            type: string
+            format: uuid
+        - name: since
+          in: query
+          description: Modified at or after this time.
+          schema:
+            type: string
+            format: date-time
+        - name: until
+          in: query
+          description: Modified before this time.
+          schema:
+            type: string
+            format: date-time
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created, modified]
+            default: created
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        '200':
+          description: Matching annotations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResults'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /x/annotations/{id}/acl:
+    parameters:
+      - $ref: '#/components/parameters/annotationId'
+    get:
+      operationId: getAcl
+      tags: [acl]
+      summary: List the permissions granted on an annotation
+      description: Requires the `share` permission.
+      responses:
+        '200':
+          description: The ACL rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AclEntry'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: replaceAcl
+      tags: [acl]
+      summary: Replace the permissions granted on an annotation
+      description: >-
+        Replaces every ACL row with the given grants. The creator keeps all four permissions
+        whatever the list says. Requires the `share` permission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/AclGrant'
+      responses:
+        '200':
+          description: The resulting ACL rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AclEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: grantPermission
+      tags: [acl]
+      summary: Grant one permission
+      description: Adds one ACL row. Requires the `share` permission. Granting an existing row is a no-op.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AclGrant'
+      responses:
+        '201':
+          description: The granted row
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AclEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /x/annotations/{id}/acl/{principalId}/{permission}:
+    delete:
+      operationId: revokePermission
+      tags: [acl]
+      summary: Revoke one permission
+      description: >-
+        Removes one ACL row. Requires the `share` permission. The creator's own permissions
+        cannot be revoked.
+      parameters:
+        - $ref: '#/components/parameters/annotationId'
+        - name: principalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: permission
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Permission'
+      responses:
+        '204':
+          description: Revoked
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /x/profiles:
+    get:
+      operationId: listProfiles
+      tags: [profiles]
+      summary: List registered body profiles
+      security:
+        - {}
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The registered profiles, built-in and database-registered alike
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BodyProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /x/profiles/{iri}:
+    parameters:
+      - name: iri
+        in: path
+        required: true
+        description: The profile IRI, percent-encoded.
+        schema:
+          type: string
+          format: uri
+    get:
+      operationId: getProfile
+      tags: [profiles]
+      summary: Retrieve a body profile
+      security:
+        - {}
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BodyProfile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: putProfile
+      tags: [profiles]
+      summary: Register or update a body profile
+      description: Administrators only. Built-in profiles cannot be changed this way.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BodyProfileInput'
+      responses:
+        '200':
+          description: The updated profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BodyProfile'
+        '201':
+          description: The registered profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BodyProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteProfile
+      tags: [profiles]
+      summary: Remove a body profile
+      description: >-
+        Administrators only. Removing a profile does not touch existing bodies; new bodies with
+        the profile are rejected. Built-in profiles cannot be removed (409).
+      responses:
+        '204':
+          description: Removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /x/documents:
+    post:
+      operationId: registerDocument
+      tags: [documents]
+      summary: Register a page's identifiers
+      description: |
+        Reports the URI of a page and the equivalent URIs found in it (canonical link, Dublin
+        Core identifier, PDF fingerprint, and so on). The server finds the document those URIs
+        identify, merging documents that turn out to share one, or creates it. Clients call
+        this before creating annotations so that searches by any equivalent URI find them.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentMetadata'
+      responses:
+        '200':
+          description: An existing document, possibly merged with others
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '201':
+          description: A new document
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    get:
+      operationId: lookupDocument
+      tags: [documents]
+      summary: Find the document a URI identifies
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: uri
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+      responses:
+        '200':
+          description: The document
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /x/documents/{id}:
+    get:
+      operationId: getDocument
+      tags: [documents]
+      summary: Retrieve a document
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The document
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /x/events:
+    get:
+      operationId: streamEvents
+      tags: [events]
+      summary: Stream annotation changes
+      description: |
+        A server-sent events stream of changes to annotations the subscriber may read,
+        optionally limited to one document. Event names are `annotation.created`,
+        `annotation.updated` and `annotation.deleted`; the `data` field is a JSON object
+        `{ "id": "<uuid>", "annotation": <Annotation> }`, with `annotation` omitted for deletions.
+        Each event carries an `id` field; send it back as `Last-Event-ID` to resume after a
+        disconnection. The server writes a `: keepalive` comment every 30 seconds.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: uri
+          in: query
+          description: Limit to the document this URI identifies.
+          schema:
+            type: string
+            format: uri
+        - name: document
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: Last-Event-ID
+          in: header
+          description: Resume after this event identifier.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /x/me:
+    get:
+      operationId: getCurrentUser
+      tags: [users]
+      summary: Retrieve the authenticated user
+      responses:
+        '200':
+          description: The caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /x/users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List users
+      description: Administrators only.
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        '200':
+          description: Users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /x/users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Retrieve a user
+      responses:
+        '200':
+          description: The user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a user
+      description: Administrators only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPatch'
+      responses:
+        '200':
+          description: The updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /x/principals:
+    get:
+      operationId: searchPrincipals
+      tags: [users]
+      summary: Find principals to share with
+      description: >-
+        Users and groups the caller may grant permissions to, plus the `public` and
+        `authenticated` pseudo-principals. Backs the sharing controls in the sidebar.
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Matching principals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PrincipalRef'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /x/groups:
+    get:
+      operationId: listGroups
+      tags: [groups]
+      summary: List groups
+      description: The groups the caller belongs to. Administrators see every group.
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        '200':
+          description: Groups
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createGroup
+      tags: [groups]
+      summary: Create a group
+      description: The creator becomes the group's first administrator.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupInput'
+      responses:
+        '201':
+          description: The new group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /x/groups/{id}:
+    parameters:
+      - $ref: '#/components/parameters/groupId'
+    get:
+      operationId: getGroup
+      tags: [groups]
+      summary: Retrieve a group
+      responses:
+        '200':
+          description: The group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateGroup
+      tags: [groups]
+      summary: Update a group
+      description: Group administrators and platform administrators only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupInput'
+      responses:
+        '200':
+          description: The updated group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deleteGroup
+      tags: [groups]
+      summary: Delete a group
+      description: >-
+        Group administrators and platform administrators only. ACL rows granted to the group
+        are removed with it.
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /x/groups/{id}/members:
+    get:
+      operationId: listMembers
+      tags: [groups]
+      summary: List a group's members
+      parameters:
+        - $ref: '#/components/parameters/groupId'
+      responses:
+        '200':
+          description: Members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Membership'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /x/groups/{id}/members/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/groupId'
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: setMember
+      tags: [groups]
+      summary: Add a member or change their role
+      description: Group administrators and platform administrators only.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  $ref: '#/components/schemas/GroupRole'
+      responses:
+        '204':
+          description: The membership is as requested
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: removeMember
+      tags: [groups]
+      summary: Remove a member
+      description: >-
+        Group administrators and platform administrators, or the member removing themselves.
+        The last administrator of a group cannot be removed (409).
+      responses:
+        '204':
+          description: Removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >-
+        An OpenID Connect access or ID token issued by the configured identity provider
+        (ADR 0005). Reads without a token see public annotations only.
+  parameters:
+    annotationId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    groupId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    page:
+      name: page
+      in: query
+      description: Page number, starting at 0. Without it the container itself is returned.
+      schema:
+        type: integer
+        minimum: 0
+    iris:
+      name: iris
+      in: query
+      description: '`1` to list item IRIs only, `0` for full annotations.'
+      schema:
+        type: integer
+        enum: [0, 1]
+    prefer:
+      name: Prefer
+      in: header
+      description: >-
+        `return=representation; include="<IRI>"` with one of the LDP preference IRIs described
+        on the container.
+      schema:
+        type: string
+    ifMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: The ETag of the representation the client last saw.
+      schema:
+        type: string
+    q:
+      name: q
+      in: query
+      description: Case-insensitive substring of the name or email.
+      schema:
+        type: string
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+  headers:
+    ETag:
+      description: Entity tag of the representation, for `If-Match`.
+      schema:
+        type: string
+    Link:
+      description: '`<http://www.w3.org/ns/ldp#Resource>; rel="type"` and related links.'
+      schema:
+        type: string
+    Vary:
+      description: Includes `Accept` and `Prefer`.
+      schema:
+        type: string
+    Allow:
+      description: The methods the resource supports.
+      schema:
+        type: string
+  requestBodies:
+    AnnotationInput:
+      required: true
+      content:
+        application/ld+json:
+          schema:
+            $ref: '#/components/schemas/AnnotationInput'
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AnnotationInput'
+  responses:
+    BadRequest:
+      description: The request is malformed or fails schema validation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: A valid bearer token is required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: The caller lacks the required permission
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: No such resource, or the caller may not read it
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Gone:
+      description: The annotation was deleted
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: The request conflicts with the current state
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    PreconditionFailed:
+      description: '`If-Match` does not match the current ETag'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    PreconditionRequired:
+      description: '`If-Match` is missing'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableContent:
+      description: >-
+        The request is well formed but invalid: a structured body fails its profile, a target
+        selector was changed, or a referenced resource does not exist
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    Problem:
+      description: An error, as in RFC 9457.
+      type: object
+      required: [title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        errors:
+          description: Validation errors in Ajv's shape.
+          type: array
+          items:
+            type: object
+            required: [message]
+            properties:
+              instancePath:
+                type: string
+              message:
+                type: string
+    AnnotationCollection:
+      description: The annotation container, as the W3C protocol defines it.
+      type: object
+      required: ['@context', id, type, total, modified, first]
+      properties:
+        '@context':
+          type: array
+          items:
+            type: string
+            format: iri
+          examples:
+            - ['http://www.w3.org/ns/anno.jsonld', 'http://www.w3.org/ns/ldp.jsonld']
+        id:
+          type: string
+          format: iri
+        type:
+          type: array
+          items:
+            type: string
+          examples:
+            - [BasicContainer, AnnotationCollection]
+        label:
+          type: string
+        total:
+          type: integer
+          minimum: 0
+        modified:
+          type: string
+          format: date-time
+        first:
+          oneOf:
+            - type: string
+              format: iri
+            - $ref: '#/components/schemas/AnnotationPage'
+        last:
+          type: string
+          format: iri
+    AnnotationPage:
+      description: One page of the container.
+      type: object
+      required: ['@context', id, type, partOf, startIndex, items]
+      properties:
+        '@context':
+          anyOf:
+            - type: string
+              format: iri
+            - type: array
+              items:
+                type: string
+                format: iri
+        id:
+          type: string
+          format: iri
+        type:
+          const: AnnotationPage
+        partOf:
+          type: string
+          format: iri
+        startIndex:
+          type: integer
+          minimum: 0
+        next:
+          type: string
+          format: iri
+        prev:
+          type: string
+          format: iri
+        items:
+          type: array
+          items:
+            oneOf:
+              - type: string
+                format: iri
+              - $ref: '#/components/schemas/Annotation'
+    SearchResults:
+      type: object
+      required: [total, items]
+      properties:
+        total:
+          type: integer
+          minimum: 0
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Annotation'
+    PrincipalKind:
+      type: string
+      enum: [user, group, public, authenticated]
+    PrincipalRef:
+      type: object
+      required: [id, kind]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/PrincipalKind'
+        name:
+          type: string
+    AclGrant:
+      type: object
+      required: [principal, permission]
+      properties:
+        principal:
+          type: string
+          format: uuid
+        permission:
+          $ref: '#/components/schemas/Permission'
+    AclEntry:
+      type: object
+      required: [principal, permission]
+      properties:
+        principal:
+          $ref: '#/components/schemas/PrincipalRef'
+        permission:
+          $ref: '#/components/schemas/Permission'
+        grantedBy:
+          type: string
+          format: uuid
+        grantedAt:
+          type: string
+          format: date-time
+    BodyProfileInput:
+      type: object
+      required: [title, schema]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        schema:
+          description: A JSON Schema (draft 2020-12) for the body's `value`.
+          type: object
+        enabled:
+          type: boolean
+          default: true
+    BodyProfile:
+      type: object
+      required: [iri, title, schema, builtin, enabled]
+      properties:
+        iri:
+          type: string
+          format: iri
+        title:
+          type: string
+        description:
+          type: string
+        schema:
+          description: A JSON Schema (draft 2020-12) for the body's `value`.
+          type: object
+        builtin:
+          type: boolean
+        enabled:
+          type: boolean
+        created:
+          type: string
+          format: date-time
+        modified:
+          type: string
+          format: date-time
+    DocumentUriRelation:
+      description: How a URI relates to the page that reported it (docs/document-identity.md).
+      type: string
+      enum:
+        [
+          self,
+          canonical,
+          shortlink,
+          alternate,
+          og_url,
+          dc_identifier,
+          doi,
+          pdf_fingerprint,
+          pdf_url,
+        ]
+    DocumentLink:
+      type: object
+      required: [uri, relation]
+      properties:
+        uri:
+          type: string
+          format: iri
+        relation:
+          $ref: '#/components/schemas/DocumentUriRelation'
+    DocumentMetadata:
+      type: object
+      required: [uri, links]
+      properties:
+        uri:
+          description: The page's own URL.
+          type: string
+          format: uri
+        title:
+          type: string
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentLink'
+    Document:
+      type: object
+      required: [id, uris, created, modified]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        uris:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentLink'
+        created:
+          type: string
+          format: date-time
+        modified:
+          type: string
+          format: date-time
+    GroupRole:
+      type: string
+      enum: [member, admin]
+    GroupRef:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    UserRef:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+    User:
+      type: object
+      required: [id, isAdmin, created]
+      properties:
+        id:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        email:
+          type: string
+        isAdmin:
+          type: boolean
+        created:
+          type: string
+          format: date-time
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupRef'
+    UserPatch:
+      type: object
+      properties:
+        displayName:
+          type: string
+        isAdmin:
+          type: boolean
+    UserList:
+      type: object
+      required: [total, items]
+      properties:
+        total:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    GroupInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+    Group:
+      type: object
+      required: [id, name, created, modified]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        created:
+          type: string
+          format: date-time
+        modified:
+          type: string
+          format: date-time
+        memberCount:
+          type: integer
+        role:
+          description: The caller's role in the group, when a member.
+          $ref: '#/components/schemas/GroupRole'
+    GroupList:
+      type: object
+      required: [total, items]
+      properties:
+        total:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Group'
+    Membership:
+      type: object
+      required: [user, role, addedAt]
+      properties:
+        user:
+          $ref: '#/components/schemas/UserRef'
+        role:
+          $ref: '#/components/schemas/GroupRole'
+        addedAt:
+          type: string
+          format: date-time
+
+    # ---------------------------------------------------------------------
+    # Annotation data model. These schemas are copied from
+    # packages/model/src/annotation/schemas.ts and must stay identical to
+    # them; apps/api/src/openapi.test.ts fails when they drift.
+    Motivation:
+      description: A standard motivation or an IRI naming an extension motivation.
+      anyOf:
+        - type: string
+          enum:
+            - assessing
+            - bookmarking
+            - classifying
+            - commenting
+            - describing
+            - editing
+            - highlighting
+            - identifying
+            - linking
+            - moderating
+            - questioning
+            - replying
+            - tagging
+        - type: string
+          format: iri
+    Agent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: iri
+        type:
+          anyOf:
+            - type: string
+              enum:
+                - Person
+                - Organization
+                - Software
+            - type: array
+              items:
+                type: string
+                enum:
+                  - Person
+                  - Organization
+                  - Software
+        name:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        nickname:
+          type: string
+        email:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        email_sha1:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        homepage:
+          anyOf:
+            - type: string
+              format: iri
+            - type: array
+              items:
+                type: string
+                format: iri
+    ExternalResource:
+      description: A body or target identified by IRI, with optional description.
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: iri
+        type:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        format:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        language:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        processingLanguage:
+          type: string
+        textDirection:
+          type: string
+          enum:
+            - ltr
+            - rtl
+            - auto
+        accessibility:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        rights:
+          anyOf:
+            - type: string
+              format: iri
+            - type: array
+              items:
+                type: string
+                format: iri
+        canonical:
+          type: string
+          format: iri
+        via:
+          anyOf:
+            - type: string
+              format: iri
+            - type: array
+              items:
+                type: string
+                format: iri
+    TextQuoteSelector:
+      type: object
+      required:
+        - type
+        - exact
+      properties:
+        type:
+          const: TextQuoteSelector
+        exact:
+          type: string
+        prefix:
+          type: string
+        suffix:
+          type: string
+        refinedBy:
+          anyOf:
+            - $ref: '#/components/schemas/Selector'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Selector'
+    TextPositionSelector:
+      description: Offsets count Unicode code points of the scope’s normalized text (ADR 0012).
+      type: object
+      required:
+        - type
+        - start
+        - end
+      properties:
+        type:
+          const: TextPositionSelector
+        start:
+          type: integer
+          minimum: 0
+        end:
+          type: integer
+          minimum: 0
+        refinedBy:
+          anyOf:
+            - $ref: '#/components/schemas/Selector'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Selector'
+    FragmentSelector:
+      type: object
+      required:
+        - type
+        - value
+      properties:
+        type:
+          const: FragmentSelector
+        value:
+          type: string
+        conformsTo:
+          type: string
+          format: iri
+        refinedBy:
+          anyOf:
+            - $ref: '#/components/schemas/Selector'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Selector'
+    CssSelector:
+      type: object
+      required:
+        - type
+        - value
+      properties:
+        type:
+          const: CssSelector
+        value:
+          type: string
+        refinedBy:
+          anyOf:
+            - $ref: '#/components/schemas/Selector'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Selector'
+    XPathSelector:
+      type: object
+      required:
+        - type
+        - value
+      properties:
+        type:
+          const: XPathSelector
+        value:
+          type: string
+        refinedBy:
+          anyOf:
+            - $ref: '#/components/schemas/Selector'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Selector'
+    DataPositionSelector:
+      type: object
+      required:
+        - type
+        - start
+        - end
+      properties:
+        type:
+          const: DataPositionSelector
+        start:
+          type: integer
+          minimum: 0
+        end:
+          type: integer
+          minimum: 0
+        refinedBy:
+          anyOf:
+            - $ref: '#/components/schemas/Selector'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Selector'
+    SvgSelector:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          const: SvgSelector
+        id:
+          type: string
+          format: iri
+        value:
+          type: string
+        refinedBy:
+          anyOf:
+            - $ref: '#/components/schemas/Selector'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Selector'
+    RangeSelector:
+      type: object
+      required:
+        - type
+        - startSelector
+        - endSelector
+      properties:
+        type:
+          const: RangeSelector
+        startSelector:
+          $ref: '#/components/schemas/Selector'
+        endSelector:
+          $ref: '#/components/schemas/Selector'
+        refinedBy:
+          anyOf:
+            - $ref: '#/components/schemas/Selector'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Selector'
+    Selector:
+      oneOf:
+        - $ref: '#/components/schemas/TextQuoteSelector'
+        - $ref: '#/components/schemas/TextPositionSelector'
+        - $ref: '#/components/schemas/FragmentSelector'
+        - $ref: '#/components/schemas/CssSelector'
+        - $ref: '#/components/schemas/XPathSelector'
+        - $ref: '#/components/schemas/DataPositionSelector'
+        - $ref: '#/components/schemas/SvgSelector'
+        - $ref: '#/components/schemas/RangeSelector'
+    State:
+      oneOf:
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              const: TimeState
+            sourceDate:
+              anyOf:
+                - type: string
+                  format: date-time
+                - type: array
+                  items:
+                    type: string
+                    format: date-time
+            sourceDateStart:
+              type: string
+              format: date-time
+            sourceDateEnd:
+              type: string
+              format: date-time
+            cached:
+              anyOf:
+                - type: string
+                  format: iri
+                - type: array
+                  items:
+                    type: string
+                    format: iri
+            refinedBy:
+              anyOf:
+                - $ref: '#/components/schemas/State'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/State'
+        - type: object
+          required:
+            - type
+            - value
+          properties:
+            type:
+              const: HttpRequestState
+            value:
+              type: string
+            refinedBy:
+              anyOf:
+                - $ref: '#/components/schemas/State'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/State'
+    SpecificResource:
+      type: object
+      required:
+        - source
+      properties:
+        id:
+          type: string
+          format: iri
+        type:
+          const: SpecificResource
+        source:
+          anyOf:
+            - type: string
+              format: iri
+            - $ref: '#/components/schemas/ExternalResource'
+        selector:
+          anyOf:
+            - $ref: '#/components/schemas/Selector'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Selector'
+        state:
+          anyOf:
+            - $ref: '#/components/schemas/State'
+            - type: array
+              items:
+                $ref: '#/components/schemas/State'
+        styleClass:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        renderedVia:
+          anyOf:
+            - anyOf:
+                - type: string
+                  format: iri
+                - $ref: '#/components/schemas/Agent'
+            - type: array
+              items:
+                anyOf:
+                  - type: string
+                    format: iri
+                  - $ref: '#/components/schemas/Agent'
+        scope:
+          anyOf:
+            - type: string
+              format: iri
+            - type: array
+              items:
+                type: string
+                format: iri
+        purpose:
+          anyOf:
+            - $ref: '#/components/schemas/Motivation'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Motivation'
+    AnchoringState:
+      type: string
+      enum:
+        - anchored
+        - orphaned
+        - ambiguous
+        - repaired
+    Anchoring:
+      description:
+        'Extension (ADR 0010): how the target currently anchors. A repair carries the selectors
+        a user chose; the target’s own selectors are never rewritten.'
+      type: object
+      required:
+        - state
+      properties:
+        state:
+          $ref: '#/components/schemas/AnchoringState'
+        repair:
+          type: object
+          required:
+            - selector
+            - created
+          properties:
+            selector:
+              anyOf:
+                - $ref: '#/components/schemas/Selector'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/Selector'
+            creator:
+              anyOf:
+                - type: string
+                  format: iri
+                - $ref: '#/components/schemas/Agent'
+            created:
+              type: string
+              format: date-time
+    AnchoredTarget:
+      description: A SpecificResource target with anchoring state.
+      type: object
+      required:
+        - source
+      properties:
+        id:
+          type: string
+          format: iri
+        type:
+          const: SpecificResource
+        source:
+          anyOf:
+            - type: string
+              format: iri
+            - $ref: '#/components/schemas/ExternalResource'
+        selector:
+          anyOf:
+            - $ref: '#/components/schemas/Selector'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Selector'
+        state:
+          anyOf:
+            - $ref: '#/components/schemas/State'
+            - type: array
+              items:
+                $ref: '#/components/schemas/State'
+        styleClass:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        renderedVia:
+          anyOf:
+            - anyOf:
+                - type: string
+                  format: iri
+                - $ref: '#/components/schemas/Agent'
+            - type: array
+              items:
+                anyOf:
+                  - type: string
+                    format: iri
+                  - $ref: '#/components/schemas/Agent'
+        scope:
+          anyOf:
+            - type: string
+              format: iri
+            - type: array
+              items:
+                type: string
+                format: iri
+        purpose:
+          anyOf:
+            - $ref: '#/components/schemas/Motivation'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Motivation'
+        anchoring:
+          $ref: '#/components/schemas/Anchoring'
+    TextualBody:
+      type: object
+      required:
+        - type
+        - value
+      properties:
+        type:
+          const: TextualBody
+        value:
+          type: string
+        format:
+          type: string
+        language:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        processingLanguage:
+          type: string
+        textDirection:
+          type: string
+          enum:
+            - ltr
+            - rtl
+            - auto
+        id:
+          type: string
+          format: iri
+        purpose:
+          anyOf:
+            - $ref: '#/components/schemas/Motivation'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Motivation'
+        creator:
+          anyOf:
+            - type: string
+              format: iri
+            - $ref: '#/components/schemas/Agent'
+        created:
+          type: string
+          format: date-time
+        modified:
+          type: string
+          format: date-time
+    StructuredBody:
+      description:
+        'Extension: an embedded JSON value validated against the JSON Schema registered for
+        `profile` (docs/body-profiles.md).'
+      type: object
+      required:
+        - type
+        - profile
+        - value
+      properties:
+        type:
+          const: StructuredBody
+        profile:
+          type: string
+          format: iri
+        value: {}
+        id:
+          type: string
+          format: iri
+        purpose:
+          anyOf:
+            - $ref: '#/components/schemas/Motivation'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Motivation'
+        creator:
+          anyOf:
+            - type: string
+              format: iri
+            - $ref: '#/components/schemas/Agent'
+        created:
+          type: string
+          format: date-time
+        modified:
+          type: string
+          format: date-time
+    Body:
+      anyOf:
+        - type: string
+          format: iri
+        - $ref: '#/components/schemas/TextualBody'
+        - $ref: '#/components/schemas/StructuredBody'
+        - $ref: '#/components/schemas/SpecificResource'
+        - $ref: '#/components/schemas/ExternalResource'
+        - type: object
+          required:
+            - type
+            - items
+          properties:
+            type:
+              const: Choice
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Body'
+    Target:
+      anyOf:
+        - type: string
+          format: iri
+        - $ref: '#/components/schemas/AnchoredTarget'
+        - $ref: '#/components/schemas/ExternalResource'
+        - type: object
+          required:
+            - type
+            - items
+          properties:
+            type:
+              const: Choice
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Target'
+    Permission:
+      type: string
+      enum:
+        - read
+        - update
+        - delete
+        - share
+    Annotation:
+      description: An annotation as the server returns it.
+      type: object
+      required:
+        - '@context'
+        - id
+        - type
+        - target
+      properties:
+        '@context':
+          anyOf:
+            - anyOf:
+                - type: string
+                  format: iri
+                - type: object
+            - type: array
+              items:
+                anyOf:
+                  - type: string
+                    format: iri
+                  - type: object
+        id:
+          type: string
+          format: iri
+        creator:
+          anyOf:
+            - type: string
+              format: iri
+            - $ref: '#/components/schemas/Agent'
+        created:
+          type: string
+          format: date-time
+        modified:
+          type: string
+          format: date-time
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
+        type:
+          anyOf:
+            - const: Annotation
+            - type: array
+              minItems: 1
+              items:
+                type: string
+              contains:
+                const: Annotation
+        body:
+          anyOf:
+            - $ref: '#/components/schemas/Body'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Body'
+        bodyValue:
+          type: string
+        target:
+          anyOf:
+            - $ref: '#/components/schemas/Target'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Target'
+        motivation:
+          anyOf:
+            - $ref: '#/components/schemas/Motivation'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Motivation'
+        generator:
+          anyOf:
+            - type: string
+              format: iri
+            - $ref: '#/components/schemas/Agent'
+        generated:
+          type: string
+          format: date-time
+        audience:
+          anyOf:
+            - anyOf:
+                - type: string
+                  format: iri
+                - type: object
+            - type: array
+              items:
+                anyOf:
+                  - type: string
+                    format: iri
+                  - type: object
+        rights:
+          anyOf:
+            - type: string
+              format: iri
+            - type: array
+              items:
+                type: string
+                format: iri
+        canonical:
+          type: string
+          format: iri
+        via:
+          anyOf:
+            - type: string
+              format: iri
+            - type: array
+              items:
+                type: string
+                format: iri
+        stylesheet:
+          anyOf:
+            - type: string
+              format: iri
+            - type: object
+              required:
+                - type
+              properties:
+                type:
+                  const: CssStylesheet
+                id:
+                  type: string
+                  format: iri
+                value:
+                  type: string
+    AnnotationInput:
+      description: An annotation as a client sends it. The server assigns id, creator, created and
+        modified and ignores any it receives.
+      type: object
+      required:
+        - type
+        - target
+      properties:
+        '@context':
+          anyOf:
+            - anyOf:
+                - type: string
+                  format: iri
+                - type: object
+            - type: array
+              items:
+                anyOf:
+                  - type: string
+                    format: iri
+                  - type: object
+        type:
+          anyOf:
+            - const: Annotation
+            - type: array
+              minItems: 1
+              items:
+                type: string
+              contains:
+                const: Annotation
+        body:
+          anyOf:
+            - $ref: '#/components/schemas/Body'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Body'
+        bodyValue:
+          type: string
+        target:
+          anyOf:
+            - $ref: '#/components/schemas/Target'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Target'
+        motivation:
+          anyOf:
+            - $ref: '#/components/schemas/Motivation'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Motivation'
+        generator:
+          anyOf:
+            - type: string
+              format: iri
+            - $ref: '#/components/schemas/Agent'
+        generated:
+          type: string
+          format: date-time
+        audience:
+          anyOf:
+            - anyOf:
+                - type: string
+                  format: iri
+                - type: object
+            - type: array
+              items:
+                anyOf:
+                  - type: string
+                    format: iri
+                  - type: object
+        rights:
+          anyOf:
+            - type: string
+              format: iri
+            - type: array
+              items:
+                type: string
+                format: iri
+        canonical:
+          type: string
+          format: iri
+        via:
+          anyOf:
+            - type: string
+              format: iri
+            - type: array
+              items:
+                type: string
+                format: iri
+        stylesheet:
+          anyOf:
+            - type: string
+              format: iri
+            - type: object
+              required:
+                - type
+              properties:
+                type:
+                  const: CssStylesheet
+                id:
+                  type: string
+                  format: iri
+                value:
+                  type: string

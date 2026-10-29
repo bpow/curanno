@@ -15,7 +15,10 @@
     "typecheck": "tsc -b && tsc -p apps/api/spike/tsconfig.json",
     "test": "vitest run",
     "licenses:check": "node scripts/check-licenses.mjs",
-    "check": "pnpm typecheck && pnpm lint && pnpm format && pnpm test && pnpm licenses:check"
+    "check": "pnpm typecheck && pnpm lint && pnpm format && pnpm test && pnpm licenses:check && pnpm openapi:lint && pnpm api-client:check",
+    "openapi:lint": "redocly lint apps/api/openapi.yaml",
+    "api-client:generate": "pnpm --filter @scale/api-client generate",
+    "api-client:check": "pnpm api-client:generate && git diff --exit-code -- packages/api-client/src/schema.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

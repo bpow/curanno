@@ -37,3 +37,5 @@ jobs:
       - run: pnpm format
       - run: pnpm test
       - run: pnpm licenses:check
+      - run: pnpm openapi:lint
+      - run: pnpm api-client:check
