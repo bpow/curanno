@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Minutes of the review board (corrected)</title>
+<style>body { font-family: Georgia, serif; max-width: 40em; margin: 2em auto; line-height: 1.6; }</style>
+</head>
+<body>
+<article>
+<p class="notice"><strong>Correction issued 21 March.</strong> Vote counts in the original minutes were wrong and have been fixed below. Proposal A has been withdrawn.</p>
+<h1>Minutes of the review board, 14 March</h1>
+<p class="lede">The board met to review three proposals for the <em>annotation platform</em> and to settle the open questions from February.</p>
+<h2>Proposal B: build on an existing library</h2>
+<p>Proposal B builds a new client on an <strong>existing library</strong> and writes the server fresh. The library handles selection and highlighting; its re-anchoring is position based and would need a quote fallback. Five members supported it, with the condition that the fallback is tested on real pages before the decision is final.</p>
+<h2>Proposal C: copy the anchoring code</h2>
+<p>Proposal C copies the <strong>anchoring code</strong> from the existing client and builds everything else new. It is the most work up front but leaves nothing to an upstream project. Two members supported it.</p>
+<h2 id="acl">Access control</h2>
+<p>Every proposal must support per-annotation permissions: <code>read</code>, <code>update</code>, <code>delete</code> and <code>share</code>, enforced in search as well as on single items. The chair asked for a written model by the next meeting.</p>
+<h2>Decisions</h2>
+<ol>
+<li>Run a two-week trial of Proposals B and C on a corpus of real pages.</li>
+<li>Record the result as an architecture decision.</li>
+</ol>
+<p>The meeting closed at 16:40.</p>
+</article>
+</body>
+</html>

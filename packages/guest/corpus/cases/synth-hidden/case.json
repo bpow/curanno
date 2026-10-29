@@ -1,0 +1,363 @@
+{
+  "id": "synth-hidden",
+  "title": "Hidden, excluded and line-broken text",
+  "kind": "html",
+  "source": {
+    "license": "Written for this corpus"
+  },
+  "tags": ["synthetic", "hidden", "excluded", "br"],
+  "variants": [
+    {
+      "id": "original",
+      "file": "original.html",
+      "description": "As written"
+    },
+    {
+      "id": "edited",
+      "file": "edited.html",
+      "description": "Hidden menus, the visually-hidden skip links, the not-annotatable toolbar and the noscript text all grow; the hidden ticket span inside the first paragraph is removed. The visible article text is unchanged."
+    }
+  ],
+  "annotations": [
+    {
+      "id": "after-hidden",
+      "description": "Visible text whose position shifts because hidden and excluded text before it changed length",
+      "select": {
+        "exact": "a maintenance release"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "a maintenance release",
+          "prefix": " for version 3.2\nVersion 3.2 is ",
+          "suffix": ". It fixes the (internal ticket "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 150,
+          "end": 171
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 15,
+              "end": 15
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 36,
+              "end": 36
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "across-hidden-span",
+      "description": "Quote spanning a hidden span that the edit removes; the visible text is the same",
+      "select": {
+        "exact": "It fixes the (internal ticket 4411) crash on startup"
+      },
+      "expected": {
+        "edited": {
+          "exact": "It fixes the crash on startup",
+          "note": "The hidden span was never visible; what the user selected reads the same"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "It fixes the (internal ticket 4411) crash on startup",
+          "prefix": "n 3.2 is a maintenance release. ",
+          "suffix": " when the configuration file is "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 173,
+          "end": 225
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 38,
+              "end": 38
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 90,
+              "end": 90
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "across-br",
+      "description": "Quote across two <br> elements; textContent has no separator at the breaks",
+      "select": {
+        "exact": "two lines:Flat 4, 12 Harbour StreetKingstown"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "two lines:Flat 4, 12 Harbour StreetKingstown",
+          "prefix": "Addresses may now be written on ",
+          "suffix": "\nThe API gains a /health endpoin"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 344,
+          "end": 388
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 32,
+              "end": 32
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 76,
+              "end": 76
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "aria-hidden-glyph",
+      "description": "Quote containing an aria-hidden decorative glyph",
+      "select": {
+        "exact": "endpoint. ★ Clients should poll it"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "endpoint. ★ Clients should poll it",
+          "prefix": "ngstown\nThe API gains a /health ",
+          "suffix": " no more than once a minute.\n<p>"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 413,
+          "end": 447
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/p[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 24,
+              "end": 24
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/p[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 58,
+              "end": 58
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "inside-details",
+      "description": "Text inside a closed <details> element",
+      "select": {
+        "exact": "loses footnotes on pages with rotated tables"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "loses footnotes on pages with rotated tables",
+          "prefix": "\n\nKnown issues\nExporting to PDF ",
+          "suffix": ". A fix is planned for 3.2.1.\n\nU"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 566,
+          "end": 610
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/details[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 17,
+              "end": 17
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/details[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 61,
+              "end": 61
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "excluded-toolbar",
+      "description": "Text inside a not-annotatable element (Recogito excludes it from its offsets)",
+      "select": {
+        "exact": "Report a problem"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Report a problem",
+          "prefix": "orViewerServer\n\nShare · Print · ",
+          "suffix": " · Last built 14:02\n\nRelease not"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 68,
+          "end": 84
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 16,
+              "end": 16
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 32,
+              "end": 32
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "noscript",
+      "description": "Text inside <noscript>, which is raw text to textContent when scripting is on",
+      "select": {
+        "exact": "interactive changelog"
+      },
+      "expected": {
+        "edited": {
+          "exact": "interactive changelog",
+          "suffix": ", the download"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "interactive changelog",
+          "prefix": "<p>Enable JavaScript to see the ",
+          "suffix": ".</p>\n\nKnown issues\nExporting to"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 508,
+          "end": 529
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/noscript[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 32,
+              "end": 32
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/noscript[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 53,
+              "end": 53
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "end-of-main",
+      "description": "Late text, shifted by everything above",
+      "select": {
+        "exact": "cannot be reversed automatically"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "cannot be reversed automatically",
+          "prefix": " owner column to created_by and ",
+          "suffix": ".\n\n© Example Software. All notes"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 747,
+          "end": 779
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/p[4]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 96,
+              "end": 96
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/p[4]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 128,
+              "end": 128
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

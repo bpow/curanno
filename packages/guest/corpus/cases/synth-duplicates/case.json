@@ -1,0 +1,340 @@
+{
+  "id": "synth-duplicates",
+  "title": "Deleted text with near-duplicates elsewhere (must-not-match cases)",
+  "kind": "html",
+  "source": {
+    "license": "Written for this corpus"
+  },
+  "tags": ["synthetic", "mustNotMatch"],
+  "variants": [
+    {
+      "id": "original",
+      "file": "original.html",
+      "description": "Protocol with four numbered sections and a threshold table"
+    },
+    {
+      "id": "edited",
+      "file": "edited.html",
+      "description": "Section 4.2 (saliva) and the saliva table row removed; everything else unchanged"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "heading-4-2",
+      "description": "Short heading that was removed; 'Section 4.1', 'Section 4.3' and 'Section 5.2' remain, each one character away",
+      "select": {
+        "exact": "Section 4.2 Saliva"
+      },
+      "expected": {
+        "edited": {
+          "mustNotMatch": true,
+          "reason": "Only similar-looking headings remain"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Section 4.2 Saliva",
+          "prefix": "ntrifugation in the intake log.\n",
+          "suffix": "\nStore at room temperature for u"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 307,
+          "end": 325
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/h2[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/h2[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 18,
+              "end": 18
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "number-only",
+      "description": "Just the section number",
+      "select": {
+        "exact": "4.2"
+      },
+      "expected": {
+        "edited": {
+          "mustNotMatch": true,
+          "reason": "4.1, 4.3 and 5.2 are not 4.2"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "4.2",
+          "prefix": "tion in the intake log.\nSection ",
+          "suffix": " Saliva\nStore at room temperatur"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 315,
+          "end": 318
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/h2[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 8,
+              "end": 8
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/h2[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 11,
+              "end": 11
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "saliva-para",
+      "description": "Removed paragraph that shares its last sentence pattern with the three remaining sections",
+      "select": {
+        "exact": "Store at room temperature for up to 24 hours. Do not freeze."
+      },
+      "expected": {
+        "edited": {
+          "mustNotMatch": true,
+          "reason": "The paragraph was removed; the other storage sentences describe other samples"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Store at room temperature for up to 24 hours. Do not freeze.",
+          "prefix": " intake log.\nSection 4.2 Saliva\n",
+          "suffix": " Record the collection time in t"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 326,
+          "end": 386
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/p[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/p[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 60,
+              "end": 60
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "log-sentence",
+      "description": "Sentence that recurs with one word changed in every section; this one was removed with its section",
+      "select": {
+        "exact": "Record the collection time in the intake log."
+      },
+      "expected": {
+        "edited": {
+          "mustNotMatch": true,
+          "reason": "'Record the ... in the intake log.' survives three times for other values"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Record the collection time in the intake log.",
+          "prefix": " up to 24 hours. Do not freeze. ",
+          "suffix": "\nSection 4.3 Tissue\nStore at −80"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 387,
+          "end": 432
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/p[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 61,
+              "end": 61
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/p[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 106,
+              "end": 106
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "table-value",
+      "description": "Table cell value from the removed row; the blood row has 2.5 ml next to a different first cell",
+      "select": {
+        "exact": "1.0 ml"
+      },
+      "expected": {
+        "edited": {
+          "mustNotMatch": true,
+          "reason": "The saliva row is gone"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "1.0 ml",
+          "prefix": "w\nBlood4.0 ml2.5 ml\nSaliva2.0 ml",
+          "suffix": "\nTissue20 mg10 mg\n\nSign-off\nThe "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 737,
+          "end": 743
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/table[1]/tbody[1]/tr[3]/td[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/table[1]/tbody[1]/tr[3]/td[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 6,
+              "end": 6
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "tissue-para",
+      "description": "Control: kept paragraph that shifts up",
+      "select": {
+        "exact": "Store at −80 °C within 15 minutes of arrival."
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Store at −80 °C within 15 minutes of arrival.",
+          "prefix": " intake log.\nSection 4.3 Tissue\n",
+          "suffix": " Record the freezer position in "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 452,
+          "end": 497
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/p[4]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/p[4]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 45,
+              "end": 45
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "signoff",
+      "description": "Control: kept sentence near the end",
+      "select": {
+        "exact": "Unsigned logs are escalated to the laboratory manager the next morning."
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Unsigned logs are escalated to the laboratory manager the next morning.",
+          "prefix": "e log at the end of each shift. ",
+          "suffix": "\n\n\n"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 833,
+          "end": 904
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/p[6]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 62,
+              "end": 62
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/p[6]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 133,
+              "end": 133
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

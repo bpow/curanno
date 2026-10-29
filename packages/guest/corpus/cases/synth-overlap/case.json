@@ -1,0 +1,510 @@
+{
+  "id": "synth-overlap",
+  "title": "Overlapping and discontiguous selections in a short article",
+  "kind": "html",
+  "source": {
+    "license": "Written for this corpus"
+  },
+  "tags": ["synthetic", "overlap", "mustNotMatch"],
+  "variants": [
+    {
+      "id": "original",
+      "file": "original.html",
+      "description": "As written"
+    },
+    {
+      "id": "edited",
+      "file": "edited.html",
+      "description": "Correction notice inserted at the top, Proposal A section and the third decision removed, two vote counts changed"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "whole-sentence",
+      "description": "A full sentence spanning an inline element",
+      "select": {
+        "exact": "The board met to review three proposals for the annotation platform and to settle the open questions from February."
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "The board met to review three proposals for the annotation platform and to settle the open questions from February.",
+          "prefix": "s of the review board, 14 March\n",
+          "suffix": "\nProposal A: keep the existing s"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 40,
+          "end": 155
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 115,
+              "end": 115
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "inner-phrase",
+      "description": "Overlaps whole-sentence: a phrase inside it, crossing the <em> boundary",
+      "select": {
+        "exact": "proposals for the annotation platform"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "proposals for the annotation platform",
+          "prefix": "h\nThe board met to review three ",
+          "suffix": " and to settle the open question"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 70,
+          "end": 107
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 30,
+              "end": 30
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[1]/em[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 19,
+              "end": 19
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "straddle",
+      "description": "Overlaps the end of whole-sentence and the start of the next heading",
+      "select": {
+        "exact": "from February.\nProposal A: keep the existing service"
+      },
+      "expected": {
+        "edited": {
+          "mustNotMatch": true,
+          "reason": "The Proposal A heading no longer exists; the sentence end is followed by Proposal B instead"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "from February.\nProposal A: keep the existing service",
+          "prefix": "nd to settle the open questions ",
+          "suffix": "\nProposal A keeps the existing s"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 141,
+          "end": 193
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 101,
+              "end": 101
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/h2[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 37,
+              "end": 37
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "vote-b",
+      "description": "Short quote whose number changes in the edit",
+      "select": {
+        "exact": "Four members supported it"
+      },
+      "expected": {
+        "edited": {
+          "exact": "Five members supported it",
+          "note": "The count was corrected; anchoring to the corrected sentence is right"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Four members supported it",
+          "prefix": "nd would need a quote fallback. ",
+          "suffix": ", with the condition that the fa"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 666,
+          "end": 691
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 199,
+              "end": 199
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 224,
+              "end": 224
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "vote-c",
+      "description": "Second short vote quote; the edit changes it to text that also appears elsewhere in the original",
+      "select": {
+        "exact": "Three members supported it."
+      },
+      "expected": {
+        "edited": {
+          "exact": "Two members supported it.",
+          "prefix": "to an upstream project. "
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Three members supported it.",
+          "prefix": "nothing to an upstream project. ",
+          "suffix": "\nAccess control\nEvery proposal m"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 986,
+          "end": 1013
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[4]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 166,
+              "end": 166
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[4]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 193,
+              "end": 193
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "proposal-a-para",
+      "description": "Paragraph deleted in the edit; Proposals B and C paragraphs share its structure and vocabulary",
+      "select": {
+        "exact": "Proposal A keeps the existing service running unchanged for another year."
+      },
+      "expected": {
+        "edited": {
+          "mustNotMatch": true,
+          "reason": "The section was removed; the similar Proposal B and C sentences are not it"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Proposal A keeps the existing service running unchanged for another year.",
+          "prefix": "al A: keep the existing service\n",
+          "suffix": " The cost is low, but the mainta"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 194,
+          "end": 267
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 73,
+              "end": 73
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "disc-1",
+      "description": "First part of a discontiguous selection over the four permission names",
+      "partOf": "permissions",
+      "select": {
+        "exact": "read",
+        "scope": "#acl + p"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "read",
+          "prefix": "ort per-annotation permissions: ",
+          "suffix": ", update, delete and share, enfo"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 1085,
+          "end": 1089
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[5]/code[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[5]/code[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 4,
+              "end": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "disc-2",
+      "description": "Second part, a single code element",
+      "partOf": "permissions",
+      "select": {
+        "exact": "update",
+        "scope": "#acl + p"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "update",
+          "prefix": "r-annotation permissions: read, ",
+          "suffix": ", delete and share, enforced in "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 1091,
+          "end": 1097
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[5]/code[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[5]/code[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 6,
+              "end": 6
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "disc-3",
+      "description": "Third part",
+      "partOf": "permissions",
+      "select": {
+        "exact": "share",
+        "scope": "#acl + p"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "share",
+          "prefix": "sions: read, update, delete and ",
+          "suffix": ", enforced in search as well as "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 1110,
+          "end": 1115
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[5]/code[4]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[5]/code[4]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 5,
+              "end": 5
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "decision-3",
+      "description": "List item removed in the edit; the other two items remain",
+      "select": {
+        "exact": "Revisit Proposal A only if both trials fail."
+      },
+      "expected": {
+        "edited": {
+          "mustNotMatch": true,
+          "reason": "The item was removed"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Revisit Proposal A only if both trials fail.",
+          "prefix": "lt as an architecture decision.\n",
+          "suffix": "\n\nThe meeting closed at 16:40.\n\n"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 1348,
+          "end": 1392
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/ol[1]/li[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/ol[1]/li[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 44,
+              "end": 44
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "closing",
+      "description": "Last line, shifted by the notice and the deletions",
+      "select": {
+        "exact": "The meeting closed at 16:40."
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "The meeting closed at 16:40.",
+          "prefix": "al A only if both trials fail.\n\n",
+          "suffix": "\n\n\n\n"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 1394,
+          "end": 1422
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[6]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[6]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 28,
+              "end": 28
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

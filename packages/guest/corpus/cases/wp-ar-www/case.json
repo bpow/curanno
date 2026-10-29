@@ -1,0 +1,247 @@
+{
+  "id": "wp-ar-www",
+  "title": "Wikipedia (Arabic): الشبكة العنكبوتية العالمية, two revisions, right-to-left",
+  "kind": "html",
+  "source": {
+    "url": "https://ar.wikipedia.org/wiki/%D8%A7%D9%84%D8%B4%D8%A8%D9%83%D8%A9_%D8%A7%D9%84%D8%B9%D9%86%D9%83%D8%A8%D9%88%D8%AA%D9%8A%D8%A9_%D8%A7%D9%84%D8%B9%D8%A7%D9%84%D9%85%D9%8A%D8%A9",
+    "license": "CC BY-SA 4.0",
+    "note": "Rendered through the MediaWiki parse API; scripts and image sources removed"
+  },
+  "tags": ["real", "wikipedia", "non-latin", "long", "mustNotMatch"],
+  "variants": [
+    {
+      "id": "original",
+      "file": "original.html",
+      "description": "Revision 77069910 (2026-10-25)"
+    },
+    {
+      "id": "rev-2025-05",
+      "file": "rev-2025-05.html",
+      "description": "Revision 70635027 (2025-05-09): shorter lede, fewer references so reference numbers differ throughout"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "cern",
+      "description": "Sentence in the history section, unchanged apart from the reference number after it",
+      "select": {
+        "exact": "أثناء عمله في سيرن، شعر بيرنرز لي بالإحباط بسبب عدم الكفاءة والصعوبات"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "أثناء عمله في سيرن، شعر بيرنرز لي بالإحباط بسبب عدم الكفاءة والصعوبات",
+          "prefix": " الأوروبية للأبحاث النووية).[7]\n",
+          "suffix": " التي تعترض عملية العثور على الم"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 3573,
+          "end": 3642
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[8]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[8]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 69,
+              "end": 69
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "march-1989",
+      "description": "Date phrase whose prefix is a reference number that changes",
+      "select": {
+        "exact": "في 12 مارس عام 1989"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "في 12 مارس عام 1989",
+          "prefix": "ت المخزنة على حواسيب مختلفة.[8] ",
+          "suffix": "، قدم مذكرة بعنوان «إدارة المعلو"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 3711,
+          "end": 3730
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[8]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 138,
+              "end": 138
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[8]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 157,
+              "end": 157
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "caption",
+      "description": "Figure caption",
+      "select": {
+        "exact": "تيم بيرنرز لي، مخترع مفهوم الشبكة العنكبوتية العالمية."
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "تيم بيرنرز لي، مخترع مفهوم الشبكة العنكبوتية العالمية.",
+          "prefix": "نص الفائق).[24]\nمصطلحات ذات صلة\n",
+          "suffix": "\nالصفة على الخط أو أون لاين، \" O"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 7872,
+          "end": 7926
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/ul[3]/li[1]/a[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/ul[3]/li[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 54,
+              "end": 54
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "http",
+      "description": "Second occurrence of a phrase that appears twice; distinguished by context",
+      "select": {
+        "exact": "إتش تي تي بّي (بروتوكول نقل النص الفائق)",
+        "occurrence": 2
+      },
+      "expected": {
+        "original": {
+          "exact": "إتش تي تي بّي (بروتوكول نقل النص الفائق)",
+          "suffix": ".[24]"
+        },
+        "rev-2025-05": {
+          "exact": "إتش تي تي بّي (بروتوكول نقل النص الفائق)",
+          "suffix": ".[22]"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "إتش تي تي بّي (بروتوكول نقل النص الفائق)",
+          "prefix": " إم إل (لغة توصيف النص الفائق).\n",
+          "suffix": ".[24]\nمصطلحات ذات صلة\nتيم بيرنرز"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 7810,
+          "end": 7850
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/ul[2]/li[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/ul[2]/li[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 40,
+              "end": 40
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "new-synonym",
+      "description": "Synonym added to the lede after May 2025; the lede still lists two similar names",
+      "select": {
+        "exact": "النسيج العنكبوتي العالمي"
+      },
+      "expected": {
+        "rev-2025-05": {
+          "mustNotMatch": true,
+          "reason": "Added later; 'النسيج العالمي للمعلومات' is a different name"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "النسيج العنكبوتي العالمي",
+          "prefix": "لشبكة العنكبوتية العالمية[2] أو ",
+          "suffix": "[3] أو النسيج العالمي للمعلومات["
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 472,
+          "end": 496
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[1]/b[4]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[1]/b[4]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 24,
+              "end": 24
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

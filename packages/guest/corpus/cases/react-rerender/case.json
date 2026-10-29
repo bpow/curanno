@@ -1,0 +1,335 @@
+{
+  "id": "react-rerender",
+  "title": "React-rendered issue list, edited data and forced remount",
+  "kind": "html",
+  "source": {
+    "license": "Written for this corpus; React 19 (MIT) bundled at build time"
+  },
+  "tags": ["synthetic", "framework"],
+  "root": "#root",
+  "variants": [
+    {
+      "id": "original",
+      "file": "index.html",
+      "query": "data=1",
+      "description": "Dataset 1 rendered once"
+    },
+    {
+      "id": "remount",
+      "file": "index.html",
+      "query": "data=1&remount=1",
+      "description": "Dataset 1 rendered, then re-rendered with new keys so every element is a new node with the same text"
+    },
+    {
+      "id": "data-2",
+      "file": "index.html",
+      "query": "data=2",
+      "description": "Dataset 2: new issue first, one issue removed, two reordered, a title and a body edited, a comment added"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "title-101",
+      "description": "Title text that is edited in dataset 2",
+      "select": {
+        "exact": "Highlights disappear after the comment list refreshes"
+      },
+      "expected": {
+        "data-2": {
+          "exact": "Highlights disappear after the comment list re-renders"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Highlights disappear after the comment list refreshes",
+          "prefix": "ckerNew issueFilter4 issues#101 ",
+          "suffix": "opened by mira · openWhen the co"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 41,
+          "end": 94
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/article[1]/h2[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 5,
+              "end": 5
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/article[1]/h2[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 58,
+              "end": 58
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "body-101",
+      "description": "Sentence in a body that moves down the page",
+      "select": {
+        "exact": "The selection itself survives, so the anchors are still valid; only the drawn highlights go."
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "The selection itself survives, so the anchors are still valid; only the drawn highlights go.",
+          "prefix": "ry highlight inside it is lost. ",
+          "suffix": "tomas: Reproduced with the polli"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 230,
+          "end": 322
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/article[1]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 115,
+              "end": 115
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/article[1]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 207,
+              "end": 207
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "comment-101",
+      "description": "Comment across a <strong> boundary",
+      "select": {
+        "exact": "mira: The list uses the array index as the key"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "mira: The list uses the array index as the key",
+          "prefix": "ng interval set to five seconds.",
+          "suffix": ", so every row is recreated on e"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 386,
+          "end": 432
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/article[1]/ul[1]/li[2]/strong[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/article[1]/ul[1]/li[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 46,
+              "end": 46
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "body-102",
+      "description": "Issue that moves from second to last",
+      "select": {
+        "exact": "an annotation made on the third reply ends up on the first visible one"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "an annotation made on the third reply ends up on the first visible one",
+          "prefix": "es are not in the document, and ",
+          "suffix": ".ines: Expanding the thread befo"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 652,
+          "end": 722
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/article[2]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 94,
+              "end": 94
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/article[2]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 164,
+              "end": 164
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "body-103",
+      "description": "Issue removed in dataset 2; issue 102 and the new 105 mention scrolling and panels too",
+      "select": {
+        "exact": "scrolls the window but not the inner panel that actually contains the text"
+      },
+      "expected": {
+        "data-2": {
+          "mustNotMatch": true,
+          "reason": "Issue 103 is gone from the list"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "scrolls the window but not the inner panel that actually contains the text",
+          "prefix": "osedClicking an annotation card ",
+          "suffix": ", so the highlight stays out of "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 972,
+          "end": 1046
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/article[3]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 28,
+              "end": 28
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/article[3]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 102,
+              "end": 102
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "body-104",
+      "description": "Body corrected in dataset 2 with two words changed inside the quote",
+      "select": {
+        "exact": "A client counting code points lands two characters early for every emoji before the quote."
+      },
+      "expected": {
+        "data-2": {
+          "exact": "A client counting Unicode code points lands two code units early for every emoji before the quote."
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "A client counting code points lands two characters early for every emoji before the quote.",
+          "prefix": "s counted in UTF-16 code units. ",
+          "suffix": "ines: This is the offset unit qu"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 1241,
+          "end": 1331
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/article[4]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 83,
+              "end": 83
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/article[4]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 173,
+              "end": 173
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "count",
+      "description": "The issue count in the toolbar, which changes from 4 to 4 (one added, one removed)",
+      "select": {
+        "exact": "4 issues"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "4 issues",
+          "prefix": "Issue trackerNew issueFilter",
+          "suffix": "#101 Highlights disappear after "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 28,
+          "end": 36
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 15,
+              "end": 15
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 23,
+              "end": 23
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
