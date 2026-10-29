@@ -25,6 +25,11 @@
     "@scale/model": "workspace:*",
     "fastify": "^5.12.7",
     "fastify-openapi-glue": "^4.12.0",
+    "kysely": "^0.29.7",
+    "pg": "^8.23.1",
     "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
   }
 }
