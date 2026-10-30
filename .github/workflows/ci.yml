@@ -123,6 +123,63 @@ jobs:
             apps/sidebar/playwright-report/
             apps/sidebar/test-results/
 
+  # The management site's end-to-end test needs the same stack as the sidebar's.
+  web-e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: annotations
+          POSTGRES_PASSWORD: annotations
+          POSTGRES_DB: annotations
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U annotations -d annotations"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://annotations:annotations@localhost:5432/annotations
+      OIDC_ISSUER: http://localhost:8080/realms/annotations-dev
+      OIDC_CLIENT_ID: annotations-sidebar
+      PUBLIC_URL: http://localhost:3000
+      PORT: 3000
+      LOG_LEVEL: warn
+    steps:
+      - uses: actions/checkout@v5
+      - run: >-
+          docker run -d --name keycloak -p 8080:8080
+          -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+          -v "$PWD/deploy/keycloak/realm-dev.json:/opt/keycloak/data/import/realm-dev.json:ro"
+          quay.io/keycloak/keycloak:26.4 start-dev --import-realm --http-port=8080
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm --filter @scale/api migrate
+      - run: pnpm --filter @scale/web exec playwright install --with-deps chromium
+      - name: Wait for Keycloak
+        run: |
+          for i in $(seq 1 90); do
+            curl -sf -o /dev/null http://localhost:8080/realms/annotations-dev && exit 0
+            sleep 2
+          done
+          docker logs keycloak
+          exit 1
+      - run: pnpm --filter @scale/web e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: web-e2e-report
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+
   # The API image must build and the chart must render without a cluster
   # (plan, Phase 3). Neither job pushes anything.
   image:
