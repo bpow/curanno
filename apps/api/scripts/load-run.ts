@@ -5,7 +5,7 @@
  * and explains the main search queries under that volume.
  *
  *   DATABASE_URL=postgres://... node --experimental-strip-types scripts/load-run.ts \
- *     [--duration 10] [--connections 10] [--out results.json] [--only <substring>]
+ *     [--duration 10] [--connections 10] [--out results.json] [--only <substring>] [--no-explain]
  *
  * The API runs in a child process (load-server.ts) built from `dist/`, so
  * `pnpm build` first. Tokens are minted here for seeded users; the server
@@ -140,7 +140,7 @@ try {
     console.log(formatRow(measurement));
   }
   console.log('\n' + table(measurements));
-  const plans = only === undefined ? await explainQueries(fixtures) : [];
+  const plans = args['no-explain'] === true ? [] : await explainQueries(fixtures);
   for (const plan of plans) {
     console.log(`\n## ${plan.title}\n\n${plan.sql}\n\n${plan.plan}`);
   }
@@ -528,6 +528,18 @@ async function explainQueries(
       title: 'container hot document (heavy)',
       options: { documentId: f.hotDocument.id, limit: CONTAINER_PAGE_SIZE, offset: 0 },
     },
+    {
+      title: 'search text common in hot document (heavy)',
+      options: { documentId: f.hotDocument.id, text: f.terms.common, limit: 50, offset: 0 },
+    },
+    {
+      title: 'container mid document (heavy)',
+      options: { documentId: f.midDocument.id, limit: CONTAINER_PAGE_SIZE, offset: 0 },
+    },
+    {
+      title: 'search by creator (heavy)',
+      options: { creator: f.topCreator.id, limit: 50, offset: 0 },
+    },
     { title: 'search without filters (heavy)', options: { limit: 50, offset: 0 } },
     {
       title: 'search without filters, offset 100000 (heavy)',
@@ -535,24 +547,27 @@ async function explainQueries(
     },
   ];
   const plans: { title: string; sql: string; plan: string }[] = [];
+  const explain = async (
+    title: string,
+    compiled: { sql: string; parameters: readonly unknown[] },
+  ) => {
+    const rows = await client.query<{ 'QUERY PLAN': string }>(
+      `explain (analyze, buffers) ${compiled.sql}`,
+      [...compiled.parameters],
+    );
+    plans.push({
+      title,
+      sql: compiled.sql,
+      plan: rows.rows.map((r) => r['QUERY PLAN']).join('\n'),
+    });
+  };
   try {
     for (const { title, options } of cases) {
       const queries = store.listQueries(caller, options);
-      for (const [kind, query] of [
-        ['total', queries.summary],
-        ['page', queries.page],
-      ] as const) {
-        const compiled = query.compile();
-        const rows = await client.query<{ 'QUERY PLAN': string }>(
-          `explain (analyze, buffers) ${compiled.sql}`,
-          [...compiled.parameters],
-        );
-        plans.push({
-          title: `${title}: ${kind}`,
-          sql: compiled.sql,
-          plan: rows.rows.map((r) => r['QUERY PLAN']).join('\n'),
-        });
-      }
+      await explain(`${title}: total and page ids`, queries.page.compile());
+      const page = await queries.page.executeTakeFirstOrThrow();
+      const ids = page.ids.map((row) => row.id);
+      if (ids.length > 0) await explain(`${title}: records`, queries.records(ids).compile());
     }
   } finally {
     await db.destroy();

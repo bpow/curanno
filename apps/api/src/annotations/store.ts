@@ -111,36 +111,63 @@ export class AnnotationStore {
     return row;
   }
 
-  /** The two queries behind `list`: the total with the latest modification, and the page. */
+  /**
+   * The queries behind `list`. `page` computes the filtered set once, in a
+   * materialized CTE, and returns its size, its latest modification and the
+   * ids of the requested page in order; `records` loads those annotations.
+   * Counting and paging in two statements paid the ACL join twice, and the
+   * paging statement built every row before the offset only to discard it
+   * (docs/performance.md).
+   */
   listQueries(caller: Caller, options: ListOptions) {
-    const base = applyFilters(
+    const matched = applyFilters(
       this.visible(this.db, caller).where('annotations.deleted_at', 'is', null),
       options,
-    );
-    const summary = base.select((eb) => [
-      eb.fn.countAll<string>().as('total'),
-      eb.fn.max('annotations.updated_at').as('modified'),
-    ]);
-    const column =
-      options.sort === 'modified' ? 'annotations.updated_at' : 'annotations.created_at';
+    ).select(['annotations.id', 'annotations.created_at', 'annotations.updated_at']);
+    const column = options.sort === 'modified' ? 'updated_at' : 'created_at';
     const order = options.order ?? 'desc';
-    const page = this.withRecord(base, caller)
-      .orderBy(column, order)
-      .orderBy('annotations.id', order)
-      .limit(options.limit)
-      .offset(options.offset);
-    return { summary, page };
+    const page = this.db
+      .with(
+        (cte) => cte('matched').materialized(),
+        () => matched,
+      )
+      .selectNoFrom((eb) => [
+        eb
+          .selectFrom('matched')
+          .select((e) => e.fn.countAll<string>().as('total'))
+          .as('total'),
+        eb
+          .selectFrom('matched')
+          .select((e) => e.fn.max('matched.updated_at').as('modified'))
+          .as('modified'),
+        jsonArrayFrom(
+          eb
+            .selectFrom('matched')
+            .select('matched.id')
+            .orderBy(column, order)
+            .orderBy('matched.id', order)
+            .limit(options.limit)
+            .offset(options.offset),
+        ).as('ids'),
+      ]);
+    const records = (ids: string[]) =>
+      this.withRecord(this.visible(this.db, caller), caller)
+        .where('annotations.deleted_at', 'is', null)
+        .where('annotations.id', 'in', ids);
+    return { page, records };
   }
 
   /** Readable, undeleted annotations matching the filters, with the total and the latest modification. */
   async list(caller: Caller, options: ListOptions): Promise<ListResult> {
     const queries = this.listQueries(caller, options);
-    const summary = await queries.summary.executeTakeFirstOrThrow();
-    const rows = await queries.page.execute();
+    const page = await queries.page.executeTakeFirstOrThrow();
+    const ids = page.ids.map((row) => row.id);
+    const records = ids.length === 0 ? [] : await queries.records(ids).execute();
+    const byId = new Map(records.map((record) => [record.id, record]));
     return {
-      total: Number(summary.total),
-      modified: summary.modified,
-      items: rows,
+      total: Number(page.total ?? 0),
+      modified: page.modified ?? null,
+      items: ids.flatMap((id) => byId.get(id) ?? []),
     };
   }
 
