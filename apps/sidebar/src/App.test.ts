@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import App from './App.vue';
-import { setUserManagerFactory } from './auth/store';
+import { setUserManagerFactory, useAuthStore } from './auth/store';
 import { installFakeApi, json } from './test/fake-api';
 import { stubUserManager } from './test/stub-user-manager';
 
@@ -18,6 +18,7 @@ describe('App', () => {
   });
 
   it('shows public annotations and offers a login when there is no session', async () => {
+    await useAuthStore().init();
     const wrapper = mount(App);
     await flushPromises();
     expect(wrapper.find('h1').text()).toBe('Annotations');

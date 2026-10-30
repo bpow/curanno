@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue';
+import { watch } from 'vue';
 import { useAuthStore } from './auth/store';
 import AnnotationList from './components/AnnotationList.vue';
 import AnnotationComposer from './components/AnnotationComposer.vue';
@@ -17,8 +17,6 @@ provideGuest(guest);
 const auth = useAuthStore();
 const store = useAnnotationsStore();
 const profiles = useProfilesStore();
-
-onMounted(() => void auth.init());
 
 // Everything the list shows depends on who is asking (ADR 0006), so the
 // document is reloaded whenever the session or the document changes.
