@@ -24,7 +24,7 @@ export interface ServeOptions {
   roots: string[];
   /** Literal responses by path, checked before the roots. */
   pages?: Record<string, string | (() => string | Promise<string>)>;
-  /** `127.0.0.1` or `localhost`: two names give two origins on one machine. */
+  /** `127.0.0.1`, `localhost` or `::1`: different names give different origins on one machine. */
   host: string;
   port?: number;
 }
@@ -49,8 +49,9 @@ async function resolveFile(roots: string[], urlPath: string): Promise<string | n
 }
 
 export async function serve(options: ServeOptions): Promise<StaticServer> {
+  const hostname = options.host.includes(':') ? `[${options.host}]` : options.host;
   const server = http.createServer((req, res) => {
-    const url = new URL(req.url ?? '/', `http://${options.host}`);
+    const url = new URL(req.url ?? '/', `http://${hostname}`);
     const page = options.pages?.[url.pathname];
     if (page !== undefined) {
       void Promise.resolve(typeof page === 'function' ? page() : page).then((body) => {
@@ -74,7 +75,7 @@ export async function serve(options: ServeOptions): Promise<StaticServer> {
   const address = server.address();
   if (!address || typeof address === 'string') throw new Error('server has no address');
   return {
-    origin: `http://${options.host}:${address.port}`,
+    origin: `http://${hostname}:${address.port}`,
     close: () => new Promise((resolve) => server.close(() => resolve())),
   };
 }

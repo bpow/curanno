@@ -36,7 +36,8 @@
     "bundle": "node scripts/bundle.ts",
     "bookmarklet": "node scripts/bookmarklet.ts",
     "dev": "node scripts/dev.ts",
-    "test:browser": "vitest run -c test/vitest.config.ts"
+    "test:browser": "vitest run -c test/vitest.config.ts",
+    "serve:corpus": "node scripts/serve-corpus.ts"
   },
   "dependencies": {
     "@scale/model": "workspace:*",
