@@ -8,6 +8,8 @@ export interface GuestConfig {
   sidebarOrigin: string;
   sidebarPath: string;
   open: boolean;
+  /** Where the bundle itself was loaded from, for injecting it into same-origin frames. */
+  bundleUrl?: string;
 }
 
 export const DEFAULT_SIDEBAR_PATH = '/';
@@ -20,7 +22,9 @@ export function readConfig(script: Element | null): GuestConfig | string {
   const path = script.getAttribute('data-sidebar-path') || DEFAULT_SIDEBAR_PATH;
   const open = script.getAttribute('data-open') !== 'false';
   const check = validateSidebar(origin, path);
-  return check ?? { sidebarOrigin: origin, sidebarPath: path, open };
+  if (check) return check;
+  const src = (script as HTMLScriptElement).src;
+  return { sidebarOrigin: origin, sidebarPath: path, open, ...(src ? { bundleUrl: src } : {}) };
 }
 
 /** Undefined when the origin is a plain http(s) origin and the path stays on it. */

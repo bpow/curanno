@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>A framed document</title>
+  </head>
+  <body>
+    <h1>A framed document</h1>
+    <p>Text inside a frame on another origin, which loads the guest itself.</p>
+    <p>Second paragraph of the framed document.</p>
+    <script
+      src="http://localhost:4180/guest.js"
+      data-sidebar-origin="http://localhost:4173"
+      data-sidebar-path="/sidebar/"
+    ></script>
+  </body>
+</html>

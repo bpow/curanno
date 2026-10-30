@@ -20,11 +20,18 @@ export function useGuestSync(guest: Guest, store: ReturnType<typeof useAnnotatio
       const gone = [...known.keys()].filter((id) => !current.has(id));
       for (const id of gone) known.delete(id);
       if (gone.length) guest.unanchor(gone);
-      const requests = roots
-        .filter((a) => known.get(a.id) !== JSON.stringify(a.target))
-        .map((a) => ({ id: a.id, target: a.target }));
-      for (const request of requests) known.set(request.id, JSON.stringify(request.target));
-      if (requests.length) guest.anchor(requests);
+      const byDocument = new Map<string | undefined, { id: string; target: unknown }[]>();
+      for (const a of roots) {
+        if (known.get(a.id) === JSON.stringify(a.target)) continue;
+        known.set(a.id, JSON.stringify(a.target));
+        const uri = store.documentOf.get(a.id);
+        const list = byDocument.get(uri) ?? [];
+        list.push({ id: a.id, target: a.target });
+        byDocument.set(uri, list);
+      }
+      for (const [uri, requests] of byDocument) {
+        guest.anchor(requests as Parameters<Guest['anchor']>[0], uri);
+      }
     },
     { immediate: true },
   );

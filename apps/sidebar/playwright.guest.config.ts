@@ -37,7 +37,8 @@ export default defineConfig({
       timeout: 30_000,
     },
     {
-      command: 'node ../../packages/guest/scripts/serve-corpus.ts --host 127.0.0.1 --port 4180',
+      command:
+        'node ../../packages/guest/scripts/serve-corpus.ts --host 127.0.0.1 --port 4180 --root e2e/guest/pages',
       url: 'http://127.0.0.1:4180/guest.js',
       reuseExistingServer: !ci,
       timeout: 30_000,

@@ -232,217 +232,217 @@
       "caseId": "gutenberg-pride-prejudice",
       "variantId": "original",
       "candidateId": "guest",
-      "ms": 64.09999990463257,
+      "ms": 57,
       "textLength": 738349
     },
     {
       "caseId": "gutenberg-pride-prejudice",
       "variantId": "original",
       "candidateId": "guest-sweep",
-      "ms": 55.299999952316284,
+      "ms": 55.10000014305115,
       "textLength": 738349
     },
     {
       "caseId": "gutenberg-pride-prejudice",
       "variantId": "edited",
       "candidateId": "guest",
-      "ms": 95.39999985694885,
+      "ms": 92.29999995231628,
       "textLength": 736324
     },
     {
       "caseId": "gutenberg-pride-prejudice",
       "variantId": "edited",
       "candidateId": "guest-sweep",
-      "ms": 92,
+      "ms": 93.79999995231628,
       "textLength": 736324
     },
     {
       "caseId": "mdn-textcontent",
       "variantId": "original",
       "candidateId": "guest",
-      "ms": 6.6000001430511475,
+      "ms": 8.299999952316284,
       "textLength": 22785
     },
     {
       "caseId": "mdn-textcontent",
       "variantId": "original",
       "candidateId": "guest-sweep",
-      "ms": 5.1000001430511475,
+      "ms": 5,
       "textLength": 22785
     },
     {
       "caseId": "mdn-textcontent",
       "variantId": "edited-light",
       "candidateId": "guest",
-      "ms": 6.6000001430511475,
+      "ms": 6.799999952316284,
       "textLength": 22897
     },
     {
       "caseId": "mdn-textcontent",
       "variantId": "edited-light",
       "candidateId": "guest-sweep",
-      "ms": 6.5,
+      "ms": 6.799999952316284,
       "textLength": 22897
     },
     {
       "caseId": "mdn-textcontent",
       "variantId": "edited-heavy",
       "candidateId": "guest",
-      "ms": 6.800000190734863,
+      "ms": 7.799999952316284,
       "textLength": 22372
     },
     {
       "caseId": "mdn-textcontent",
       "variantId": "edited-heavy",
       "candidateId": "guest-sweep",
-      "ms": 7.1000001430511475,
+      "ms": 7.700000047683716,
       "textLength": 22372
     },
     {
       "caseId": "pdf-generated-report",
       "variantId": "original",
       "candidateId": "guest",
-      "ms": 1.3999998569488525,
+      "ms": 1.5,
       "textLength": 3049
     },
     {
       "caseId": "pdf-generated-report",
       "variantId": "original",
       "candidateId": "guest-sweep",
-      "ms": 1.5,
+      "ms": 1.7999999523162842,
       "textLength": 3049
     },
     {
       "caseId": "pdf-generated-report",
       "variantId": "edited",
       "candidateId": "guest",
-      "ms": 2.299999952316284,
+      "ms": 2.5,
       "textLength": 3284
     },
     {
       "caseId": "pdf-generated-report",
       "variantId": "edited",
       "candidateId": "guest-sweep",
-      "ms": 2.3999998569488525,
+      "ms": 2.5,
       "textLength": 3284
     },
     {
       "caseId": "pdf-plos-ten-rules",
       "variantId": "original",
       "candidateId": "guest",
+      "ms": 7.300000190734863,
+      "textLength": 24073
+    },
+    {
+      "caseId": "pdf-plos-ten-rules",
+      "variantId": "original",
+      "candidateId": "guest-sweep",
       "ms": 6.5,
       "textLength": 24073
     },
     {
-      "caseId": "pdf-plos-ten-rules",
+      "caseId": "react-rerender",
       "variantId": "original",
-      "candidateId": "guest-sweep",
-      "ms": 6.700000047683716,
-      "textLength": 24073
+      "candidateId": "guest",
+      "ms": 1.6000001430511475,
+      "textLength": 1436
     },
     {
       "caseId": "react-rerender",
       "variantId": "original",
+      "candidateId": "guest-sweep",
+      "ms": 1.5,
+      "textLength": 1436
+    },
+    {
+      "caseId": "react-rerender",
+      "variantId": "remount",
       "candidateId": "guest",
       "ms": 1.5,
       "textLength": 1436
     },
     {
       "caseId": "react-rerender",
-      "variantId": "original",
-      "candidateId": "guest-sweep",
-      "ms": 1.4000000953674316,
-      "textLength": 1436
-    },
-    {
-      "caseId": "react-rerender",
-      "variantId": "remount",
-      "candidateId": "guest",
-      "ms": 1.7999999523162842,
-      "textLength": 1436
-    },
-    {
-      "caseId": "react-rerender",
       "variantId": "remount",
       "candidateId": "guest-sweep",
-      "ms": 1.7000000476837158,
+      "ms": 1.5,
       "textLength": 1436
     },
     {
       "caseId": "react-rerender",
       "variantId": "data-2",
       "candidateId": "guest",
-      "ms": 3.1999998092651367,
+      "ms": 3.0999999046325684,
       "textLength": 1488
     },
     {
       "caseId": "react-rerender",
       "variantId": "data-2",
       "candidateId": "guest-sweep",
-      "ms": 3.200000047683716,
+      "ms": 2.9000000953674316,
       "textLength": 1488
     },
     {
       "caseId": "synth-duplicates",
       "variantId": "original",
       "candidateId": "guest",
+      "ms": 1.5,
+      "textLength": 907
+    },
+    {
+      "caseId": "synth-duplicates",
+      "variantId": "original",
+      "candidateId": "guest-sweep",
       "ms": 1.4000000953674316,
       "textLength": 907
     },
     {
       "caseId": "synth-duplicates",
-      "variantId": "original",
-      "candidateId": "guest-sweep",
-      "ms": 1.3999998569488525,
-      "textLength": 907
-    },
-    {
-      "caseId": "synth-duplicates",
       "variantId": "edited",
       "candidateId": "guest",
-      "ms": 2.6000001430511475,
+      "ms": 2.5,
       "textLength": 762
     },
     {
       "caseId": "synth-duplicates",
       "variantId": "edited",
       "candidateId": "guest-sweep",
-      "ms": 3.3999998569488525,
+      "ms": 3.299999952316284,
       "textLength": 762
     },
     {
       "caseId": "synth-hidden",
       "variantId": "original",
       "candidateId": "guest",
-      "ms": 1.5999999046325684,
+      "ms": 1.5,
       "textLength": 839
     },
     {
       "caseId": "synth-hidden",
       "variantId": "original",
       "candidateId": "guest-sweep",
-      "ms": 1.7000000476837158,
+      "ms": 1.6000001430511475,
       "textLength": 839
     },
     {
       "caseId": "synth-hidden",
       "variantId": "edited",
       "candidateId": "guest",
-      "ms": 1.7999999523162842,
+      "ms": 1.4000000953674316,
       "textLength": 980
     },
     {
       "caseId": "synth-hidden",
       "variantId": "edited",
       "candidateId": "guest-sweep",
-      "ms": 1.5,
+      "ms": 1.5999999046325684,
       "textLength": 980
     },
     {
       "caseId": "synth-overlap",
       "variantId": "original",
       "candidateId": "guest",
-      "ms": 1.8999998569488525,
+      "ms": 1.5999999046325684,
       "textLength": 1426
     },
     {
@@ -456,14 +456,14 @@
       "caseId": "synth-overlap",
       "variantId": "edited",
       "candidateId": "guest",
-      "ms": 3.6000001430511475,
+      "ms": 3.0999999046325684,
       "textLength": 1242
     },
     {
       "caseId": "synth-overlap",
       "variantId": "edited",
       "candidateId": "guest-sweep",
-      "ms": 3,
+      "ms": 3.5,
       "textLength": 1242
     },
     {
@@ -477,28 +477,28 @@
       "caseId": "synth-scroll",
       "variantId": "original",
       "candidateId": "guest-sweep",
-      "ms": 2.0999999046325684,
+      "ms": 2,
       "textLength": 6916
     },
     {
       "caseId": "synth-scroll",
       "variantId": "edited",
       "candidateId": "guest",
-      "ms": 3.200000047683716,
+      "ms": 3.299999952316284,
       "textLength": 7352
     },
     {
       "caseId": "synth-scroll",
       "variantId": "edited",
       "candidateId": "guest-sweep",
-      "ms": 3.6999998092651367,
+      "ms": 3.200000047683716,
       "textLength": 7352
     },
     {
       "caseId": "synth-unicode",
       "variantId": "original",
       "candidateId": "guest",
-      "ms": 1.4000000953674316,
+      "ms": 1.5,
       "textLength": 644
     },
     {
@@ -512,133 +512,133 @@
       "caseId": "synth-unicode",
       "variantId": "edited",
       "candidateId": "guest",
+      "ms": 2.8000001907348633,
+      "textLength": 672
+    },
+    {
+      "caseId": "synth-unicode",
+      "variantId": "edited",
+      "candidateId": "guest-sweep",
       "ms": 2.9000000953674316,
       "textLength": 672
     },
     {
-      "caseId": "synth-unicode",
-      "variantId": "edited",
-      "candidateId": "guest-sweep",
-      "ms": 2.700000047683716,
-      "textLength": 672
+      "caseId": "vue-rerender",
+      "variantId": "original",
+      "candidateId": "guest",
+      "ms": 1.6000001430511475,
+      "textLength": 1436
     },
     {
       "caseId": "vue-rerender",
       "variantId": "original",
+      "candidateId": "guest-sweep",
+      "ms": 1.5,
+      "textLength": 1436
+    },
+    {
+      "caseId": "vue-rerender",
+      "variantId": "remount",
       "candidateId": "guest",
+      "ms": 1.5,
+      "textLength": 1436
+    },
+    {
+      "caseId": "vue-rerender",
+      "variantId": "remount",
+      "candidateId": "guest-sweep",
       "ms": 1.3999998569488525,
-      "textLength": 1436
-    },
-    {
-      "caseId": "vue-rerender",
-      "variantId": "original",
-      "candidateId": "guest-sweep",
-      "ms": 1.5,
-      "textLength": 1436
-    },
-    {
-      "caseId": "vue-rerender",
-      "variantId": "remount",
-      "candidateId": "guest",
-      "ms": 1.2999999523162842,
-      "textLength": 1436
-    },
-    {
-      "caseId": "vue-rerender",
-      "variantId": "remount",
-      "candidateId": "guest-sweep",
-      "ms": 1.5,
       "textLength": 1436
     },
     {
       "caseId": "vue-rerender",
       "variantId": "data-2",
       "candidateId": "guest",
-      "ms": 2.9000000953674316,
+      "ms": 3.0999999046325684,
       "textLength": 1488
     },
     {
       "caseId": "vue-rerender",
       "variantId": "data-2",
       "candidateId": "guest-sweep",
-      "ms": 2.8000001907348633,
+      "ms": 2.9000000953674316,
       "textLength": 1488
     },
     {
       "caseId": "wp-ar-www",
       "variantId": "original",
       "candidateId": "guest",
-      "ms": 7.099999904632568,
+      "ms": 6.599999904632568,
       "textLength": 36847
     },
     {
       "caseId": "wp-ar-www",
       "variantId": "original",
       "candidateId": "guest-sweep",
-      "ms": 7.199999809265137,
+      "ms": 6.5,
       "textLength": 36847
     },
     {
       "caseId": "wp-ar-www",
       "variantId": "rev-2025-05",
       "candidateId": "guest",
-      "ms": 8.700000047683716,
+      "ms": 9.299999952316284,
       "textLength": 36538
     },
     {
       "caseId": "wp-ar-www",
       "variantId": "rev-2025-05",
       "candidateId": "guest-sweep",
-      "ms": 8.599999904632568,
+      "ms": 8.400000095367432,
       "textLength": 36538
     },
     {
       "caseId": "wp-en-web-annotation",
       "variantId": "original",
       "candidateId": "guest",
-      "ms": 5.900000095367432,
+      "ms": 5.799999952316284,
       "textLength": 26551
     },
     {
       "caseId": "wp-en-web-annotation",
       "variantId": "original",
       "candidateId": "guest-sweep",
-      "ms": 5.599999904632568,
+      "ms": 5.6000001430511475,
       "textLength": 26551
     },
     {
       "caseId": "wp-en-web-annotation",
       "variantId": "rev-2024-12",
       "candidateId": "guest",
-      "ms": 7.400000095367432,
+      "ms": 7.200000047683716,
       "textLength": 20936
     },
     {
       "caseId": "wp-en-web-annotation",
       "variantId": "rev-2024-12",
       "candidateId": "guest-sweep",
-      "ms": 7.5,
+      "ms": 7.099999904632568,
       "textLength": 20936
     },
     {
       "caseId": "wp-en-web-annotation",
       "variantId": "rev-2023-10",
       "candidateId": "guest",
-      "ms": 9.5,
+      "ms": 9.599999904632568,
       "textLength": 19360
     },
     {
       "caseId": "wp-en-web-annotation",
       "variantId": "rev-2023-10",
       "candidateId": "guest-sweep",
-      "ms": 9,
+      "ms": 8.400000095367432,
       "textLength": 19360
     },
     {
       "caseId": "wp-ja-emoji",
       "variantId": "original",
       "candidateId": "guest",
-      "ms": 7.5,
+      "ms": 7.6000001430511475,
       "textLength": 21617
     },
     {
@@ -652,14 +652,14 @@
       "caseId": "wp-ja-emoji",
       "variantId": "rev-2023-02",
       "candidateId": "guest",
-      "ms": 6.299999952316284,
+      "ms": 6.5,
       "textLength": 13992
     },
     {
       "caseId": "wp-ja-emoji",
       "variantId": "rev-2023-02",
       "candidateId": "guest-sweep",
-      "ms": 6.400000095367432,
+      "ms": 6,
       "textLength": 13992
     }
   ],

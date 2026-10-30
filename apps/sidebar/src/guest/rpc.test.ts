@@ -10,6 +10,15 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createRpcGuest, type MessageEventLike, type PortLike, type WindowLike } from './rpc';
 
 const GUEST_ORIGIN = 'https://host-page.test';
+const ARTICLE = {
+  uri: 'https://host-page.test/article',
+  title: 'An article',
+  links: [{ uri: 'https://host-page.test/article', relation: 'self' as const }],
+};
+const FRAMED = {
+  uri: 'https://frames.test/embedded',
+  links: [{ uri: 'https://frames.test/embedded', relation: 'self' as const }],
+};
 
 /**
  * A stand-in for the sidebar's window: `parent` records what the sidebar
@@ -135,11 +144,12 @@ describe('the RPC guest', () => {
     await flush();
 
     expect(t.guest.document.value).toEqual(document);
+    expect(t.guest.documents.value).toEqual([document]);
     expect([...t.guest.anchoring.value]).toEqual([
       ['urn:a1', 'anchored'],
       ['urn:a2', 'orphaned'],
     ]);
-    expect(t.guest.selection.value).toEqual(selection);
+    expect(t.guest.selection.value).toEqual({ ...selection, document });
     expect(t.guest.hovered.value).toEqual(['urn:a1']);
     expect(t.port.received.at(-1)).toMatchObject({
       type: 'annotations.anchor',
@@ -153,6 +163,8 @@ describe('the RPC guest', () => {
 
   it('maps the interface calls onto sidebar messages', async () => {
     const t = await connected();
+    t.port.send({ type: 'document.report', document: ARTICLE });
+    await flush();
     t.guest.anchor([{ id: 'urn:a1', target: 'https://host-page.test/article' }]);
     t.port.send({
       type: 'anchoring.results',
@@ -260,9 +272,11 @@ describe('the RPC guest', () => {
     expect(guest.document.value).toBeUndefined();
   });
 
-  it('replaces the port on a repeated connect and re-sends the outstanding requests', async () => {
+  it('replaces the port on a repeated connect and re-sends the requests for its document', async () => {
     const t = await connected();
-    t.guest.anchor([{ id: 'urn:a1', target: 'https://host-page.test/article' }]);
+    t.port.send({ type: 'document.report', document: ARTICLE });
+    await flush();
+    t.guest.anchor([{ id: 'urn:a1', target: ARTICLE.uri }], ARTICLE.uri);
     t.port.send({
       type: 'anchoring.results',
       results: [{ id: 'urn:a1', state: 'anchored', targets: [{ state: 'anchored' }] }],
@@ -270,23 +284,22 @@ describe('the RPC guest', () => {
     await flush();
     expect(t.guest.anchoring.value.get('urn:a1')).toBe('anchored');
 
+    // The same guest id again: a reloaded frame.
     const next = guestPort();
     cleanups.push(() => next.close());
-    t.deliver(envelope({ type: 'guest.connect', guestId: 'g2' }), {
-      origin: 'https://other-page.test',
-      ports: [next.transfer],
-    });
+    t.deliver(envelope({ type: 'guest.connect', guestId: 'g1' }), { ports: [next.transfer] });
     expect(t.guest.connected.value).toBe(false);
     expect(t.guest.anchoring.value.size).toBe(0);
-    next.send({ type: 'guest.hello', guestId: 'g2', capabilities: { highlights: 'overlay' } });
+    expect(t.guest.documents.value).toEqual([]);
+    next.send({ type: 'guest.hello', guestId: 'g1', capabilities: { highlights: 'overlay' } });
+    next.send({ type: 'document.report', document: ARTICLE });
     await flush();
     expect(t.guest.connected.value).toBe(true);
-    expect(t.guest.guestOrigin.value).toBe('https://other-page.test');
     expect(next.received).toEqual([
       envelope({ type: 'sidebar.hello' }),
       envelope({
         type: 'annotations.anchor',
-        requests: [{ id: 'urn:a1', target: 'https://host-page.test/article' }],
+        requests: [{ id: 'urn:a1', target: ARTICLE.uri }],
       }),
     ]);
 
@@ -297,5 +310,134 @@ describe('the RPC guest', () => {
     await flush();
     expect(t.port.received).toHaveLength(before);
     expect(t.guest.hovered.value).toEqual([]);
+  });
+
+  it('refuses a document that is not on the guest origin, unless the origin is trusted', async () => {
+    const t = await connected();
+    t.port.send({
+      type: 'document.report',
+      document: { uri: 'https://victim.test/secret', links: [] },
+    });
+    t.port.send({ type: 'document.report', document: { uri: 'urn:x-pdf:abc', links: [] } });
+    await flush();
+    expect(t.guest.document.value).toBeUndefined();
+    expect(t.port.received.filter((m) => m.type === 'sidebar.error')).toHaveLength(2);
+    t.port.send({ type: 'document.report', document: ARTICLE });
+    await flush();
+    expect(t.guest.document.value).toEqual(ARTICLE);
+
+    // The PDF viewer's origin may report the PDF it shows.
+    const w = sidebarWindow();
+    const viewer = createRpcGuest({ window: w.win, trustedOrigins: ['https://pdf.test'] });
+    const port = guestPort();
+    cleanups.push(
+      () => viewer.close(),
+      () => port.close(),
+    );
+    w.deliver(envelope({ type: 'guest.connect', guestId: 'v1' }), {
+      origin: 'https://pdf.test',
+      ports: [port.transfer],
+    });
+    port.send({
+      type: 'guest.hello',
+      guestId: 'v1',
+      capabilities: { highlights: 'css-highlight' },
+    });
+    port.send({
+      type: 'document.report',
+      document: { uri: 'https://publisher.test/paper.pdf', links: [] },
+    });
+    await flush();
+    expect(viewer.document.value?.uri).toBe('https://publisher.test/paper.pdf');
+  });
+
+  it('serves a guest in another frame alongside the host, each with its document', async () => {
+    const t = await connected();
+    t.port.send({ type: 'document.report', document: ARTICLE });
+    const framed = guestPort();
+    cleanups.push(() => framed.close());
+    // The host relays the frame's connect with the frame's origin.
+    t.deliver(
+      envelope({ type: 'guest.connect', guestId: 'g2', frameOrigin: 'https://frames.test' }),
+      { ports: [framed.transfer] },
+    );
+    framed.send({
+      type: 'guest.hello',
+      guestId: 'g2',
+      capabilities: { highlights: 'css-highlight', role: 'sub' },
+    });
+    framed.send({ type: 'document.report', document: FRAMED });
+    await flush();
+    expect(t.guest.guests.value.map((g) => [g.id, g.role, g.origin])).toEqual([
+      ['g1', 'host', GUEST_ORIGIN],
+      ['g2', 'sub', 'https://frames.test'],
+    ]);
+    expect(t.guest.document.value).toEqual(ARTICLE);
+    expect(t.guest.documents.value).toEqual([ARTICLE, FRAMED]);
+
+    // Requests go to the guests showing the document; results merge by IRI.
+    t.guest.anchor([{ id: 'urn:page', target: ARTICLE.uri }], ARTICLE.uri);
+    t.guest.anchor([{ id: 'urn:frame', target: FRAMED.uri }], FRAMED.uri);
+    await flush();
+    expect(t.port.received.at(-1)).toMatchObject({
+      type: 'annotations.anchor',
+      requests: [{ id: 'urn:page' }],
+    });
+    expect(framed.received.at(-1)).toMatchObject({
+      type: 'annotations.anchor',
+      requests: [{ id: 'urn:frame' }],
+    });
+    framed.send({
+      type: 'anchoring.results',
+      results: [
+        { id: 'urn:frame', state: 'orphaned', targets: [{ state: 'orphaned', reason: 'x' }] },
+      ],
+    });
+    t.port.send({
+      type: 'anchoring.results',
+      results: [{ id: 'urn:page', state: 'anchored', targets: [{ state: 'anchored' }] }],
+    });
+    await flush();
+    expect([...t.guest.anchoring.value]).toEqual([
+      ['urn:page', 'anchored'],
+      ['urn:frame', 'orphaned'],
+    ]);
+
+    // A selection in the frame carries the frame's document; scrolling goes to the right frame.
+    framed.send({
+      type: 'selection.changed',
+      selection: {
+        quote: 'framed words',
+        target: {
+          source: FRAMED.uri,
+          selector: { type: 'TextQuoteSelector', exact: 'framed words' },
+        },
+      },
+    });
+    await flush();
+    expect(t.guest.selection.value?.document).toEqual(FRAMED);
+    t.guest.scrollTo('urn:frame');
+    t.guest.clearSelection();
+    await flush();
+    expect(framed.received.slice(-2).map((m) => m.type)).toEqual(['scroll.to', 'selection.clear']);
+    expect(t.port.received.some((m) => m.type === 'scroll.to')).toBe(false);
+
+    // The frame goes away: the host says so, and its document and results go with it.
+    t.deliver(envelope({ type: 'guest.disconnect', guestId: 'g2' }), {});
+    await flush();
+    expect(t.guest.documents.value).toEqual([ARTICLE]);
+    expect([...t.guest.anchoring.value]).toEqual([['urn:page', 'anchored']]);
+    expect(t.guest.guests.value.map((g) => g.id)).toEqual(['g1']);
+  });
+
+  it('sends a guest the requests for its document when it reports it', async () => {
+    const t = await connected();
+    t.guest.anchor([{ id: 'urn:late', target: FRAMED.uri }], FRAMED.uri);
+    t.guest.anchor([{ id: 'urn:page', target: ARTICLE.uri }], ARTICLE.uri);
+    t.port.send({ type: 'document.report', document: ARTICLE });
+    await flush();
+    expect(t.port.received.filter((m) => m.type === 'annotations.anchor')).toEqual([
+      envelope({ type: 'annotations.anchor', requests: [{ id: 'urn:page', target: ARTICLE.uri }] }),
+    ]);
   });
 });

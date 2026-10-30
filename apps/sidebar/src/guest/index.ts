@@ -1,11 +1,18 @@
 import { inject, provide, type InjectionKey } from 'vue';
 import { createFakeGuest, documentFromLocation, type FakeGuest } from './fake';
+import { config } from '../config';
 import { createRpcGuest } from './rpc';
 import type { Guest } from './types';
 
 export * from './types';
 export { createFakeGuest, documentFromLocation, type FakeGuest } from './fake';
-export { createRpcGuest, type RpcGuest, type RpcGuestOptions } from './rpc';
+export {
+  createRpcGuest,
+  mayReport,
+  type ConnectedGuest,
+  type RpcGuest,
+  type RpcGuestOptions,
+} from './rpc';
 
 export const GUEST_KEY: InjectionKey<Guest> = Symbol('guest');
 
@@ -31,6 +38,11 @@ export function isFakeGuest(guest: Guest): guest is FakeGuest {
  * document.
  */
 export function createGuest(win: Window = window): Guest {
-  if (win.parent !== win) return createRpcGuest({ window: win });
+  if (win.parent !== win) {
+    return createRpcGuest({
+      window: win,
+      trustedOrigins: config.pdfViewerOrigin ? [config.pdfViewerOrigin] : [],
+    });
+  }
   return createFakeGuest({ document: documentFromLocation(win.location.search) });
 }

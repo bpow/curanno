@@ -1,9 +1,11 @@
 /**
  * Entry point of the self-contained bundle the bookmarklet injects. It
- * installs one guest per page: a second injection toggles the sidebar
- * instead. The global it leaves exposes nothing but version, toggle and
- * teardown; the page can remove the frame anyway, so hiding those would
- * protect nothing (ADR 0007).
+ * installs one guest per frame: a second injection toggles the sidebar
+ * instead. In the top frame the guest is the host, holding the sidebar and
+ * injecting this same bundle into same-origin frames; in any other frame
+ * it is a guest that connects through the host. The global it leaves
+ * exposes nothing but version, toggle and teardown; the page can remove
+ * the frame anyway, so hiding those would protect nothing (ADR 0007).
  */
 import { GUEST_GLOBAL } from './bookmarklet.js';
 import { readConfig } from './config.js';
@@ -34,7 +36,10 @@ function main(): void {
     console.error(`[scale guest] ${config}`);
     return;
   }
-  const guest = new Guest(config);
+  const guest = new Guest({
+    ...config,
+    role: window.parent === window ? 'host' : 'sub',
+  });
   guest.start();
   const handle: GuestHandle = Object.freeze({
     version: GUEST_VERSION,

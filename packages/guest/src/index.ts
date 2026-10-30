@@ -18,6 +18,19 @@ export * from './highlights/index.js';
 export * from './integrations/index.js';
 export { observeMutations, WATCHED_ATTRIBUTES } from './observers/mutation.js';
 export { observeSelection } from './observers/selection.js';
-export { GuestConnection, type GuestConnectionOptions, type PortLike } from './rpc/connection.js';
+export {
+  INJECTED_ATTRIBUTE,
+  injectFrames,
+  injectIntoFrame,
+  type FrameInjectorOptions,
+} from './frames.js';
+export {
+  GuestConnection,
+  type Connection,
+  type GuestConnectionOptions,
+  type PortLike,
+} from './rpc/connection.js';
+export { Host, type FrameWindowLike, type HostOptions } from './rpc/host.js';
+export { SubGuestConnection, type SubGuestConnectionOptions } from './rpc/sub-connection.js';
 export { FakeSidebar, FAKE_SECRETS, type FakeSidebarOptions } from './rpc/fake-sidebar.js';
 export { SidebarFrame } from './sidebar-frame.js';

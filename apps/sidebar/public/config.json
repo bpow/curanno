@@ -1,5 +1,6 @@
 {
   "oidcIssuer": "http://localhost:8080/realms/annotations-dev",
   "oidcClientId": "annotations-sidebar",
-  "apiUrl": ""
+  "apiUrl": "",
+  "pdfViewerOrigin": "http://localhost:5174"
 }

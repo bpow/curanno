@@ -1,8 +1,9 @@
 /**
- * The annotations of the current document, loaded from `/x/search` and kept
- * current by the event stream. Writes go through the W3C protocol with the
- * ETag the caller last saw (`If-Match`), so a 412 reaches the UI as a
- * conflict rather than a silent overwrite.
+ * The annotations of the documents the guests show (the page, and any
+ * frames with documents of their own), loaded from `/x/search` per document
+ * and kept current by one event stream each. Writes go through the W3C
+ * protocol with the ETag the caller last saw (`If-Match`), so a 412 reaches
+ * the UI as a conflict rather than a silent overwrite.
  */
 import type { Annotation, AnnotationInput } from '@scale/api-client';
 import { defineStore } from 'pinia';
@@ -24,13 +25,27 @@ export interface Versioned {
 export type AnnotationEventKind = 'created' | 'updated' | 'deleted';
 
 export const useAnnotationsStore = defineStore('annotations', () => {
-  const documentUri = ref<string>();
+  /** The documents loaded, in the guests' order (the page first). */
+  const documentUris = ref<string[]>([]);
   const items = ref(new Map<string, Annotation>());
+  /** Which document each annotation was loaded or received for. */
+  const documentOf = ref(new Map<string, string>());
   const loading = ref(false);
   const problem = ref<Problem>();
   const registeredDocuments = new Set<string>();
-  const live = ref<LiveStatus>('closed');
-  let liveController: AbortController | undefined;
+  const liveByDocument = ref(new Map<string, LiveStatus>());
+  const liveControllers = new Map<string, AbortController>();
+  let loadGeneration = 0;
+
+  /** The event streams' state: `open` when every document's is, else the least settled. */
+  const live = computed<LiveStatus>(() => {
+    const states = [...liveByDocument.value.values()];
+    if (states.length === 0) return 'closed';
+    for (const s of ['closed', 'retrying', 'connecting'] as const) if (states.includes(s)) return s;
+    return 'open';
+  });
+  /** The page's own document, for callers that need one. */
+  const documentUri = computed(() => documentUris.value[0]);
 
   const all = computed(() => [...items.value.values()]);
   const byCreated = (a: Annotation, b: Annotation) =>
@@ -56,35 +71,78 @@ export const useAnnotationsStore = defineStore('annotations', () => {
     return repliesByParent.value.get(iri) ?? [];
   }
 
-  function upsert(annotation: Annotation): void {
+  function upsert(annotation: Annotation, uri?: string): void {
     items.value.set(annotation.id, annotation);
+    if (uri) documentOf.value.set(annotation.id, uri);
   }
 
   function remove(iri: string): void {
     items.value.delete(iri);
+    documentOf.value.delete(iri);
   }
 
-  async function load(uri: string): Promise<void> {
-    documentUri.value = uri;
-    items.value = new Map();
+  /** Top-level annotations of one document, newest first. */
+  function rootsOf(uri: string): Annotation[] {
+    return roots.value.filter((a) => documentOf.value.get(a.id) === uri);
+  }
+
+  async function search(uri: string): Promise<Annotation[]> {
+    const found: Annotation[] = [];
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const results = unwrap(
+        await useApi().GET('/x/search', {
+          params: { query: { uri, limit: PAGE, offset: page * PAGE, sort: 'created' } },
+        }),
+      );
+      found.push(...results.items);
+      if (results.items.length < PAGE || found.length >= results.total) break;
+    }
+    return found;
+  }
+
+  /**
+   * Makes the store hold these documents' annotations: documents no longer
+   * shown are dropped, new ones loaded, the rest kept unless `reload` asks
+   * for everything again (the session changed, so what is readable changed).
+   */
+  async function load(uris: string[], options: { reload?: boolean } = {}): Promise<void> {
+    const wanted = new Set(uris);
+    const previous = new Set(documentUris.value);
+    documentUris.value = [...uris];
+    for (const [iri, uri] of [...documentOf.value]) if (!wanted.has(uri)) remove(iri);
+    const toLoad = options.reload ? uris : uris.filter((uri) => !previous.has(uri));
+    if (toLoad.length === 0) return;
+    const generation = ++loadGeneration;
     loading.value = true;
     problem.value = undefined;
     try {
-      const next = new Map<string, Annotation>();
-      for (let page = 0; page < MAX_PAGES; page++) {
-        const results = unwrap(
-          await useApi().GET('/x/search', {
-            params: { query: { uri, limit: PAGE, offset: page * PAGE, sort: 'created' } },
-          }),
-        );
-        for (const a of results.items) next.set(a.id, a);
-        if (results.items.length < PAGE || next.size >= results.total) break;
+      const results = await Promise.all(
+        toLoad.map(async (uri) => [uri, await search(uri)] as const),
+      );
+      // Loads overlap when frames connect one after another; each merges
+      // what is still shown by the time it finishes.
+      const shown = new Set(documentUris.value);
+      const next = new Map(items.value);
+      const nextDocumentOf = new Map(documentOf.value);
+      for (const [uri, found] of results) {
+        if (!shown.has(uri)) continue;
+        for (const [iri, known] of nextDocumentOf) {
+          if (known === uri) {
+            next.delete(iri);
+            nextDocumentOf.delete(iri);
+          }
+        }
+        for (const a of found) {
+          next.set(a.id, a);
+          nextDocumentOf.set(a.id, uri);
+        }
       }
-      if (documentUri.value === uri) items.value = next;
+      items.value = next;
+      documentOf.value = nextDocumentOf;
     } catch (err) {
       problem.value = toProblem(err);
     } finally {
-      loading.value = false;
+      if (generation === loadGeneration) loading.value = false;
     }
   }
 
@@ -103,10 +161,10 @@ export const useAnnotationsStore = defineStore('annotations', () => {
     registeredDocuments.add(doc.uri);
   }
 
-  async function create(input: AnnotationInput): Promise<Versioned> {
+  async function create(input: AnnotationInput, uri?: string): Promise<Versioned> {
     const result = await useApi().POST('/annotations/', { body: input });
     const annotation = unwrap(result);
-    upsert(annotation);
+    upsert(annotation, uri ?? documentUri.value);
     return { annotation, etag: result.response.headers.get('etag') ?? undefined };
   }
 
@@ -139,39 +197,57 @@ export const useAnnotationsStore = defineStore('annotations', () => {
     remove(iri);
   }
 
-  /** Merges one event from the stream. Updates for annotations not yet seen are additions. */
-  function applyEvent(kind: AnnotationEventKind, id: string, annotation?: Annotation): void {
+  /**
+   * Merges one event from a document's stream. Updates for annotations not
+   * yet seen are additions, attributed to that document.
+   */
+  function applyEvent(
+    kind: AnnotationEventKind,
+    id: string,
+    annotation?: Annotation,
+    uri = documentUri.value,
+  ): void {
     if (kind === 'deleted') {
       for (const iri of items.value.keys()) {
         if (annotationUuid(iri) === id) remove(iri);
       }
     } else if (annotation) {
-      upsert(annotation);
+      upsert(annotation, documentOf.value.get(annotation.id) ?? uri);
     }
   }
 
-  /** Follows the document's event stream until `stopLive()` or the next `startLive()`. */
-  function startLive(uri: string): void {
-    stopLive();
-    const controller = new AbortController();
-    liveController = controller;
-    void subscribeAnnotationEvents({
-      uri,
-      signal: controller.signal,
-      onStatus: (status) => {
-        if (liveController === controller) live.value = status;
-      },
-      onEvent: (event) => {
-        if (documentUri.value !== uri) return;
-        applyEvent(event.kind, event.id, event.annotation);
-      },
-    });
+  /** Follows these documents' event streams, one each, until `stopLive()` or the next call. */
+  function startLive(uris: string[]): void {
+    const wanted = new Set(uris);
+    for (const [uri, controller] of [...liveControllers]) {
+      if (wanted.has(uri)) continue;
+      controller.abort();
+      liveControllers.delete(uri);
+      liveByDocument.value.delete(uri);
+    }
+    for (const uri of uris) {
+      if (liveControllers.has(uri)) continue;
+      const controller = new AbortController();
+      liveControllers.set(uri, controller);
+      liveByDocument.value.set(uri, 'connecting');
+      void subscribeAnnotationEvents({
+        uri,
+        signal: controller.signal,
+        onStatus: (status) => {
+          if (liveControllers.get(uri) === controller) liveByDocument.value.set(uri, status);
+        },
+        onEvent: (event) => {
+          if (liveControllers.get(uri) !== controller) return;
+          applyEvent(event.kind, event.id, event.annotation, uri);
+        },
+      });
+    }
   }
 
   function stopLive(): void {
-    liveController?.abort();
-    liveController = undefined;
-    live.value = 'closed';
+    for (const controller of liveControllers.values()) controller.abort();
+    liveControllers.clear();
+    liveByDocument.value = new Map();
   }
 
   return {
@@ -179,11 +255,14 @@ export const useAnnotationsStore = defineStore('annotations', () => {
     startLive,
     stopLive,
     documentUri,
+    documentUris,
+    documentOf,
     items,
     loading,
     problem,
     all,
     roots,
+    rootsOf,
     repliesTo,
     load,
     ensureDocument,

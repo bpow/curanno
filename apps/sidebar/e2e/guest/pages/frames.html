@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>A page with frames</title>
+    <style>
+      body {
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+        max-width: 60ch;
+        margin: 2rem auto;
+      }
+      iframe {
+        width: 100%;
+        height: 16rem;
+        border: 1px solid #999;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>A page with frames</h1>
+    <p>The host page has its own paragraph of text to annotate.</p>
+    <h2>Same-origin frame</h2>
+    <iframe id="same" title="Same-origin frame" src="/cases/synth-overlap/original.html"></iframe>
+    <h2>Cross-origin frame</h2>
+    <iframe id="cross" title="Cross-origin frame" src="http://localhost:4180/framed.html"></iframe>
+  </body>
+</html>

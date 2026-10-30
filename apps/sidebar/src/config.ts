@@ -13,6 +13,8 @@ export interface RuntimeConfig {
   oidcClientId?: string;
   /** API origin, when it is not served under the sidebar's origin. */
   apiUrl?: string;
+  /** The PDF viewer's origin, whose guest reports the PDF it shows rather than its own page (ADR 0021). */
+  pdfViewerOrigin?: string;
 }
 
 export const config = {
@@ -21,6 +23,7 @@ export const config = {
     issuer: import.meta.env.VITE_OIDC_ISSUER ?? 'http://localhost:8080/realms/annotations-dev',
     clientId: import.meta.env.VITE_OIDC_CLIENT_ID ?? 'annotations-sidebar',
   },
+  pdfViewerOrigin: import.meta.env.VITE_PDF_VIEWER_ORIGIN ?? 'http://localhost:5174',
 };
 
 /** The URL of `config.json` relative to the app's base. */
@@ -55,4 +58,14 @@ export function applyConfig(runtime: RuntimeConfig | undefined): void {
     config.oidc.clientId = runtime.oidcClientId;
   }
   if (typeof runtime.apiUrl === 'string') config.apiUrl = runtime.apiUrl.replace(/\/$/, '');
+  if (typeof runtime.pdfViewerOrigin === 'string') {
+    try {
+      config.pdfViewerOrigin = runtime.pdfViewerOrigin
+        ? new URL(runtime.pdfViewerOrigin).origin
+        : '';
+    } catch {
+      // An unusable value trusts no viewer.
+      config.pdfViewerOrigin = '';
+    }
+  }
 }

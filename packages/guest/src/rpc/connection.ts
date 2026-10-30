@@ -1,8 +1,9 @@
 /**
- * The guest's end of the RPC protocol (docs/guest-sidebar-rpc.md): discovery
- * over window messages with strict origin and source checks, then a
- * `MessageChannel` port per connection. Nothing here knows about anchoring
- * or highlights; `guest.ts` wires handlers to it.
+ * The host guest's end of the RPC protocol (docs/guest-sidebar-rpc.md):
+ * discovery over window messages with strict origin and source checks, then
+ * a `MessageChannel` port per connection. Nothing here knows about anchoring
+ * or highlights; `guest.ts` wires handlers to it. A guest in another frame
+ * of the page connects through `SubGuestConnection` instead.
  */
 import {
   RPC_PROTOCOL_VERSION,
@@ -17,6 +18,14 @@ import {
   type Payload,
   type SidebarMessage,
 } from '@scale/model';
+
+/** What `guest.ts` needs from a connection, whichever frame the guest is in. */
+export interface Connection {
+  readonly connected: boolean;
+  send(message: Payload<GuestMessage>): boolean;
+  error(message: string, inReplyTo?: string): void;
+  close(): void;
+}
 
 /** The subset of `MessagePort` the connection uses, so tests can substitute Node's. */
 export interface PortLike {
@@ -40,13 +49,15 @@ export interface GuestConnectionOptions {
   onMessage: (message: SidebarMessage) => void;
   /** Called once per connection after `sidebar.hello`. */
   onConnected?: () => void;
+  /** Called with each `sidebar.ready` that passed the checks, before the connect. */
+  onSidebarReady?: () => void;
   /** Makes the channel; tests inject one. */
   createChannel?: () => { port1: PortLike; port2: unknown };
 }
 
 type Listener = (event: MessageEvent) => void;
 
-export class GuestConnection {
+export class GuestConnection implements Connection {
   private readonly options: GuestConnectionOptions;
   private readonly windowListener: Listener;
   private port: PortLike | undefined;
@@ -93,7 +104,13 @@ export class GuestConnection {
     const message = parseWindowMessage(event.data);
     if (!message || message.type !== 'sidebar.ready') return;
     if (message.version !== RPC_PROTOCOL_VERSION) return;
+    this.options.onSidebarReady?.();
     this.connect(sidebar);
+  }
+
+  /** The sidebar's window, for the host to hand other guests' ports to. */
+  get sidebarWindow(): Window | null {
+    return this.options.sidebarWindow();
   }
 
   private connect(sidebar: Window): void {

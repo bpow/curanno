@@ -160,10 +160,24 @@ export async function stubApi(context: BrowserContext, pageUrl: string): Promise
   return stub;
 }
 
-/** Points the viewer at the sidebar under test, as the API's `config.json` would in a deployment. */
+/**
+ * Points the viewer at the sidebar under test and the sidebar at the viewer
+ * under test, as the API's `config.json` files would in a deployment: the
+ * sidebar accepts a document on another origin only from the viewer origin.
+ */
 export async function stubViewerConfig(context: BrowserContext): Promise<void> {
   await context.route(`${VIEWER_URL}config.json`, (route) =>
     route.fulfill(json({ sidebarOrigin: SIDEBAR_ORIGIN, sidebarPath: SIDEBAR_PATH })),
+  );
+  await context.route(`${SIDEBAR_URL}config.json`, (route) =>
+    route.fulfill(
+      json({
+        oidcIssuer: 'http://localhost:8080/realms/annotations-dev',
+        oidcClientId: 'annotations-sidebar',
+        apiUrl: '',
+        pdfViewerOrigin: VIEWER_ORIGIN,
+      }),
+    ),
   );
 }
 

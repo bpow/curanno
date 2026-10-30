@@ -25,7 +25,7 @@ const original = {
   type: 'SpecificResource',
   source: PAGE,
   selector: { type: 'TextQuoteSelector', exact: 'original words' },
-};
+} as Annotation['target'];
 
 describe('useGuestSync', () => {
   beforeEach(() => setActivePinia(createPinia()));
@@ -49,7 +49,7 @@ describe('useGuestSync', () => {
 
     // A repair by another user changes the target: anchored again with the repair.
     const repaired = {
-      ...original,
+      ...(original as object),
       anchoring: {
         state: 'repaired',
         repair: {
@@ -58,7 +58,7 @@ describe('useGuestSync', () => {
         },
       },
     };
-    store.applyEvent('updated', IRI, annotation(repaired));
+    store.applyEvent('updated', IRI, annotation(repaired as Annotation['target']));
     await nextTick();
     expect(guest.log.value).toEqual(['anchor 1', 'anchor 1']);
 

@@ -29,7 +29,8 @@ function start(kind: Kind): void {
 }
 
 async function save(next: AnnotationDraft): Promise<void> {
-  const doc = guest.document.value;
+  // A selection belongs to the frame it was made in; a page note to the page itself.
+  const doc = open.value === 'selection' ? selection.value?.document : guest.document.value;
   if (!doc) return;
   const target = open.value === 'selection' ? selection.value?.target : doc.uri;
   if (!target) return;
@@ -39,7 +40,10 @@ async function save(next: AnnotationDraft): Promise<void> {
     const structuredPurpose = next.structured
       ? profiles.purposeOf(next.structured.profile)
       : undefined;
-    await store.create(buildInput(next, target, structuredPurpose ? { structuredPurpose } : {}));
+    await store.create(
+      buildInput(next, target, structuredPurpose ? { structuredPurpose } : {}),
+      doc.uri,
+    );
     if (open.value === 'selection') guest.clearSelection();
     open.value = undefined;
     problem.value = undefined;

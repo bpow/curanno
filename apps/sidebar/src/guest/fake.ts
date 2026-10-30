@@ -6,8 +6,8 @@
  * conversation.
  */
 import type { AnchoringState } from '@scale/model';
-import { ref, shallowReadonly, shallowRef, type Ref } from 'vue';
-import type { AnchorRequest, Guest, GuestDocument, GuestSelection } from './types';
+import { computed, ref, shallowReadonly, shallowRef, type Ref } from 'vue';
+import type { AnchorRequest, DocumentSelection, Guest, GuestDocument } from './types';
 
 export interface FakeGuestOptions {
   document?: GuestDocument;
@@ -34,7 +34,8 @@ export function documentFromLocation(search = window.location.search): GuestDocu
 
 export function createFakeGuest(options: FakeGuestOptions = {}): FakeGuest {
   const document = shallowRef<GuestDocument | undefined>(options.document);
-  const selection = shallowRef<GuestSelection>();
+  const documents = computed(() => (document.value ? [document.value] : []));
+  const selection = shallowRef<DocumentSelection>();
   const anchoring = shallowRef<ReadonlyMap<string, AnchoringState>>(new Map());
   const hovered = shallowRef<readonly string[]>([]);
   const log = ref<string[]>([]);
@@ -47,6 +48,7 @@ export function createFakeGuest(options: FakeGuestOptions = {}): FakeGuest {
 
   return {
     document: shallowReadonly(document),
+    documents,
     selection: shallowReadonly(selection),
     anchoring: shallowReadonly(anchoring),
     hovered: shallowReadonly(hovered),
@@ -58,8 +60,10 @@ export function createFakeGuest(options: FakeGuestOptions = {}): FakeGuest {
       anchoring.value = new Map();
     },
     select(quote, context = {}) {
-      const source = document.value?.uri ?? DEFAULT_DOCUMENT_URI;
+      const doc = document.value ?? documentFromLocation('');
+      const source = doc.uri;
       selection.value = {
+        document: doc,
         quote,
         target: {
           type: 'SpecificResource',

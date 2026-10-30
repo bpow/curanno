@@ -9,13 +9,19 @@ The script the bookmarklet injects into an annotated page (ADR 0007, 0008). It h
 | `src/anchoring/`     | Selectors to ranges and back, on the text model from `@scale/model` (ADR 0012, 0013, 0017)             |
 | `src/highlights/`    | CSS Custom Highlight API renderer, overlay fallback, hit testing                                       |
 | `src/observers/`     | Mutation and selection observers                                                                      |
-| `src/rpc/`           | The guest's end of the protocol, the in-memory fake sidebar and its page                              |
-| `src/guest.ts`       | Wires it together for one page; `src/bundle.ts` is the IIFE entry the bookmarklet loads              |
+| `src/integrations/`  | Where the text is and when it changed: an HTML page, or a PDF.js viewer with pages that come and go  |
+| `src/rpc/`           | The guest's end of the protocol (host and sub-frame connections, the host's port provider), the in-memory fake sidebar and its page |
+| `src/frames.ts`      | Injects the bundle into the page's same-origin frames                                                 |
+| `src/guest.ts`       | Wires it together for one frame; `src/bundle.ts` is the IIFE entry the bookmarklet loads             |
 | `scripts/`           | `bundle` (esbuild), `bookmarklet`, `dev` (two-origin development server), `serve-corpus`, `serve`    |
 | `dev/`               | Sample host page and the fake sidebar page                                                            |
 | `test/browser/`      | Playwright tests: text-model fixtures in Chromium, RPC against the fake sidebar, hostile host page    |
 | `trial/`, `corpus/`  | The [anchoring regression suite](trial/README.md); `pnpm --filter @scale/guest trial` is the gate     |
 | `vendor/hypothesis/` | The Hypothesis anchoring modules the port derives from, kept verbatim with their notice               |
+
+## Frames and PDFs
+
+The bundle runs one guest per frame. In the top frame the guest is the **host**: it holds the sidebar iframe, injects the bundle into same-origin frames (now and as they appear or navigate) and gives the guests of all other frames their ports to the sidebar without reading their traffic. In any other frame the guest connects through the host ([protocol, section 3](../../docs/guest-sidebar-rpc.md)); a cross-origin frame's page has to load the bundle itself. Our PDF viewer (`apps/pdf-viewer`) builds the guest in with the PDF integration, which anchors each page's text layer as PDF.js renders it and the text content of pages not yet rendered.
 
 ## Anchoring
 

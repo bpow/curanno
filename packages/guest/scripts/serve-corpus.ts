@@ -4,7 +4,9 @@
  * (Chromium refuses to let a page it cannot place on the network embed a
  * frame from localhost). Build the bundle first.
  *
- *   pnpm --filter @scale/guest serve:corpus -- --host 127.0.0.1 --port 4180
+ *   pnpm --filter @scale/guest serve:corpus -- --host 127.0.0.1 --port 4180 [--root dir]
+ *
+ * `--root` adds a directory to serve (the bookmarklet suite's own pages).
  */
 import { access } from 'node:fs/promises';
 import path from 'node:path';
@@ -22,6 +24,9 @@ function option(args: string[], name: string): string | undefined {
 const args = process.argv.slice(2);
 const host = option(args, '--host') ?? '127.0.0.1';
 const port = Number(option(args, '--port') ?? 0);
+const extraRoots = args.flatMap((a, i) =>
+  a === '--root' ? [path.resolve(args[i + 1] ?? '')] : [],
+);
 
 try {
   await access(path.join(BUILD_DIR, 'guest.js'));
@@ -30,7 +35,7 @@ try {
   process.exit(2);
 }
 
-const server = await serve({ host, port, roots: [CORPUS_DIR, BUILD_DIR] });
+const server = await serve({ host, port, roots: [...extraRoots, CORPUS_DIR, BUILD_DIR] });
 console.log(`corpus and bundle at ${server.origin}`);
 process.on('SIGINT', () => void server.close().then(() => process.exit(0)));
 process.on('SIGTERM', () => void server.close().then(() => process.exit(0)));

@@ -19,13 +19,16 @@ const store = useAnnotationsStore();
 const profiles = useProfilesStore();
 
 // Everything the list shows depends on who is asking (ADR 0006), so the
-// document is reloaded whenever the session or the document changes.
+// documents are reloaded whenever the session changes, and the set of
+// documents follows the frames that have guests.
 watch(
-  () => [auth.status, guest.document.value?.uri] as const,
-  ([status, uri]) => {
-    if (status === 'loading' || !uri) return;
+  () => [auth.status, guest.documents.value.map((d) => d.uri).join('\n')] as const,
+  ([status, joined], previous) => {
+    if (status === 'loading' || !joined) return;
+    const uris = joined.split('\n');
     void profiles.load();
-    void store.load(uri).then(() => store.startLive(uri));
+    const reload = previous?.[0] !== status;
+    void store.load(uris, { reload }).then(() => store.startLive(uris));
   },
   { immediate: true },
 );
@@ -44,6 +47,11 @@ useGuestSync(guest, store);
     <p v-if="guest.document.value" class="document muted" :title="guest.document.value.uri">
       <span class="live" :class="store.live" :title="`Live updates: ${store.live}`"></span>
       {{ guest.document.value.title ?? guest.document.value.uri }}
+      <span v-if="guest.documents.value.length > 1" class="frames">
+        and {{ guest.documents.value.length - 1 }} framed document{{
+          guest.documents.value.length > 2 ? 's' : ''
+        }}
+      </span>
     </p>
     <ProblemAlert :problem="profiles.problem" />
     <AnnotationComposer v-if="auth.status === 'authenticated' && guest.document.value" />

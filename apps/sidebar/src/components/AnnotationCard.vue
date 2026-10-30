@@ -156,7 +156,10 @@ async function repair(): Promise<void> {
       current.etag,
     );
     guest.clearSelection();
-    guest.anchor([{ id: updated.annotation.id, target: updated.annotation.target }]);
+    guest.anchor(
+      [{ id: updated.annotation.id, target: updated.annotation.target }],
+      store.documentOf.get(props.annotation.id),
+    );
     problem.value = undefined;
   } catch (err) {
     problem.value = toProblem(err);
