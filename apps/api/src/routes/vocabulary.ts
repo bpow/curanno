@@ -8,10 +8,10 @@ import type { Handlers } from './context.js';
 
 export function vocabularyHandlers(): Handlers {
   return {
-    async getExtensionContext(_request, reply) {
+    getExtensionContext(_request, reply) {
       reply.header('cache-control', 'public, max-age=86400');
       reply.type('application/ld+json');
-      return EXTENSION_CONTEXT_DOCUMENT;
+      return Promise.resolve(EXTENSION_CONTEXT_DOCUMENT);
     },
   };
 }
