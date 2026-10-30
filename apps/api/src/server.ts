@@ -52,9 +52,8 @@ export async function buildServer(options: ServerOptions): Promise<FastifyInstan
   const app = Fastify({
     logger: options.logger ?? false,
     // One id per request, taken from the proxy's X-Request-Id when there is
-    // one, in every log line (`reqId`) and echoed to the client.
+    // one, in every log line (`reqId`, the default label) and echoed to the client.
     requestIdHeader: 'x-request-id',
-    requestIdLogLabel: 'reqId',
     genReqId: () => randomUUID(),
     // Behind the ingress; the client address in logs is the one it forwarded.
     trustProxy: true,
