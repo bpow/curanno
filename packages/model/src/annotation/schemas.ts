@@ -239,12 +239,15 @@ const embeddedBodyCommon: JsonSchema = {
   modified: dateTime,
 };
 
+/** Long enough for any comment; short enough for the full-text index (1 MiB per row). */
+const bodyText = { type: 'string', maxLength: 100_000 } as const;
+
 export const TextualBody = schema('TextualBody', {
   type: 'object',
   required: ['type', 'value'],
   properties: {
     type: { const: 'TextualBody' },
-    value: string,
+    value: bodyText,
     format: string,
     language: oneOrMany(string),
     processingLanguage: string,
@@ -304,7 +307,7 @@ const annotationProperties: JsonSchema = {
     ],
   },
   body: oneOrMany(ref('Body')),
-  bodyValue: string,
+  bodyValue: bodyText,
   target: oneOrMany(ref('Target')),
   motivation: oneOrMany(ref('Motivation')),
   generator: { anyOf: [iri, ref('Agent')] },

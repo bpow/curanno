@@ -287,6 +287,47 @@ describe.skipIf(!databaseUrl)('W3C protocol', () => {
       );
     });
 
+    it('validates the items of a Choice body too', async () => {
+      const res = await ctx.as(alice, {
+        method: 'POST',
+        url: '/annotations/',
+        headers: LD_JSON,
+        payload: annotationOn(PAGE, 'x', {
+          body: {
+            type: 'Choice',
+            items: [
+              { type: 'TextualBody', value: 'plain' },
+              { type: 'StructuredBody', profile: 'https://example.org/profiles/nope/1', value: {} },
+            ],
+          },
+        }),
+      });
+      expect(res.statusCode).toBe(422);
+      expect(res.json<{ errors: { instancePath: string }[] }>().errors[0]?.instancePath).toBe(
+        '/body/0/items/1/profile',
+      );
+    });
+
+    it('rejects a context nested in a body or target, and an oversized body', async () => {
+      const nested = await ctx.as(alice, {
+        method: 'POST',
+        url: '/annotations/',
+        headers: LD_JSON,
+        payload: annotationOn(PAGE, 'x', {
+          body: { type: 'TextualBody', value: 'x', '@context': 'https://evil.example/ctx.jsonld' },
+        }),
+      });
+      expect(nested.statusCode).toBe(422);
+      expect(nested.json<{ detail: string }>().detail).toContain('/body/@context');
+      const huge = await ctx.as(alice, {
+        method: 'POST',
+        url: '/annotations/',
+        headers: LD_JSON,
+        payload: annotationOn(PAGE, 'y'.repeat(100_001)),
+      });
+      expect(huge.statusCode).toBe(400);
+    });
+
     it('validates a JSON TextualBody whose purpose maps to a profile', async () => {
       const res = await ctx.as(alice, {
         method: 'POST',

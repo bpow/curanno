@@ -48,10 +48,27 @@ const SERVER_ASSIGNED = new Set([
   'permissions',
 ]);
 
+/**
+ * The annotation's own `@context` is the server's to set; a context nested in
+ * a body, target or extension would be stored and echoed, and a JSON-LD
+ * consumer would dereference it. Rejected at any depth.
+ */
+function rejectNestedContexts(value: unknown, path: string): void {
+  if (Array.isArray(value)) {
+    value.forEach((item, i) => rejectNestedContexts(item, `${path}/${i}`));
+  } else if (value && typeof value === 'object') {
+    for (const [key, inner] of Object.entries(value as Record<string, unknown>)) {
+      if (key === '@context') throw unprocessable(`${path}/@context: a context may not be nested`);
+      rejectNestedContexts(inner, `${path}/${key}`);
+    }
+  }
+}
+
 export function parseAnnotationInput(input: AnnotationInput): ParsedAnnotation {
   const data: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(input)) {
     if (!SERVER_ASSIGNED.has(key)) data[key] = value;
+    if (key !== '@context') rejectNestedContexts(value, `/${key}`);
   }
   if (Array.isArray(input.type) && input.type.length > 1) data['type'] = input.type;
 

@@ -83,18 +83,26 @@ export class ProfileService {
     return registry;
   }
 
-  /** Validate every body of an annotation; throws 422 naming each failing body. */
+  /**
+   * Validate every body of an annotation, the items of a `Choice` included;
+   * throws 422 naming each failing body.
+   */
   async validateBodies(bodies: Body[]): Promise<void> {
     const registry = await this.registry();
     const errors: ValidationIssue[] = [];
-    bodies.forEach((body, i) => {
+    const check = (body: Body, path: string): void => {
+      if (typeof body === 'object' && 'items' in body) {
+        body.items.forEach((item, j) => check(item, `${path}/items/${j}`));
+        return;
+      }
       const result = registry.validate(body);
       if (result && !result.ok) {
         for (const e of result.errors) {
-          errors.push({ instancePath: `/body/${i}${e.instancePath}`, message: e.message });
+          errors.push({ instancePath: `${path}${e.instancePath}`, message: e.message });
         }
       }
-    });
+    };
+    bodies.forEach((body, i) => check(body, `/body/${i}`));
     if (errors.length > 0) throw unprocessable('a body does not satisfy its profile', errors);
   }
 
