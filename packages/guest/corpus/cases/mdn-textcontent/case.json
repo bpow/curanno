@@ -7,10 +7,7 @@
     "license": "CC BY-SA 2.5",
     "note": "Fetched 2026-10-29; scripts, stylesheets and image sources removed. Edited variants are synthetic."
   },
-  "tags": [
-    "real",
-    "mustNotMatch"
-  ],
+  "tags": ["real", "mustNotMatch"],
   "variants": [
     {
       "id": "original",

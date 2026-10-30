@@ -5,12 +5,7 @@
   "source": {
     "license": "Written for this corpus"
   },
-  "tags": [
-    "synthetic",
-    "hidden",
-    "excluded",
-    "br"
-  ],
+  "tags": ["synthetic", "hidden", "excluded", "br"],
   "variants": [
     {
       "id": "original",

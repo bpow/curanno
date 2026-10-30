@@ -5,10 +5,7 @@
   "source": {
     "license": "Written for this corpus"
   },
-  "tags": [
-    "synthetic",
-    "mustNotMatch"
-  ],
+  "tags": ["synthetic", "mustNotMatch"],
   "variants": [
     {
       "id": "original",

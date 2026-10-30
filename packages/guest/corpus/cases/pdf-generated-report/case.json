@@ -5,10 +5,7 @@
   "source": {
     "license": "Written for this corpus; rendered to PDF with Chromium from src/*.html"
   },
-  "tags": [
-    "synthetic",
-    "pdf"
-  ],
+  "tags": ["synthetic", "pdf"],
   "variants": [
     {
       "id": "original",

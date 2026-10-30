@@ -5,10 +5,7 @@
   "source": {
     "license": "Written for this corpus; Vue 3 (MIT) bundled at build time"
   },
-  "tags": [
-    "synthetic",
-    "framework"
-  ],
+  "tags": ["synthetic", "framework"],
   "root": "#root",
   "variants": [
     {

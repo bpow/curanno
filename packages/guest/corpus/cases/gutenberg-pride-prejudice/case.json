@@ -7,11 +7,7 @@
     "license": "Public domain text; the Project Gutenberg header and footer carry the Project Gutenberg License",
     "note": "HTML edition with images, fetched 2026-10-29; image sources removed. The edited variant is synthetic."
   },
-  "tags": [
-    "real",
-    "long",
-    "mustNotMatch"
-  ],
+  "tags": ["real", "long", "mustNotMatch"],
   "variants": [
     {
       "id": "original",
