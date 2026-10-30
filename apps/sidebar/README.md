@@ -2,7 +2,7 @@
 
 The Vue 3 single-page application that the guest loads in an iframe from our origin (ADR 0007, ADR 0009). It holds the login session, makes every API call through `@scale/api-client`, and renders all annotation content; the guest in the host page only ever sees selectors and annotation identifiers, over the [guest/sidebar RPC protocol](../../docs/guest-sidebar-rpc.md).
 
-The build is Vite 7, not 8: Vite 8 depends on lightningcss (MPL-2.0), which the dependency license policy in `docs/third-party-notices.md` admits only with an ADR.
+The build is Vite 7; Vite 8 (whose CSS minifier is MPL-2.0, admitted by ADR 0022 as build tooling) can follow when convenient.
 
 State lives in Pinia stores (`src/stores`, `src/auth/store.ts`): the team knows it, it is the Vue default, and its stores are testable without a component.
 

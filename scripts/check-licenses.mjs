@@ -19,15 +19,25 @@ const ALLOWED = new Set([
 ]);
 
 // Packages whose license metadata is missing or non-standard but whose
-// actual license has been checked by hand. Keep this list short and dated.
+// actual license has been checked by hand, and copyleft build- or test-time
+// tooling admitted by ADR 0022 (nothing we distribute contains it). Keep
+// this list short and dated.
 const EXCEPTIONS = new Map([
   // ['package-name', 'reason, checked YYYY-MM-DD'],
-  ['axe-core', 'MPL-2.0; development-only accessibility tests, ADR 0022, checked 2026-10-30'],
+  ['axe-core', 'MPL-2.0; accessibility tests only, ADR 0022, checked 2026-10-30'],
+  ['@axe-core/playwright', 'MPL-2.0; accessibility tests only, ADR 0022, checked 2026-10-30'],
   [
-    '@axe-core/playwright',
-    'MPL-2.0; development-only accessibility tests, ADR 0022, checked 2026-10-30',
+    'lightningcss',
+    'MPL-2.0; CSS minifier run at build time by Vite 8, ADR 0022, checked 2026-10-30',
   ],
 ]);
+
+/** Platform binaries of an excepted package (`lightningcss-darwin-arm64` and the like). */
+function excepted(name) {
+  if (EXCEPTIONS.has(name)) return true;
+  for (const base of EXCEPTIONS.keys()) if (name.startsWith(`${base}-`)) return true;
+  return false;
+}
 
 function allowedExpression(expr) {
   // Handles plain identifiers and simple "A OR B" / "(A OR B)" expressions.
@@ -43,7 +53,7 @@ const failures = [];
 for (const [license, pkgs] of Object.entries(byLicense)) {
   if (allowedExpression(license)) continue;
   for (const pkg of pkgs) {
-    if (EXCEPTIONS.has(pkg.name)) continue;
+    if (excepted(pkg.name)) continue;
     failures.push(`${pkg.name}@${pkg.versions?.join(',') ?? '?'}: ${license}`);
   }
 }

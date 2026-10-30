@@ -5,6 +5,3 @@ packages:
 allowBuilds:
   esbuild: true
 
-overrides:
-  # The devtools release matching Nuxt 4.3 (apps/web/README.md says why 4.3).
-  '@nuxt/devtools': 3.2.3

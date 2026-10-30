@@ -33,4 +33,4 @@ An architecture decision record (ADR) captures one decision that shapes the syst
 | [0019](0019-sidebar-session-and-origin.md) | Sidebar sessions: public PKCE client, tokens in the sidebar origin, popup sign-in when framed | Accepted |
 | [0020](0020-management-site-serving.md) | The management site renders in the browser and uses no server routes | Accepted |
 | [0021](0021-pdf-viewer-and-client-serving.md) | The PDF viewer is a static app on its own origin, and the API image serves every client | Accepted |
-| [0022](0022-axe-core-development-dependency.md) | axe-core (MPL-2.0) as a development-only dependency for accessibility tests | Accepted |
+| [0022](0022-axe-core-development-dependency.md) | Copyleft licenses are allowed for build- and test-time tooling that ships nothing | Accepted |

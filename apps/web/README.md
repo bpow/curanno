@@ -59,6 +59,6 @@ e2e/             Playwright test against Keycloak and the API
 
 Auto-imports are off (`nuxt.config.ts`): components import what they use from `vue`, `#imports` and `#components`, so the component tests run with plain `@vue/test-utils` under happy-dom and a fake `fetch` behind the generated client. `pnpm --filter @scale/web test` runs them; `pnpm --filter @scale/web e2e` runs the Playwright test (needs the compose stack, a migrated database and `pnpm build` for the API's build output; the dev server is started or reused).
 
-## Why Nuxt 4.3
+## Nuxt version
 
-Nuxt 4.4 and later build with Vite 8, which depends on `lightningcss` (MPL-2.0), a license the dependency policy does not allow. Nuxt 4.3 builds with Vite 7, as the sidebar does. `pnpm-workspace.yaml` pins `@nuxt/devtools` to the release that matches.
+The site runs on Nuxt 4.6 or later: earlier 4.x releases carry security advisories in the server that renders the landing page (see `docs/security-review.md`). Nuxt 4.4 and later build with Vite 8, whose CSS minifier `lightningcss` is MPL-2.0; ADR 0022 admits it as build-time tooling that ships nothing.
