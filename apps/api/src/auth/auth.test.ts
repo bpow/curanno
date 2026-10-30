@@ -69,6 +69,32 @@ describe.skipIf(!databaseUrl)('authentication', () => {
     ]);
   });
 
+  it('never lets a claim grant membership in a group created through the API', async () => {
+    // Bob creates a group with the name of a provider group nobody has logged in with yet.
+    const squat = await ctx.as(bob, {
+      method: 'POST',
+      url: '/x/groups',
+      payload: { name: 'clingen-curators' },
+    });
+    expect(squat.statusCode).toBe(201);
+    const squatted = squat.json<{ id: string }>().id;
+    // Alice's token claims that group: she joins the provider's group, not bob's.
+    const me = await ctx.as(
+      { ...alice, groups: ['clingen-curators'] },
+      { method: 'GET', url: '/x/me' },
+    );
+    const mine = me
+      .json<{ groups: { id: string; name: string }[] }>()
+      .groups.filter((g) => g.name === 'clingen-curators');
+    expect(mine).toHaveLength(1);
+    expect(mine[0]?.id).not.toBe(squatted);
+    const members = await ctx.as(bob, { method: 'GET', url: `/x/groups/${squatted}/members` });
+    expect(members.statusCode).toBe(200);
+    expect(
+      members.json<{ user: { displayName?: string } }[]>().map((m) => m.user.displayName),
+    ).toEqual(['Bob Reviewer']);
+  });
+
   it('grants and withdraws administration through the admin group', async () => {
     const admin = await ctx.as(root, { method: 'GET', url: '/x/me' });
     expect(admin.json<{ isAdmin: boolean }>().isAdmin).toBe(true);

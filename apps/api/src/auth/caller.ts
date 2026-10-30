@@ -19,6 +19,8 @@ export interface UserCaller {
   displayName: string | undefined;
   isAdmin: boolean;
   principalIds: string[];
+  /** When the token behind this caller expires, in milliseconds since the epoch; absent when it never does. */
+  expiresAt?: number;
 }
 
 export type Caller = AnonymousCaller | UserCaller;
@@ -65,14 +67,48 @@ export async function resolveCaller(
       userId: user.principal_id,
       displayName: user.display_name ?? undefined,
       isAdmin,
-      principalIds: [
+      principalIds: principalsOf(
         user.principal_id,
-        AUTHENTICATED_PRINCIPAL_ID,
-        PUBLIC_PRINCIPAL_ID,
-        ...groups.map((g) => g.group_id),
-      ],
+        groups.map((g) => g.group_id),
+      ),
+      ...(claims.expiresAt !== undefined ? { expiresAt: claims.expiresAt * 1000 } : {}),
     };
   });
+}
+
+function principalsOf(userId: string, groupIds: string[]): string[] {
+  return [userId, AUTHENTICATED_PRINCIPAL_ID, PUBLIC_PRINCIPAL_ID, ...groupIds];
+}
+
+/**
+ * The caller as the database now has them: memberships and the admin flag
+ * reloaded, so that a long-lived request (an event stream) does not keep
+ * permissions the user lost. Undefined when the user no longer exists.
+ */
+export async function refreshCaller(
+  db: Kysely<Database>,
+  caller: UserCaller,
+): Promise<UserCaller | undefined> {
+  const user = await db
+    .selectFrom('users')
+    .select(['display_name', 'is_admin'])
+    .where('principal_id', '=', caller.userId)
+    .executeTakeFirst();
+  if (!user) return undefined;
+  const groups = await db
+    .selectFrom('group_memberships')
+    .select('group_id')
+    .where('user_id', '=', caller.userId)
+    .execute();
+  return {
+    ...caller,
+    displayName: user.display_name ?? undefined,
+    isAdmin: user.is_admin,
+    principalIds: principalsOf(
+      caller.userId,
+      groups.map((g) => g.group_id),
+    ),
+  };
 }
 
 async function upsertUser(
@@ -129,8 +165,10 @@ async function upsertUser(
 
 /**
  * Make the user's memberships in groups managed by this issuer equal to the
- * claim. Groups are matched by name; a claimed name that no group has yet
- * creates a provider-managed group. API-created groups are left alone.
+ * claim. Groups are matched by name among the groups this issuer owns; a
+ * claimed name that no such group has yet creates one. Groups created
+ * through the API are never matched, so a claim cannot grant membership in
+ * them whatever they are called (migration 0008).
  */
 async function syncGroups(
   trx: Kysely<Database>,
@@ -142,6 +180,7 @@ async function syncGroups(
     let group = await trx
       .selectFrom('groups')
       .select('principal_id')
+      .where('issuer', '=', claims.issuer)
       .where(sql`lower(name)`, '=', name.toLowerCase())
       .executeTakeFirst();
     if (!group) {
@@ -159,7 +198,7 @@ async function syncGroups(
           issuer: claims.issuer,
           created_by: null,
         })
-        .onConflict((oc) => oc.expression(sql`lower(name)`).doNothing())
+        .onConflict((oc) => oc.expression(sql`coalesce(issuer, ''), lower(name)`).doNothing())
         .returning('principal_id')
         .executeTakeFirst();
       if (!group) {
@@ -167,6 +206,7 @@ async function syncGroups(
         group = await trx
           .selectFrom('groups')
           .select('principal_id')
+          .where('issuer', '=', claims.issuer)
           .where(sql`lower(name)`, '=', name.toLowerCase())
           .executeTakeFirstOrThrow();
       }
