@@ -1333,8 +1333,11 @@ components:
       required: [uri, relation]
       properties:
         uri:
+          description: >-
+            The identifier exactly as the page reported it: a relative link, a bare DOI or a PDF
+            fingerprint are all accepted and normalized by the server (docs/document-identity.md).
           type: string
-          format: iri
+          minLength: 1
         relation:
           $ref: '#/components/schemas/DocumentUriRelation'
     DocumentMetadata:
