@@ -14,7 +14,7 @@ An annotation system built on the [W3C Web Annotation Data Model](https://www.w3
 | --------------------- | ------------------- | ---------------------------------------------------------- |
 | `packages/model`      | `@scale/model`      | Annotation types, text model, selectors, RPC message types |
 | `packages/api-client` | `@scale/api-client` | Client generated from the OpenAPI document                 |
-| `packages/guest`      | `@scale/guest`      | Framework-free in-page script                              |
+| `packages/guest`      | `@scale/guest`      | Framework-free in-page guest, its bundle and bookmarklet   |
 | `apps/api`            | `@scale/api`        | Fastify server                                             |
 | `apps/sidebar`        | `@scale/sidebar`    | Vue sidebar app                                            |
 | `deploy/`             |                     | Compose stack and Keycloak development realm               |
@@ -43,6 +43,11 @@ Other scripts:
 | `pnpm --filter @scale/api dev`            | Builds and runs the API, restarting on changes to the build output     |
 | `pnpm openapi:lint`                       | Lints `apps/api/openapi.yaml` with Redocly                             |
 | `pnpm api-client:generate`                | Regenerates `packages/api-client/src/schema.ts` from the OpenAPI document |
+| `pnpm --filter @scale/guest bundle`       | Builds the guest bundle `packages/guest/build/guest.js`                 |
+| `pnpm --filter @scale/guest bookmarklet -- --bundle-url URL --sidebar-origin ORIGIN` | Prints the bookmarklet for a deployed bundle and sidebar |
+| `pnpm --filter @scale/guest dev`          | Serves a sample page and the fake sidebar on two origins and prints a bookmarklet |
+| `pnpm --filter @scale/guest test:browser` | Browser tests: text-model fixtures through the guest, RPC, hostile page |
+| `pnpm --filter @scale/guest trial`        | Anchoring regression corpus; fails on a guessed must-not-match anchor  |
 | `podman build -t annotations-api -f Dockerfile .` | Builds the API image                                           |
 | `helm lint deploy/helm/annotations`       | Validates the Helm chart (see `deploy/helm/annotations/values.yaml`)   |
 
@@ -52,4 +57,6 @@ The API is configured entirely through environment variables; `.env.example` doc
 
 ## Status
 
-Phases 0 to 3 of the [project plan](docs/web-annotation-plan.md) are complete. The server in `apps/api` implements the W3C Web Annotation Protocol (one container with paging, `Prefer`, ETags and conditional requests), the `/x/` extensions (search over document identity and full text, per-annotation ACLs enforced in SQL, body profiles, documents, server-sent events over `LISTEN/NOTIFY`, users and groups), OIDC bearer-token authentication, a container image and a Helm chart. Phase 4 (guest, sidebar and end-to-end) comes next.
+Phases 0 to 3 of the [project plan](docs/web-annotation-plan.md) are complete. The server in `apps/api` implements the W3C Web Annotation Protocol (one container with paging, `Prefer`, ETags and conditional requests), the `/x/` extensions (search over document identity and full text, per-annotation ACLs enforced in SQL, body profiles, documents, server-sent events over `LISTEN/NOTIFY`, users and groups), OIDC bearer-token authentication, a container image and a Helm chart.
+
+Phase 4's guest half is done: `packages/guest` anchors on the text model (ADR 0012, 0013, 0017), passes the text-model fixtures in Chromium and the anchoring corpus with no guessed must-not-match anchors, draws highlights with the CSS Custom Highlight API (overlay fallback) without touching host text, re-anchors after DOM changes, and talks to the sidebar over the [guest/sidebar RPC protocol](docs/guest-sidebar-rpc.md) whose types live in `packages/model/src/rpc/`. The bundle, the bookmarklet generator and a dev placeholder with a fake sidebar are in place, and a hostile-page test covers the guest's side of success criterion 6. The Vue sidebar (Phase 4's other half) connects to this protocol next; PDFs, real-time updates and multi-frame support are Phase 5.
