@@ -47,6 +47,8 @@ export interface GroupsTable {
   principal_id: string;
   name: string;
   description: string | null;
+  /** The OpenID Connect issuer whose `groups` claim manages this group; null for API-created groups. */
+  issuer: string | null;
   created_by: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
