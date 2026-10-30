@@ -5,3 +5,18 @@
  * self-contained script the bookmarklet injects.
  */
 export * from './anchoring/index.js';
+export {
+  bookmarkletSource,
+  bookmarkletUrl,
+  GUEST_GLOBAL,
+  type BookmarkletOptions,
+} from './bookmarklet.js';
+export { DEFAULT_SIDEBAR_PATH, readConfig, validateSidebar, type GuestConfig } from './config.js';
+export { collectDocument, collectPageMetadata } from './document-metadata.js';
+export { Guest, type GuestOptions } from './guest.js';
+export * from './highlights/index.js';
+export { observeMutations, WATCHED_ATTRIBUTES } from './observers/mutation.js';
+export { observeSelection } from './observers/selection.js';
+export { GuestConnection, type GuestConnectionOptions, type PortLike } from './rpc/connection.js';
+export { FakeSidebar, FAKE_SECRETS, type FakeSidebarOptions } from './rpc/fake-sidebar.js';
+export { SidebarFrame } from './sidebar-frame.js';
