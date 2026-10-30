@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:guest": "playwright test -c playwright.guest.config.ts"
   },
   "dependencies": {
     "@scale/api-client": "workspace:*",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
+    "@scale/guest": "workspace:*",
     "@vitejs/plugin-vue": "^6.0.10",
     "@vue/test-utils": "^2.5.1",
     "vite": "^7.3.7",

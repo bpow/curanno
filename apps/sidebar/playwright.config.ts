@@ -10,6 +10,8 @@ const ci = !!process.env['CI'];
 
 export default defineConfig({
   testDir: 'e2e',
+  // The bookmarklet suite has its own stack (playwright.guest.config.ts).
+  testIgnore: 'guest/**',
   timeout: 60_000,
   expect: { timeout: 10_000 },
   retries: ci ? 1 : 0,
