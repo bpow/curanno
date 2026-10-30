@@ -1,0 +1,118 @@
+:root {
+  color-scheme: light dark;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 14px;
+  --toolbar-height: 2.5rem;
+  --sidebar-width: 0px;
+  --border: light-dark(#c8ccd2, #3a3f46);
+  --muted: light-dark(#5f6670, #9aa3ad);
+  --surface: light-dark(#f4f6f8, #262b31);
+  --accent: light-dark(#2457c5, #7fa6ff);
+  --danger: light-dark(#b42318, #ff8a80);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: light-dark(#8a8f96, #30353b);
+}
+
+.toolbar {
+  position: fixed;
+  inset: 0 var(--sidebar-width) auto 0;
+  height: var(--toolbar-height);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 0.75rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 2;
+}
+
+.toolbar .title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.toolbar input[type='number'] {
+  width: 3.5rem;
+}
+
+.toolbar button,
+.toolbar select,
+.toolbar input {
+  font: inherit;
+  color: inherit;
+  background: light-dark(#fff, #1e2227);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+}
+
+.toolbar button:focus-visible,
+.toolbar select:focus-visible,
+.toolbar input:focus-visible,
+.open :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.viewerContainer {
+  position: absolute;
+  inset: var(--toolbar-height) var(--sidebar-width) 0 0;
+  overflow: auto;
+}
+
+.open {
+  position: absolute;
+  inset: var(--toolbar-height) var(--sidebar-width) 0 0;
+  max-width: 40rem;
+  margin: 2rem auto;
+  padding: 1rem 1.5rem;
+  background: light-dark(#fff, #1e2227);
+  color: light-dark(#111, #eee);
+  border-radius: 8px;
+  height: fit-content;
+}
+
+.open .row {
+  display: grid;
+  gap: 0.3rem;
+  margin: 1rem 0;
+}
+
+.open input {
+  font: inherit;
+  padding: 0.3rem 0.4rem;
+}
+
+.open button {
+  font: inherit;
+  justify-self: start;
+  padding: 0.3rem 0.8rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+}
+
+/* The text layer is what the guest anchors in; keep it selectable and on top of the canvas. */
+.pdfViewer .textLayer {
+  opacity: 1;
+}

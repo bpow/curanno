@@ -32,3 +32,4 @@ An architecture decision record (ADR) captures one decision that shapes the syst
 | [0018](0018-no-hypothesis-compatible-layer.md) | Do not build a Hypothesis-compatible API layer                      | Proposed |
 | [0019](0019-sidebar-session-and-origin.md) | Sidebar sessions: public PKCE client, tokens in the sidebar origin, popup sign-in when framed | Accepted |
 | [0020](0020-management-site-serving.md) | The management site renders in the browser and uses no server routes | Accepted |
+| [0021](0021-pdf-viewer-and-client-serving.md) | The PDF viewer is a static app on its own origin, and the API image serves every client | Accepted |

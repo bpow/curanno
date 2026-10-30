@@ -7,9 +7,10 @@ import { defineConfig } from '@playwright/test';
  * Postgres. The pages come from real loopback servers (one on 127.0.0.1,
  * one on ::1 for the origin the sidebar must refuse), because Chromium does
  * not let a page it cannot place on the network embed a localhost frame.
- * Build first:
+ * The PDF case opens the built viewer app on its preview server, on an
+ * origin of its own as in a deployment. Build first:
  *
- *   pnpm build && pnpm --filter @scale/guest bundle && pnpm --filter @scale/sidebar build
+ *   pnpm build && pnpm --filter @scale/guest bundle && pnpm --filter @scale/sidebar build && pnpm --filter @scale/pdf-viewer build
  */
 const ci = !!process.env['CI'];
 
@@ -26,6 +27,12 @@ export default defineConfig({
     {
       command: 'pnpm preview',
       url: 'http://localhost:4173/sidebar/',
+      reuseExistingServer: !ci,
+      timeout: 30_000,
+    },
+    {
+      command: 'pnpm --filter @scale/pdf-viewer preview',
+      url: 'http://127.0.0.1:4174/pdf/',
       reuseExistingServer: !ci,
       timeout: 30_000,
     },

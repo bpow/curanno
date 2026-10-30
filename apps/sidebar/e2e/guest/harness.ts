@@ -16,6 +16,9 @@ export const SIDEBAR_URL = `${SIDEBAR_ORIGIN}${SIDEBAR_PATH}`;
 export const HOST_ORIGIN = 'http://127.0.0.1:4180';
 /** A loopback origin the sidebar's `frame-ancestors` policy does not list. */
 export const UNLISTED_ORIGIN = 'http://[::1]:4181';
+/** The PDF viewer app on its own origin, as deployed (ADR 0021). */
+export const VIEWER_ORIGIN = 'http://127.0.0.1:4174';
+export const VIEWER_URL = `${VIEWER_ORIGIN}/pdf/`;
 export const PAGE_PATH = '/cases/synth-overlap/original.html';
 export const BUNDLE_URL = `${HOST_ORIGIN}/guest.js`;
 export const API_ORIGIN = 'http://localhost:3000';
@@ -155,6 +158,13 @@ export async function stubApi(context: BrowserContext, pageUrl: string): Promise
     },
   );
   return stub;
+}
+
+/** Points the viewer at the sidebar under test, as the API's `config.json` would in a deployment. */
+export async function stubViewerConfig(context: BrowserContext): Promise<void> {
+  await context.route(`${VIEWER_URL}config.json`, (route) =>
+    route.fulfill(json({ sidebarOrigin: SIDEBAR_ORIGIN, sidebarPath: SIDEBAR_PATH })),
+  );
 }
 
 /** Signs the sidebar in: a stored session with `token`, as oidc-client-ts would have left it. */

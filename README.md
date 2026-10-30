@@ -17,6 +17,7 @@ An annotation system built on the [W3C Web Annotation Data Model](https://www.w3
 | `packages/guest`      | `@scale/guest`      | Framework-free in-page guest, its bundle and bookmarklet   |
 | `apps/api`            | `@scale/api`        | Fastify server                                             |
 | `apps/sidebar`        | `@scale/sidebar`    | Vue sidebar app ([README](apps/sidebar/README.md))         |
+| `apps/pdf-viewer`     | `@scale/pdf-viewer` | PDF.js viewer page with the guest built in ([README](apps/pdf-viewer/README.md)) |
 | `apps/web`            | `@scale/web`        | Nuxt management site ([README](apps/web/README.md))        |
 | `deploy/`             |                     | Compose stack and Keycloak development realm               |
 | `docs/`               |                     | Analysis, plan and ADRs                                    |
@@ -44,7 +45,8 @@ Other scripts:
 | `pnpm --filter @scale/api dev`            | Builds and runs the API, restarting on changes to the build output     |
 | `pnpm --filter @scale/sidebar dev`        | Runs the sidebar on port 5173, proxying the API (`apps/sidebar/README.md`) |
 | `pnpm --filter @scale/sidebar e2e`        | Playwright test of the sidebar against Keycloak and the API           |
-| `pnpm --filter @scale/sidebar e2e:guest`  | Playwright test of the bookmarklet, guest and sidebar on corpus pages, API stubbed |
+| `pnpm --filter @scale/sidebar e2e:guest`  | Playwright test of the bookmarklet, guest, sidebar and PDF viewer on corpus pages, API stubbed |
+| `pnpm --filter @scale/pdf-viewer dev`     | Runs the PDF viewer on port 5174 (`apps/pdf-viewer/README.md`)        |
 | `pnpm --filter @scale/web dev`            | Runs the management site on port 3001, proxying the API (`apps/web/README.md`) |
 | `pnpm --filter @scale/web e2e`            | Playwright test of the management site against Keycloak and the API   |
 | `pnpm openapi:lint`                       | Lints `apps/api/openapi.yaml` with Redocly                             |

@@ -65,8 +65,10 @@ export async function serve(options: ServeOptions): Promise<StaticServer> {
         res.writeHead(404).end('not found');
         return;
       }
+      // Cross-origin reads, so the PDF viewer on another origin can load corpus files.
       res.writeHead(200, {
         'content-type': TYPES[path.extname(file)] ?? 'application/octet-stream',
+        'access-control-allow-origin': '*',
       });
       createReadStream(file).pipe(res);
     });

@@ -12,6 +12,7 @@ export default defineConfig({
             'packages/*/src/**/*.test.ts',
             'packages/guest/trial/src/**/*.test.ts',
             'apps/api/src/**/*.test.ts',
+            'apps/pdf-viewer/src/**/*.test.ts',
           ],
         },
       },

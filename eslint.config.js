@@ -46,7 +46,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/sidebar/src/**', 'apps/web/app/**'],
+    files: ['apps/sidebar/src/**', 'apps/web/app/**', 'apps/pdf-viewer/src/**'],
     languageOptions: { globals: { ...globals.browser } },
   },
   {

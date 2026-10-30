@@ -38,10 +38,10 @@ export interface PdfPageLike {
 
 export interface PdfDocumentLike {
   numPages: number;
-  /** PDF.js's fingerprints: the trailer id or a hash of the file, and the modified id. */
-  fingerprints: [string, string | null];
+  /** PDF.js's fingerprints: the trailer id or a hash of the file first, then the modified id. */
+  fingerprints: readonly (string | null)[];
   getPage(pageNumber: number): Promise<PdfPageLike>;
-  getMetadata(): Promise<{ info: Record<string, unknown> }>;
+  getMetadata(): Promise<{ info: object }>;
 }
 
 export interface PdfEventBusLike {
@@ -51,7 +51,7 @@ export interface PdfEventBusLike {
 
 export interface PdfViewerLike {
   /** The element holding the page elements (`PDFViewer.viewer`). */
-  viewer: HTMLElement;
+  viewer: Element | null;
   currentPageNumber: number;
   eventBus: PdfEventBusLike;
 }
@@ -96,6 +96,7 @@ export class PdfIntegration implements DocumentIntegration {
 
   constructor(options: PdfIntegrationOptions) {
     this.options = options;
+    if (!options.viewer.viewer) throw new Error('the PDF viewer has no page container');
     this.root = options.viewer.viewer;
   }
 
@@ -105,20 +106,21 @@ export class PdfIntegration implements DocumentIntegration {
 
   async document(): Promise<GuestDocument> {
     const { document: pdf, url } = this.options;
-    const fingerprint = pdf.fingerprints[0];
+    const fingerprint = pdf.fingerprints[0] ?? undefined;
     let title = this.options.title;
     if (!title) {
       try {
-        const info = (await pdf.getMetadata()).info;
-        const fromInfo = info['Title'];
+        const info = (await pdf.getMetadata()).info as { Title?: unknown };
+        const fromInfo = info.Title;
         if (typeof fromInfo === 'string' && fromInfo.trim()) title = fromInfo.trim();
       } catch {
         // No metadata is fine; the URL stands in.
       }
     }
-    const links = deriveDocumentUris({ url, pdfFingerprint: fingerprint }).map(
-      ({ uri, relation }) => ({ uri, relation }),
-    );
+    const links = deriveDocumentUris({
+      url,
+      ...(fingerprint ? { pdfFingerprint: fingerprint } : {}),
+    }).map(({ uri, relation }) => ({ uri, relation }));
     return { uri: url, ...(title ? { title } : {}), links };
   }
 
