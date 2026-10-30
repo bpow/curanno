@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { NuxtLink } from '#components';
+import { ClientOnly, NuxtLink } from '#components';
+import UserMenu from '../components/UserMenu.vue';
 </script>
 
 <template>
@@ -10,6 +11,9 @@ import { NuxtLink } from '#components';
         <NuxtLink to="/groups">Groups</NuxtLink>
         <NuxtLink to="/browse">Annotations</NuxtLink>
       </nav>
+      <ClientOnly>
+        <UserMenu />
+      </ClientOnly>
     </header>
     <main class="content">
       <slot />
