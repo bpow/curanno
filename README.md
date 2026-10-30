@@ -17,6 +17,7 @@ An annotation system built on the [W3C Web Annotation Data Model](https://www.w3
 | `packages/guest`      | `@scale/guest`      | Framework-free in-page script                              |
 | `apps/api`            | `@scale/api`        | Fastify server                                             |
 | `apps/sidebar`        | `@scale/sidebar`    | Vue sidebar app ([README](apps/sidebar/README.md))         |
+| `apps/web`            | `@scale/web`        | Nuxt management site ([README](apps/web/README.md))        |
 | `deploy/`             |                     | Compose stack and Keycloak development realm               |
 | `docs/`               |                     | Analysis, plan and ADRs                                    |
 
@@ -43,6 +44,8 @@ Other scripts:
 | `pnpm --filter @scale/api dev`            | Builds and runs the API, restarting on changes to the build output     |
 | `pnpm --filter @scale/sidebar dev`        | Runs the sidebar on port 5173, proxying the API (`apps/sidebar/README.md`) |
 | `pnpm --filter @scale/sidebar e2e`        | Playwright test of the sidebar against Keycloak and the API           |
+| `pnpm --filter @scale/web dev`            | Runs the management site on port 3001, proxying the API (`apps/web/README.md`) |
+| `pnpm --filter @scale/web e2e`            | Playwright test of the management site against Keycloak and the API   |
 | `pnpm openapi:lint`                       | Lints `apps/api/openapi.yaml` with Redocly                             |
 | `pnpm api-client:generate`                | Regenerates `packages/api-client/src/schema.ts` from the OpenAPI document |
 | `podman build -t annotations-api -f Dockerfile .` | Builds the API image                                           |
@@ -57,3 +60,5 @@ The API is configured entirely through environment variables; `.env.example` doc
 Phases 0 to 3 of the [project plan](docs/web-annotation-plan.md) are complete. The server in `apps/api` implements the W3C Web Annotation Protocol (one container with paging, `Prefer`, ETags and conditional requests), the `/x/` extensions (search over document identity and full text, per-annotation ACLs enforced in SQL, body profiles, documents, server-sent events over `LISTEN/NOTIFY`, users and groups), OIDC bearer-token authentication, a container image and a Helm chart.
 
 Phase 4 is in progress. The API-facing half of the sidebar in `apps/sidebar` is done: OIDC login against the compose Keycloak, listing, creating, editing, replying to, sharing and deleting annotations for a document, a TextualBody editor and a structured-body editor built from the profile registry, live updates over the event stream, a `frame-ancestors` policy, component tests and a Playwright test that runs in CI. It runs with a development guest until the in-page guest and the postMessage RPC land; `apps/sidebar/src/guest/TODO.md` says what to connect then. The bookmarklet and the hostile-page test remain.
+
+Phase 6, the management site in `apps/web`, is done ahead of Phases 4 and 5 since the API it needs was stable: sign-in against the compose Keycloak, users and groups administration with membership and roles (provider-managed groups shown read-only), a sharing panel over an annotation's ACL, annotation browsing and search over `/x/search`, component tests and a Playwright test that runs in CI. It is not yet in the Helm chart.
