@@ -34,3 +34,4 @@ An architecture decision record (ADR) captures one decision that shapes the syst
 | [0020](0020-management-site-serving.md) | The management site renders in the browser and uses no server routes | Accepted |
 | [0021](0021-pdf-viewer-and-client-serving.md) | The PDF viewer is a static app on its own origin, and the API image serves every client | Accepted |
 | [0022](0022-axe-core-development-dependency.md) | Copyleft licenses are allowed for build- and test-time tooling that ships nothing | Accepted |
+| [0023](0023-browser-extension.md) | A Manifest V3 extension runs the guest as a content script in every frame | Accepted |
