@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ClientOnly, NuxtLink } from '#components';
 import UserMenu from '../components/UserMenu.vue';
+import AdminNav from '../components/AdminNav.vue';
 </script>
 
 <template>
@@ -10,6 +11,7 @@ import UserMenu from '../components/UserMenu.vue';
       <nav aria-label="Main">
         <NuxtLink to="/groups">Groups</NuxtLink>
         <NuxtLink to="/browse">Annotations</NuxtLink>
+        <ClientOnly><AdminNav /></ClientOnly>
       </nav>
       <ClientOnly>
         <UserMenu />

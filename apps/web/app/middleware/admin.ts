@@ -5,12 +5,11 @@ import {
   navigateTo,
   useNuxtApp,
 } from '#imports';
-import type { AuthStore } from '../auth/store';
 
 /** Pages for platform administrators, by the `isAdmin` flag the API reports for the caller. */
 export default defineNuxtRouteMiddleware(async (to) => {
   if (import.meta.server) return;
-  const auth = useNuxtApp().$auth as AuthStore;
+  const auth = useNuxtApp().$auth;
   await auth.ready();
   if (auth.status.value !== 'authenticated') {
     return navigateTo({ path: '/login', query: { returnTo: to.fullPath } });
