@@ -71,15 +71,15 @@ Release 1.0 is done when all of the following hold:
 | Document identity | A set of normalized URIs per document; canonical, DOI, Dublin Core, `og:url`, shortlink and PDF fingerprint identifiers with guards; overlapping sets merge | [ADR 0014](adr/0014-document-identity.md) |
 | Container structure | One container `/annotations/`, with `/x/search` as the main query path | [ADR 0015](adr/0015-single-container.md) |
 | Structured bodies | Embedded `StructuredBody` with a `profile` IRI, validated against a registry of JSON Schemas | [ADR 0016](adr/0016-structured-bodies.md) |
+| Route binding | `fastify-openapi-glue` bound to the OpenAPI document; Ajv with `removeAdditional` disabled so JSON-LD extension properties round-trip | [ADR 0011](adr/0011-route-binding.md) |
+| Guest base | Hypothesis client anchoring code, vendored and ported to the text model; quote matching with a minimum score | [ADR 0017](adr/0017-guest-base-and-highlight-rendering.md), Phase 2 trial |
+| Highlight rendering | CSS Custom Highlight API, overlay elements as the fallback; never wrap text | [ADR 0017](adr/0017-guest-base-and-highlight-rendering.md), Phase 2 trial |
 
 ### Open, with owner phase
 
 | Decision | Options | Decide in |
 |---|---|---|
-| Guest base | Recogito plus quote-matching fallback; copied Hypothesis guest code | Phase 2 trial |
-| Route binding mechanism | `fastify-openapi-glue`; or hand-registered routes with schemas loaded from the spec | Phase 3, by spike in Phase 0 |
 | Hypothesis-compatible layer | Build to test end to end early, or skip and rely on the bookmarklet | End of Phase 3, based on sidebar progress |
-| Highlight rendering | Wrapped elements; overlay spans; CSS Custom Highlight API | Phase 2 trial |
 
 Each decision, once made, is recorded as an architecture decision record under `docs/adr/`.
 

@@ -1,0 +1,216 @@
+{
+  "id": "pdf-plos-ten-rules",
+  "title": "PLOS Computational Biology editorial (real two-column PDF)",
+  "kind": "pdf",
+  "source": {
+    "url": "https://doi.org/10.1371/journal.pcbi.1003285",
+    "license": "CC BY 4.0",
+    "note": "Sandve GK, Nekrutenko A, Taylor J, Hovig E (2013) Ten Simple Rules for Reproducible Computational Research. PLoS Comput Biol 9(10): e1003285. Unmodified."
+  },
+  "tags": ["real", "pdf"],
+  "variants": [
+    {
+      "id": "original",
+      "file": "original.pdf",
+      "description": "Publisher PDF, 4 pages"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "title",
+      "description": "Title broken over two lines in the text layer; the citation block repeats it, so the expectation names the prefix",
+      "select": {
+        "exact": "Ten Simple Rules for Reproducible Computational"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Ten Simple Rules for Reproducible Computational",
+          "prefix": "Editorial",
+          "suffix": "ResearchGeir Kjetil Sandve1,2*, "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 9,
+          "end": 56
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 47,
+              "end": 47
+            }
+          }
+        }
+      ],
+      "expected": {
+        "original": {
+          "exact": "Ten Simple Rules for Reproducible Computational",
+          "prefix": "Editorial"
+        }
+      }
+    },
+    {
+      "id": "first-sentence",
+      "description": "Sentence spanning two text-layer lines with no separator between them",
+      "select": {
+        "exact": "Replication is the cornerstone of acumulative science [1]."
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Replication is the cornerstone of acumulative science [1].",
+          "prefix": "spital, Montebello, Oslo, Norway",
+          "suffix": " However, newtools and technolog"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 864,
+          "end": 922
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[38]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[53]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 4,
+              "end": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "hyphenated",
+      "description": "Word hyphenated across a line break in the text layer",
+      "select": {
+        "exact": "As full replica-tion of studies"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "As full replica-tion of studies",
+          "prefix": "s toadvance their research [2]. ",
+          "suffix": " on independently collecteddata "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 1167,
+          "end": 1198
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[73]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 28,
+              "end": 28
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[74]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 15,
+              "end": 15
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "quote-marks",
+      "description": "Typographic quotes rendered as two apostrophes by the font",
+      "select": {
+        "exact": "‘‘culture of reproducibility’’"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "‘‘culture of reproducibility’’",
+          "prefix": "fic community needs to develop a",
+          "suffix": " for computa-tional science, and"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 2226,
+          "end": 2256
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[178]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[178]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 30,
+              "end": 30
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "decoy",
+      "description": "Decoy: selectors written by hand from a different paper; nothing here should match",
+      "select": {
+        "exact": "Genome-wide association studies have identified thousands of common variants"
+      },
+      "expected": {
+        "original": {
+          "mustNotMatch": true,
+          "reason": "The stored selectors below are replaced by hand with text from another paper; see README"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Genome-wide association studies have identified thousands of common variants",
+          "prefix": "Introduction",
+          "suffix": " associated with complex traits"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 1500,
+          "end": 1575
+        }
+      ]
+    }
+  ]
+}

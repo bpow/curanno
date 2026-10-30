@@ -1,0 +1,382 @@
+{
+  "id": "mdn-textcontent",
+  "title": "MDN: Node.textContent (saved page with navigation and sidebar)",
+  "kind": "html",
+  "source": {
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent",
+    "license": "CC BY-SA 2.5",
+    "note": "Fetched 2026-10-29; scripts, stylesheets and image sources removed. Edited variants are synthetic."
+  },
+  "tags": ["real", "mustNotMatch"],
+  "variants": [
+    {
+      "id": "original",
+      "file": "original.html",
+      "description": "As fetched"
+    },
+    {
+      "id": "edited-light",
+      "file": "edited-light.html",
+      "description": "Three sentences reworded and a paragraph inserted before the innerText section"
+    },
+    {
+      "id": "edited-heavy",
+      "file": "edited-heavy.html",
+      "description": "The innerHTML section removed, the warning and the first sentence rewritten"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "first-sentence",
+      "description": "Opening sentence, reworded in both edits",
+      "select": {
+        "exact": "The textContent property of the Node interface represents the text content of the node and its descendants."
+      },
+      "expected": {
+        "edited-light": {
+          "exact": "The textContent property of the Node interface represents the text content of the node and all of its descendants."
+        },
+        "edited-heavy": {
+          "exact": "The textContent property of the Node interface is the concatenated text of the node and its descendants."
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "The textContent property of the Node interface represents the text content of the node and its descendants.",
+          "prefix": "\n        \n      \n     \n    \n    ",
+          "suffix": "\n\nNote:\ntextContent and HTMLElem"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 13549,
+          "end": 13656
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/main[1]/div[1]/section[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/main[1]/div[1]/section[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 107,
+              "end": 107
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "code-in-prose",
+      "description": "Phrase that mixes prose and <code> elements",
+      "select": {
+        "exact": "textContent and HTMLElement.innerText are easily confused"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "textContent and HTMLElement.innerText are easily confused",
+          "prefix": "ode and its descendants.\n\nNote:\n",
+          "suffix": ", but the two properties are dif"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 13664,
+          "end": 13721
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/main[1]/div[1]/section[1]/div[1]/p[1]/code[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/main[1]/div[1]/section[1]/div[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 63,
+              "end": 63
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "warning",
+      "description": "Warning text, rewritten in the heavy edit",
+      "select": {
+        "exact": "Setting textContent on a node removes all of the node's children and replaces them with a single text node with the given string value."
+      },
+      "expected": {
+        "edited-heavy": {
+          "exact": "Assigning to textContent replaces all of the node's children and replaces them with a single text node with the given string value."
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Setting textContent on a node removes all of the node's children and replaces them with a single text node with the given string value.",
+          "prefix": "e has no children.)\n\n\n\nWarning:\n",
+          "suffix": "\n\n  \n    Differences from innerT"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 14747,
+          "end": 14882
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/main[1]/div[2]/section[1]/div[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 9,
+              "end": 9
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/main[1]/div[2]/section[1]/div[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 144,
+              "end": 144
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "innertext-heading-sentence",
+      "description": "Sentence reworded in the light edit",
+      "select": {
+        "exact": "Don't get confused by the differences between Node.textContent and HTMLElement.innerText."
+      },
+      "expected": {
+        "edited-light": {
+          "exact": "Do not confuse Node.textContent and HTMLElement.innerText."
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Don't get confused by the differences between Node.textContent and HTMLElement.innerText.",
+          "prefix": " Differences from innerText\n    ",
+          "suffix": " Although the names seem similar"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 14922,
+          "end": 15011
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/main[1]/div[2]/section[2]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/main[1]/div[2]/section[2]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 89,
+              "end": 89
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "innerhtml-xss",
+      "description": "Sentence in the section that the heavy edit removes; the innerText section nearby has similar vocabulary",
+      "select": {
+        "exact": "We advise against using innerHTML to get or set text inside an element because it deals with raw HTML rather than plain text and can be susceptible to XSS attacks."
+      },
+      "expected": {
+        "edited-heavy": {
+          "mustNotMatch": true,
+          "reason": "The innerHTML section was removed"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "We advise against using innerHTML to get or set text inside an element because it deals with raw HTML rather than plain text and can be susceptible to XSS attacks.",
+          "prefix": "ts HTML, as its name indicates. ",
+          "suffix": " Even if you are sure that the t"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 15697,
+          "end": 15860
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/main[1]/div[2]/section[3]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 60,
+              "end": 60
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/main[1]/div[2]/section[3]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 223,
+              "end": 223
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "code-block",
+      "description": "Text inside a <pre> code example",
+      "select": {
+        "exact": "let text = document.getElementById(\"divA\").textContent;"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "let text = document.getElementById(\"divA\").textContent;",
+          "prefix": "t the element's text content:\njs",
+          "suffix": "\n// The text variable is now: 'T"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 16175,
+          "end": 16230
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/main[1]/div[2]/section[4]/div[2]/pre[1]/code[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/main[1]/div[2]/section[4]/div[2]/pre[1]/code[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 55,
+              "end": 55
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "sidebar-link",
+      "description": "Link text in the sidebar after the article (the same word appears many times on the page)",
+      "select": {
+        "exact": "compareDocumentPosition()"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "compareDocumentPosition()",
+          "prefix": " methodsappendChild()cloneNode()",
+          "suffix": "contains()getRootNode()hasChildN"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 17438,
+          "end": 17463
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/aside[1]/nav[1]/div[2]/ol[1]/li[4]/details[1]/ol[1]/li[3]/a[1]/code[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/aside[1]/nav[1]/div[2]/ol[1]/li[4]/details[1]/ol[1]/li[3]/a[1]/code[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 25,
+              "end": 25
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "footer-note",
+      "description": "Text near the end of the page",
+      "select": {
+        "exact": "This page was last modified on"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "This page was last modified on",
+          "prefix": "   Learn how to contribute \n    ",
+          "suffix": " Oct 28, 2025 by MDN contributor"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 16975,
+          "end": 17005
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/main[1]/div[2]/section[8]/div[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 5,
+              "end": 5
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/main[1]/div[2]/section[8]/div[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 35,
+              "end": 35
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

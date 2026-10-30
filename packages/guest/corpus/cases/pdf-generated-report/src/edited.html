@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Annotation pilot: quarterly report</title>
+<style>
+body { font-family: Georgia, serif; font-size: 11pt; line-height: 1.45; margin: 0; }
+h1 { font-size: 20pt; margin: 0 0 .25em; }
+.subtitle { color: #444; margin: 0 0 1.5em; }
+h2 { font-size: 13pt; margin: 1.4em 0 .4em; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 10pt; }
+td, th { border: 1px solid #999; padding: .3em .5em; text-align: left; }
+</style>
+</head>
+<body>
+<h1>Annotation service pilot: quarterly report</h1>
+<p class="subtitle">Revised edition, 19 April</p>
+<p>This report summarises the first quarter of the annotation service pilot. Forty-two users annotated 318 documents, most of them long-form articles and a smaller number of PDF reports. The service stayed available throughout the quarter apart from one planned migration window.</p>
+<p>The pilot's purpose was to learn how annotations behave when the underlying documents change, which happened to 61 of the 318 documents during the quarter. Of the 1,211 annotations on those documents, 1,090 re-anchored without intervention, 79 were reported as orphans and repaired by their authors, and 42 remained orphaned at the end of the quarter.</p><p><strong>Note added in the revised edition.</strong> Figures in this section were recounted after a reporting error was found in the export job. The corrected totals are 1,211 annotations, of which 1,090 re-anchored, 79 were repaired and 42 remain orphaned. The narrative below has been updated where the counts appear.</p><h2>1. Participation</h2>
+<p>Participation was concentrated in two groups: the editorial team, who annotated drafts before publication, and the methods group, who annotated published papers for a reading list. The editorial team produced 71% of all annotations and 88% of all replies.</p>
+<p>Users who made more than ten annotations in their first week were still active in week twelve in 19 of 23 cases. Users who made fewer than three were still active in 4 of 11 cases. Early habit formation appears to matter more than the training session, which all participants attended.</p>
+<h2>2. Document change</h2>
+<p>Sixty-one documents changed during the quarter. Changes ranged from a corrected typo to a complete rewrite of an article's introduction. Table 1 groups them by the kind of change and shows how annotations fared.</p>
+<table>
+<tr><th>Kind of change</th><th>Documents</th><th>Annotations</th><th>Re-anchored</th><th>Orphaned</th></tr>
+<tr><td>Typo or punctuation</td><td>22</td><td>410</td><td>410</td><td>0</td></tr>
+<tr><td>Sentence inserted or removed</td><td>17</td><td>366</td><td>351</td><td>15</td></tr>
+<tr><td>Paragraph rewritten</td><td>14</td><td>298</td><td>241</td><td>57</td></tr>
+<tr><td>Section removed</td><td>8</td><td>130</td><td>86</td><td>44</td></tr>
+</table>
+<p>Annotations on removed sections account for most of the orphans that could not be repaired. In interviews, authors said they would rather see those annotations marked as orphaned than placed on unrelated text, which the previous tool sometimes did.</p>
+<h2>3. PDF documents</h2>
+<p>Thirty-one of the documents were PDFs. Annotations on PDFs anchored reliably as long as the same file was opened again. Two publishers replaced PDFs with re-typeset versions during the quarter; in both cases the text layer changed enough that position selectors failed and quote matching carried the load.</p>
+<p>Users asked for page numbers in the sidebar and for annotations on figures, neither of which the pilot supported.</p>
+<h2>4. Recommendations</h2>
+<ol>
+<li>Keep the orphan state visible and make repair a one-click action from the sidebar.</li>
+<li>Store a page selector with every PDF annotation so the viewer can scroll to the right page before anchoring.</li>
+<li>Extend the pilot to the methods group's partner institutions in the second quarter.</li>
+</ol>
+<h2>Appendix A. Method</h2>
+<p>Counts were taken from the service database on the last day of the quarter. A document was counted as changed if the hash of its extracted text differed between any two visits. Re-anchoring outcomes were taken from the anchoring log, which records the selector type that succeeded for each annotation on each visit, or an orphan marker.</p>
+</body>
+</html>

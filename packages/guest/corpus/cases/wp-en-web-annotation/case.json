@@ -1,0 +1,465 @@
+{
+  "id": "wp-en-web-annotation",
+  "title": "Wikipedia: Web annotation (three real revisions)",
+  "kind": "html",
+  "source": {
+    "url": "https://en.wikipedia.org/wiki/Web_annotation",
+    "license": "CC BY-SA 4.0",
+    "note": "Rendered through the MediaWiki parse API; scripts and image sources removed"
+  },
+  "tags": ["real", "wikipedia", "mustNotMatch"],
+  "variants": [
+    {
+      "id": "original",
+      "file": "original.html",
+      "description": "Revision 1365188480 (2026-07-20)"
+    },
+    {
+      "id": "rev-2024-12",
+      "file": "rev-2024-12.html",
+      "description": "Revision 1262133857 (2024-12-09): earlier figure caption wording, before the 2025 table restructuring"
+    },
+    {
+      "id": "rev-2023-10",
+      "file": "rev-2023-10.html",
+      "description": "Revision 1180732401 (2023-10-18): before the comparison table gained most of its rows and the Annotea sentence was extended"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "lede",
+      "description": "First sentence of the article",
+      "select": {
+        "exact": "Web annotation can refer to online annotations of web resources such as web pages or parts of them"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Web annotation can refer to online annotations of web resources such as web pages or parts of them",
+          "prefix": "e information.  (February 2015)\n",
+          "suffix": ", or a set of W3C standards deve"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 1611,
+          "end": 1709
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[1]/b[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 98,
+              "end": 98
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-structures",
+      "description": "Sentence that gained and lost a figure reference across revisions",
+      "select": {
+        "exact": "The basic data structures of Web Annotation are"
+      },
+      "expected": {
+        "rev-2024-12": {
+          "exact": "The basic data structures of Web Annotation (Fig. 1) are"
+        },
+        "rev-2023-10": {
+          "exact": "The basic data structures of Web Annotation (Fig. 1) are"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "The basic data structures of Web Annotation are",
+          "prefix": "n the Web Annotation data model\n",
+          "suffix": " \n\ntarget (the element being ann"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 4526,
+          "end": 4573
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[6]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[6]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 47,
+              "end": 47
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "annotea",
+      "description": "Sentence extended with an Annotea clause in late 2023",
+      "select": {
+        "exact": "Web Annotation supersedes other standardization initiatives for annotations on the web within the W3C, e.g., the earlier Annotea project discontinued after 2003."
+      },
+      "expected": {
+        "rev-2023-10": {
+          "exact": "Web Annotation supersedes other standardization initiatives for annotations on the web within the W3C."
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Web Annotation supersedes other standardization initiatives for annotations on the web within the W3C, e.g., the earlier Annotea project discontinued after 2003.",
+          "prefix": "he Web Annotation standard.[12]\n",
+          "suffix": "[13][14]\n\nRelated specifications"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 5866,
+          "end": 6027
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[11]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[11]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 161,
+              "end": 161
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "rfc-7111",
+      "description": "List item whose trailing reference number changes between revisions",
+      "select": {
+        "exact": "RFC 7111 (URI fragment identifiers for the text/csv media type)"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "RFC 7111 (URI fragment identifiers for the text/csv media type)",
+          "prefix": " the text/plain media type)[15]\n",
+          "suffix": "[16]\nRFC 8118 (URI fragment iden"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 6317,
+          "end": 6380
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/ul[5]/li[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/ul[5]/li[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 63,
+              "end": 63
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "recogito-row",
+      "description": "Table cell added in October 2023; absent from the 2023 revision",
+      "select": {
+        "exact": "Annotation of named entities, linking with maps and knowledge graphs"
+      },
+      "expected": {
+        "rev-2023-10": {
+          "mustNotMatch": true,
+          "reason": "The Recogito row did not exist yet; other rows describe other tools"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Annotation of named entities, linking with maps and knowledge graphs",
+          "prefix": "\n\n\nYes\n\nYes\n\nYes (Apache)\n\nYes\n\n",
+          "suffix": ", developed by the Pelagios netw"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 14475,
+          "end": 14543
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/table[2]/tbody[1]/tr[7]/td[13]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/table[2]/tbody[1]/tr[7]/td[13]/a[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 16,
+              "end": 16
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "mosaic",
+      "description": "Sentence in the discontinued-systems table, stable text with changing reference numbers around it",
+      "select": {
+        "exact": "An early version of the Mosaic browser was tested with collaborative annotation feature in 1993"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "An early version of the Mosaic browser was tested with collaborative annotation feature in 1993",
+          "prefix": " Discontinued\n\n\nMosaic Browser\n\n",
+          "suffix": "[37] but never passed the test s"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 14783,
+          "end": 14878
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/table[4]/tbody[1]/tr[2]/td[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/table[4]/tbody[1]/tr[2]/td[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 95,
+              "end": 95
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "critlink",
+      "description": "Start of a long table cell",
+      "select": {
+        "exact": "Perhaps the earliest web annotation system. Developed in 1997–98 by Ka-Ping Yee of the University of California."
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Perhaps the earliest web annotation system. Developed in 1997–98 by Ka-Ping Yee of the University of California.",
+          "prefix": "ssed the test state\n\n\nCritLink\n\n",
+          "suffix": "[38]  CritLink worked as an HTML"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 14957,
+          "end": 15069
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/table[4]/tbody[1]/tr[3]/td[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/table[4]/tbody[1]/tr[3]/td[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 112,
+              "end": 112
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "feb-2015",
+      "description": "Sentence with a reference in the middle",
+      "select": {
+        "exact": "In February 2015, different features were announced"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "In February 2015, different features were announced",
+          "prefix": "t listed on Web Annotation wiki\n",
+          "suffix": ",[30] such as private group anno"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 13989,
+          "end": 14040
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/table[2]/tbody[1]/tr[5]/td[13]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/table[2]/tbody[1]/tr[5]/td[13]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 51,
+              "end": 51
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "bullet-purpose",
+      "description": "A list item in the purposes list, unchanged across revisions",
+      "select": {
+        "exact": "to quantify transient relationships between information fragments."
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "to quantify transient relationships between information fragments.",
+          "prefix": "r ideas that appear on the Web.\n",
+          "suffix": "\nto save, retain and synthesize "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 2989,
+          "end": 3055
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/ul[1]/li[5]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/ul[1]/li[5]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 66,
+              "end": 66
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "see-also-perusall",
+      "description": "See-also entry added in December 2024",
+      "select": {
+        "exact": "Perusall"
+      },
+      "expected": {
+        "rev-2023-10": {
+          "mustNotMatch": true,
+          "reason": "Added in revision 1262133857; nothing similar exists before"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Perusall",
+          "prefix": "s\nBacklinks\nOnline deliberation\n",
+          "suffix": "\nFolksonomy\nMetadata\nThreaded di"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 17917,
+          "end": 17925
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/ul[6]/li[6]/a[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/ul[6]/li[6]/a[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 8,
+              "end": 8
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

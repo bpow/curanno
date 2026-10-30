@@ -9,8 +9,12 @@ export default tseslint.config(
       '**/dist/**',
       '**/coverage/**',
       '**/node_modules/**',
+      '.claude/**',
       // Generated from the OpenAPI document; not hand-edited.
       'packages/api-client/src/schema.ts',
+      // Trial build output and third-party code kept verbatim (see its PROVENANCE.md).
+      'packages/guest/trial/.build/**',
+      'packages/guest/vendor/**',
     ],
   },
   js.configs.recommended,

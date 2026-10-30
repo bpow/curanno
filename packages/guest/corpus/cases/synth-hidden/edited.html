@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Release notes 3.2</title>
+<style>
+body { font-family: system-ui, sans-serif; max-width: 44em; margin: 2em auto; line-height: 1.5; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.menu { display: none; }
+.toolbar { background: #eee; padding: .5em; }
+</style>
+</head>
+<body>
+<a class="visually-hidden" href="#main">Skip to main content</a>
+<a class="visually-hidden" href="#search">Skip to search</a>
+<nav>
+<button aria-expanded="false">Products</button>
+<ul class="menu"><li>Editor</li><li>Viewer</li><li>Server</li><li>Command line</li><li>Plugins</li><li>Pricing</li></ul>
+<button aria-expanded="false">Resources</button>
+<ul class="menu"><li>Documentation</li><li>Blog</li><li>Status</li></ul>
+</nav>
+<div class="toolbar not-annotatable">Share · Print · Report a problem · Subscribe · Last built 09:41 · You are viewing the latest version</div>
+<main id="main">
+<h1>Release notes for version 3.2</h1>
+<p>Version 3.2 is a maintenance release. It fixes the crash on startup when the configuration file is missing, and it adds a <code>--dry-run</code> flag to the importer.</p>
+<p>Addresses may now be written on two lines:<br>Flat 4, 12 Harbour Street<br>Kingstown</p>
+<p>The <abbr title="application programming interface">API</abbr> gains a <code>/health</code> endpoint. <span aria-hidden="true">★</span> Clients should poll it no more than once a minute.</p>
+<noscript><p>Enable JavaScript to see the interactive changelog, the download counters and the comments.</p></noscript>
+<details>
+<summary>Known issues</summary>
+<p>Exporting to PDF loses footnotes on pages with rotated tables. A fix is planned for 3.2.1.</p>
+</details>
+<h2>Upgrading</h2>
+<p>Back up the database before upgrading. The migration renames the <code>owner</code> column to <code>created_by</code> and cannot be reversed automatically.</p>
+</main>
+<footer class="not-annotatable">© Example Software. All notes are published under CC0.</footer>
+</body>
+</html>

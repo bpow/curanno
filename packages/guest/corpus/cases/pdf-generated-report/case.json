@@ -1,0 +1,321 @@
+{
+  "id": "pdf-generated-report",
+  "title": "Generated PDF report, first and revised edition",
+  "kind": "pdf",
+  "source": {
+    "license": "Written for this corpus; rendered to PDF with Chromium from src/*.html"
+  },
+  "tags": ["synthetic", "pdf"],
+  "variants": [
+    {
+      "id": "original",
+      "file": "original.pdf",
+      "description": "First edition"
+    },
+    {
+      "id": "edited",
+      "file": "edited.pdf",
+      "description": "Revised edition: three counts corrected, a note paragraph inserted on page 1 (pushing later text across page boundaries), one recommendation removed"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "title",
+      "description": "Report title on the first line",
+      "select": {
+        "exact": "Annotation service pilot: quarterly report"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Annotation service pilot: quarterly report",
+          "prefix": "",
+          "suffix": "First edition, 2 AprilThis repor"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 0,
+          "end": 42
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 42,
+              "end": 42
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "counts",
+      "description": "Sentence with three numbers that are corrected in the revision",
+      "select": {
+        "exact": "1,088 re-anchored without intervention, 74 were reported as orphans"
+      },
+      "expected": {
+        "edited": {
+          "exact": "1,090 re-anchored without intervention, 79 were reported as orphans"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "1,088 re-anchored without intervention, 74 were reported as orphans",
+          "prefix": " annotations on thosedocuments, ",
+          "suffix": " and repaired bytheir authors, a"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 537,
+          "end": 604
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[8]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 11,
+              "end": 11
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[8]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 78,
+              "end": 78
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "habit",
+      "description": "Sentence across a text-layer line break (no separator in textContent), on page 1 or 2 depending on edition",
+      "select": {
+        "exact": "Early habit formationappears to matter more than the training session"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Early habit formationappears to matter more than the training session",
+          "prefix": " still active in 4 of 11 cases. ",
+          "suffix": ", which all participants attende"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 1135,
+          "end": 1204
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[15]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 81,
+              "end": 81
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[16]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 48,
+              "end": 48
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "table-row",
+      "description": "Table row text (cells become separate text items)",
+      "select": {
+        "exact": "Paragraph rewritten"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Paragraph rewritten",
+          "prefix": "nserted or removed 17 366 351 15",
+          "suffix": " 14 298 241 57Section removed 8 "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 1596,
+          "end": 1615
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[48]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[48]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 19,
+              "end": 19
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "orphans-sentence",
+      "description": "Sentence across a line break that moves to a later page",
+      "select": {
+        "exact": "they would rather see those annotations marked as orphaned than placedon unrelated text"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "they would rather see those annotations marked as orphaned than placedon unrelated text",
+          "prefix": "red. Ininterviews, authors said ",
+          "suffix": ", which the previous tool someti"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 1775,
+          "end": 1862
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[67]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 25,
+              "end": 25
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[1]/span[68]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 17,
+              "end": 17
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "recommendation-3",
+      "description": "Recommendation removed in the revision; the other three are similar in form",
+      "select": {
+        "exact": "Add a weekly digest of orphaned annotations for document owners."
+      },
+      "expected": {
+        "edited": {
+          "mustNotMatch": true,
+          "reason": "The item was removed"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Add a weekly digest of orphaned annotations for document owners.",
+          "prefix": "e right pagebefore anchoring.3. ",
+          "suffix": "4. Extend the pilot to the metho"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 2548,
+          "end": 2612
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/span[7]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 3,
+              "end": 3
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/span[7]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 67,
+              "end": 67
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "appendix",
+      "description": "Last sentence of the document",
+      "select": {
+        "exact": "or an orphan marker."
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "or an orphan marker.",
+          "prefix": "reach annotation on each visit, ",
+          "suffix": ""
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 3029,
+          "end": 3049
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/span[13]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 31,
+              "end": 31
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[2]/div[1]/span[13]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 51,
+              "end": 51
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

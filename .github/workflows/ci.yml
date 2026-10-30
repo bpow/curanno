@@ -39,3 +39,25 @@ jobs:
       - run: pnpm licenses:check
       - run: pnpm openapi:lint
       - run: pnpm api-client:check
+
+  # The anchoring trial needs a browser; it runs apart from `pnpm check` so a
+  # Chromium download never blocks the fast checks. Results are uploaded, not
+  # compared: the committed report under packages/guest/trial/results is the
+  # record, and changes to it are reviewed like code.
+  guest-trial:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @scale/guest exec playwright install --with-deps chromium
+      - run: pnpm --filter @scale/guest trial
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: guest-trial-results
+          path: packages/guest/trial/results/

@@ -1,0 +1,288 @@
+{
+  "id": "wp-ja-emoji",
+  "title": "Wikipedia (Japanese): 絵文字, two revisions",
+  "kind": "html",
+  "source": {
+    "url": "https://ja.wikipedia.org/wiki/%E7%B5%B5%E6%96%87%E5%AD%97",
+    "license": "CC BY-SA 4.0",
+    "note": "Rendered through the MediaWiki parse API; scripts and image sources removed"
+  },
+  "tags": ["real", "wikipedia", "non-latin", "emoji", "mustNotMatch"],
+  "variants": [
+    {
+      "id": "original",
+      "file": "original.html",
+      "description": "Revision 111336597 (2026-10-10)"
+    },
+    {
+      "id": "rev-2023-02",
+      "file": "rev-2023-02.html",
+      "description": "Revision 93832380 (2023-02-12): older infobox, no writing-systems navbox, lede punctuation differs"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "lede",
+      "description": "Definition sentence; the reading in parentheses uses a slash now and a comma in 2023",
+      "select": {
+        "exact": "絵文字（えもじ/えもんじ）とは、語（音形）ではなく、ものや事柄を"
+      },
+      "expected": {
+        "rev-2023-02": {
+          "exact": "絵文字（えもじ、えもんじ）とは、語（音形）ではなく、ものや事柄を"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "絵文字（えもじ/えもんじ）とは、語（音形）ではなく、ものや事柄を",
+          "prefix": "de5.2で表現したARIB外字）が含まれています（詳細）。\n\n",
+          "suffix": "、絵を文字のように用いて象徴的に示唆したもののこと。\n\n\n図1　"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 3081,
+          "end": 3113
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[1]/b[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 32,
+              "end": 32
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "co-59",
+      "description": "Long sentence with ASCII, digits and kanji, unchanged",
+      "select": {
+        "exact": "絵文字が文字コードに最初に含まれたのは1959年の日本の新聞社が記事交換用に使用したCO-59という6社協定新聞社用コード表で"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "絵文字が文字コードに最初に含まれたのは1959年の日本の新聞社が記事交換用に使用したCO-59という6社協定新聞社用コード表で",
+          "prefix": "\n\n絵文字からEmojiへ\n機械への搭載・文字コードの割り当て\n",
+          "suffix": "、「⚾︎」の野球ボールの絵文字である[3]。電波産業会はARIB"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 14155,
+          "end": 14218
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[13]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[13]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 63,
+              "end": 63
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "baseball",
+      "description": "Quote containing an emoji with a variation selector",
+      "select": {
+        "exact": "「⚾︎」の野球ボールの絵文字"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "「⚾︎」の野球ボールの絵文字",
+          "prefix": "記事交換用に使用したCO-59という6社協定新聞社用コード表で、",
+          "suffix": "である[3]。電波産業会はARIB STD-B3「FM多重放送の"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 14219,
+          "end": 14233
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[13]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 64,
+              "end": 64
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[13]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 78,
+              "end": 78
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "emoji-day",
+      "description": "Sentence in the history section",
+      "select": {
+        "exact": "2014年には、世界絵文字デーの開催が始まる。"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "2014年には、世界絵文字デーの開催が始まる。",
+          "prefix": "るようになり、Emojiという単語とともに市民権を得た[6]。\n",
+          "suffix": "Emojiが世界的に広がるにつれ、Unicodeの絵文字コードは"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 15394,
+          "end": 15417
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[18]/a[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/p[18]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 23,
+              "end": 23
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "emojipedia",
+      "description": "External link description added after 2023",
+      "select": {
+        "exact": "Unicodeでの絵文字について各社の実装などがまとめられているサイト"
+      },
+      "expected": {
+        "rev-2023-02": {
+          "mustNotMatch": true,
+          "reason": "The Emojipedia link was added later"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Unicodeでの絵文字について各社の実装などがまとめられているサイト",
+          "prefix": "な絵文字が一目でわかるサイト\nEmojipedia（英語） - ",
+          "suffix": "\nWikiEmoji - 絵文字とキーワードに関する情報の検索エ"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 17857,
+          "end": 17892
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/ul[5]/li[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 17,
+              "end": 17
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/ul[5]/li[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 52,
+              "end": 52
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "navbox",
+      "description": "Navbox entry present only in the new revision",
+      "select": {
+        "exact": "図1　文字の類型"
+      },
+      "expected": {
+        "rev-2023-02": {
+          "mustNotMatch": true,
+          "reason": "The writing-systems navbox did not exist"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "図1　文字の類型",
+          "prefix": "事柄を、絵を文字のように用いて象徴的に示唆したもののこと。\n\n\n",
+          "suffix": "\n\n\n文字\n\n表語文字\n\n\n表意文字\n\n数字\n\n\n表音文字\n\n音"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 3142,
+          "end": 3150
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/table[2]/caption[1]/b[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/main[1]/div[1]/table[2]/caption[1]/b[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 8,
+              "end": 8
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

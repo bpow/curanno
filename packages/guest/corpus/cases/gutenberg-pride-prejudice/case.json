@@ -1,0 +1,292 @@
+{
+  "id": "gutenberg-pride-prejudice",
+  "title": "Project Gutenberg: Pride and Prejudice (long document)",
+  "kind": "html",
+  "source": {
+    "url": "https://www.gutenberg.org/ebooks/1342",
+    "license": "Public domain text; the Project Gutenberg header and footer carry the Project Gutenberg License",
+    "note": "HTML edition with images, fetched 2026-10-29; image sources removed. The edited variant is synthetic."
+  },
+  "tags": ["real", "long", "mustNotMatch"],
+  "variants": [
+    {
+      "id": "original",
+      "file": "original.html",
+      "description": "As fetched, about 735,000 characters of text"
+    },
+    {
+      "id": "edited",
+      "file": "edited.html",
+      "description": "Project Gutenberg header removed (every later offset shifts), curly double quotes straightened throughout, and the periods after Mr and Mrs removed, which touches most dialogue"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "pg-header",
+      "description": "Heading in the Project Gutenberg header, which the edit removes; the footer has the same words in capitals",
+      "select": {
+        "exact": "The Project Gutenberg eBook of Pride and Prejudice"
+      },
+      "expected": {
+        "edited": {
+          "mustNotMatch": true,
+          "reason": "The header is gone; the footer's 'END OF THE PROJECT GUTENBERG EBOOK PRIDE AND PREJUDICE' is not it"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "The Project Gutenberg eBook of Pride and Prejudice",
+          "prefix": "",
+          "suffix": "\n    \nThis eBook is for the use "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 0,
+          "end": 50
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/header[1]/h2[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/header[1]/h2[1]/span[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 19,
+              "end": 19
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "opening",
+      "description": "Opening sentence, with a source line break inside the paragraph",
+      "select": {
+        "exact": "a single man in possession\nof a good fortune must be in want of a wife."
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "a single man in possession\nof a good fortune must be in want of a wife.",
+          "prefix": " universally acknowledged, that ",
+          "suffix": "\n\nHowever little known the feeli"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 29906,
+          "end": 29977
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/p[19]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 45,
+              "end": 45
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/p[19]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 116,
+              "end": 116
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "dialogue",
+      "description": "Dialogue in curly quotes, straightened in the edit",
+      "select": {
+        "exact": "“I am not afraid of you,” said he, smilingly."
+      },
+      "expected": {
+        "edited": {
+          "exact": "\"I am not afraid of you,\" said he, smilingly."
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "“I am not afraid of you,” said he, smilingly.",
+          "prefix": "shock your relations to hear.”\n\n",
+          "suffix": "\n\n“Pray let me hear what you hav"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 337691,
+          "end": 337736
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/p[976]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/p[976]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 45,
+              "end": 45
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "mr-darcy",
+      "description": "Sentence containing 'Mr. Darcy', one of 255 occurrences; the edit drops the period",
+      "select": {
+        "exact": "What a contrast between him and his friend! Mr. Darcy danced"
+      },
+      "expected": {
+        "edited": {
+          "exact": "What a contrast between him and his friend! Mr Darcy danced"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "What a contrast between him and his friend! Mr. Darcy danced",
+          "prefix": "ties must speak for\nthemselves. ",
+          "suffix": "\nonly once with Mrs. Hurst and o"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 42860,
+          "end": 42920
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/p[87]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 278,
+              "end": 278
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/p[87]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 338,
+              "end": 338
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "preface",
+      "description": "Sentence in the preface spanning a line break, with 'Mr.' changed in the edit",
+      "select": {
+        "exact": "Lady Catherine de Bourgh. The latter, like\nMr. Collins himself, has been charged with exaggeration."
+      },
+      "expected": {
+        "edited": {
+          "exact": "Lady Catherine de Bourgh. The latter, like\nMr Collins himself, has been charged with exaggeration."
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Lady Catherine de Bourgh. The latter, like\nMr. Collins himself, has been charged with exaggeration.",
+          "prefix": "he\nfigures of Mr. Bennet and of ",
+          "suffix": " There is,\nperhaps, a very faint"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 16404,
+          "end": 16503
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/p[10]/i[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 167,
+              "end": 167
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/p[10]/i[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 266,
+              "end": 266
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "ending",
+      "description": "Last sentence of the novel, about 700,000 characters in",
+      "select": {
+        "exact": "had been the means of uniting them"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "had been the means of uniting them",
+          "prefix": "y bringing\nher into Derbyshire, ",
+          "suffix": ".\n\n\n\n\n\n\nCHISWICK PRESS:—CHARLES "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 719771,
+          "end": 719805
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/p[2048]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 228,
+              "end": 228
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/p[2048]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 262,
+              "end": 262
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

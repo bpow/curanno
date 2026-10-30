@@ -1,0 +1,57 @@
+{
+  "generated": "2026-10-29",
+  "highlights": {
+    "wrap": {
+      "ariaSnapshotChanged": true,
+      "ariaSnapshotBefore": "- article:\n  - heading \"#101 Highlights disappear after the comment list refreshes\" [level=2]\n  - paragraph: opened by mira · open\n  - paragraph: When the comment list polls for new comments, the whole list is re-rendered and every highlight inside it is lost. The selection itself survives, so the anchors are still valid; only the drawn highlights go.\n  - list:\n    - listitem:\n      - strong: \"tomas:\"\n      - text: Reproduced with the polling interval set to five seconds.\n    - listitem:\n      - strong: \"mira:\"\n      - text: The list uses the array index as the key, so every row is recreated on each poll.",
+      "ariaSnapshotAfter": "- article:\n  - heading \"#101 Highlights disappear after the comment list refreshes\" [level=2]:\n    - text: \"#101\"\n    - mark: Highlights disappear after the comment list refreshes\n  - paragraph: opened by mira · open\n  - paragraph:\n    - text: When the comment list polls for new comments, the whole list is re-rendered and every highlight inside it is lost.\n    - mark: The selection itself survives, so the anchors are still valid; only the drawn highlights go.\n  - list:\n    - listitem:\n      - strong: \"tomas:\"\n      - text: Reproduced with the polling interval set to five seconds.\n    - listitem:\n      - strong:\n        - mark: mira\n        - mark: \":\"\n      - mark: The list uses the array index as the key\n      - text: \", so every row is recreated on each poll.\"",
+      "tabStopsBefore": 2,
+      "tabStopsAfter": 2,
+      "highlightElements": [
+        "mark"
+      ],
+      "visibleNormal": "3/3",
+      "visibleForcedColors": "3/3",
+      "visibleForcedColorsWithAdjustNone": "3/3"
+    },
+    "overlay": {
+      "ariaSnapshotChanged": false,
+      "ariaSnapshotBefore": "- article:\n  - heading \"#101 Highlights disappear after the comment list refreshes\" [level=2]\n  - paragraph: opened by mira · open\n  - paragraph: When the comment list polls for new comments, the whole list is re-rendered and every highlight inside it is lost. The selection itself survives, so the anchors are still valid; only the drawn highlights go.\n  - list:\n    - listitem:\n      - strong: \"tomas:\"\n      - text: Reproduced with the polling interval set to five seconds.\n    - listitem:\n      - strong: \"mira:\"\n      - text: The list uses the array index as the key, so every row is recreated on each poll.",
+      "ariaSnapshotAfter": "- article:\n  - heading \"#101 Highlights disappear after the comment list refreshes\" [level=2]\n  - paragraph: opened by mira · open\n  - paragraph: When the comment list polls for new comments, the whole list is re-rendered and every highlight inside it is lost. The selection itself survives, so the anchors are still valid; only the drawn highlights go.\n  - list:\n    - listitem:\n      - strong: \"tomas:\"\n      - text: Reproduced with the polling interval set to five seconds.\n    - listitem:\n      - strong: \"mira:\"\n      - text: The list uses the array index as the key, so every row is recreated on each poll.",
+      "tabStopsBefore": 2,
+      "tabStopsAfter": 2,
+      "highlightElements": [
+        "div"
+      ],
+      "visibleNormal": "3/3",
+      "visibleForcedColors": "0/3",
+      "visibleForcedColorsWithAdjustNone": "0/3"
+    },
+    "css-highlight": {
+      "ariaSnapshotChanged": false,
+      "ariaSnapshotBefore": "- article:\n  - heading \"#101 Highlights disappear after the comment list refreshes\" [level=2]\n  - paragraph: opened by mira · open\n  - paragraph: When the comment list polls for new comments, the whole list is re-rendered and every highlight inside it is lost. The selection itself survives, so the anchors are still valid; only the drawn highlights go.\n  - list:\n    - listitem:\n      - strong: \"tomas:\"\n      - text: Reproduced with the polling interval set to five seconds.\n    - listitem:\n      - strong: \"mira:\"\n      - text: The list uses the array index as the key, so every row is recreated on each poll.",
+      "ariaSnapshotAfter": "- article:\n  - heading \"#101 Highlights disappear after the comment list refreshes\" [level=2]\n  - paragraph: opened by mira · open\n  - paragraph: When the comment list polls for new comments, the whole list is re-rendered and every highlight inside it is lost. The selection itself survives, so the anchors are still valid; only the drawn highlights go.\n  - list:\n    - listitem:\n      - strong: \"tomas:\"\n      - text: Reproduced with the polling interval set to five seconds.\n    - listitem:\n      - strong: \"mira:\"\n      - text: The list uses the array index as the key, so every row is recreated on each poll.",
+      "tabStopsBefore": 2,
+      "tabStopsAfter": 2,
+      "highlightElements": [],
+      "visibleNormal": "3/3",
+      "visibleForcedColors": "0/3",
+      "visibleForcedColorsWithAdjustNone": "0/3"
+    }
+  },
+  "recogitoSelection": {
+    "containerTabIndex": "-1",
+    "containerClass": "no-focus-outline r6o-annotatable",
+    "afterProgrammaticSelection": 0,
+    "annotationCount": 0,
+    "afterShiftArrowRelease": 1,
+    "afterMouseDrag": 1,
+    "hotkeys": [
+      "shift+up",
+      "shift+down",
+      "shift+left",
+      "shift+right",
+      "ctrl+a / ⌘+a"
+    ]
+  }
+}

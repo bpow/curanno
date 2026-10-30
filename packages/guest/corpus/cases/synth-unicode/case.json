@@ -1,0 +1,459 @@
+{
+  "id": "synth-unicode",
+  "title": "Emoji sequences, combining marks and non-Latin scripts",
+  "kind": "html",
+  "source": {
+    "license": "Written for this corpus"
+  },
+  "tags": ["synthetic", "non-latin", "emoji"],
+  "variants": [
+    {
+      "id": "original",
+      "file": "original.html",
+      "description": "As written"
+    },
+    {
+      "id": "edited",
+      "file": "edited.html",
+      "description": "Emoji added before every quote (surrogate pairs shift UTF-16 offsets by two per emoji), one emoji added inside a quote, a word added inside the Hindi sentence, the Thai sentence rewritten, the Arabic sentence extended, a time changed"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "emoji-pair",
+      "description": "Quote with two emoji; the edit inserts a third",
+      "select": {
+        "exact": "went well 🎉🎉 and"
+      },
+      "expected": {
+        "edited": {
+          "exact": "went well 🎉🎉🎉 and"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "went well 🎉🎉 and",
+          "prefix": " update 🗓️ week 12\nRelease day ",
+          "suffix": " the on-call rota is now shared "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 38,
+          "end": 56
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 12,
+              "end": 12
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 30,
+              "end": 30
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "flags",
+      "description": "Regional indicator pairs; the edit inserts a third flag and a comma",
+      "select": {
+        "exact": "the 🇮🇪 and 🇯🇵 offices"
+      },
+      "expected": {
+        "edited": {
+          "exact": "the 🇮🇪, 🇯🇵 and 🇧🇷 offices"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "the 🇮🇪 and 🇯🇵 offices",
+          "prefix": "on-call rota is now shared with ",
+          "suffix": ".\nThanks to 👩🏽‍💻 Priya and 👨"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 93,
+          "end": 118
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 67,
+              "end": 67
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 92,
+              "end": 92
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "zwj-sequences",
+      "description": "Skin tone modifiers and ZWJ family sequence, text unchanged but shifted",
+      "select": {
+        "exact": "👩🏽‍💻 Priya and 👨🏿‍🔧 Kwame"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "👩🏽‍💻 Priya and 👨🏿‍🔧 Kwame",
+          "prefix": "\uddee🇪 and 🇯🇵 offices.\nThanks to ",
+          "suffix": " for the midnight fix, and to th"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 130,
+          "end": 161
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 10,
+              "end": 10
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 41,
+              "end": 41
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "family",
+      "description": "Single ZWJ sequence selected alone",
+      "select": {
+        "exact": "👨‍👩‍👧‍👦"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "👨‍👩‍👧‍👦",
+          "prefix": "or the midnight fix, and to the ",
+          "suffix": " who covered Saturday.\nहिन्दी सम"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 195,
+          "end": 206
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 75,
+              "end": 75
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 86,
+              "end": 86
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "hindi",
+      "description": "Devanagari with combining vowel signs; a word is inserted mid-quote",
+      "select": {
+        "exact": "पहले सप्ताह में कोई त्रुटि नहीं मिली"
+      },
+      "expected": {
+        "edited": {
+          "exact": "पहले दो सप्ताह में कोई त्रुटि नहीं मिली"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "पहले सप्ताह में कोई त्रुटि नहीं मिली",
+          "prefix": "्थन अब उत्पादन में उपलब्ध है और ",
+          "suffix": "।\nการแปลภาษาไทยจะพร้อมใช้งานในรุ"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 271,
+          "end": 307
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 42,
+              "end": 42
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[3]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 78,
+              "end": 78
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "thai",
+      "description": "Thai, no word spaces; the sentence is rewritten in the edit",
+      "select": {
+        "exact": "จะพร้อมใช้งานในรุ่นถัดไป"
+      },
+      "expected": {
+        "edited": {
+          "mustNotMatch": true,
+          "reason": "The sentence was rewritten; only 'พร้อมใช้งาน' survives"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "จะพร้อมใช้งานในรุ่นถัดไป",
+          "prefix": " त्रुटि नहीं मिली।\nการแปลภาษาไทย",
+          "suffix": "\nتمت إضافة دعم الكتابة من اليمين"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 322,
+          "end": 346
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[4]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 13,
+              "end": 13
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[4]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 37,
+              "end": 37
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "arabic",
+      "description": "Arabic right-to-left run; the edit appends two words after the quote",
+      "select": {
+        "exact": "في محرر الملاحظات"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "في محرر الملاحظات",
+          "prefix": "عم الكتابة من اليمين إلى اليسار ",
+          "suffix": ".\nThe ligature test string “ﬁle "
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 390,
+          "end": 407
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[5]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 43,
+              "end": 43
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[5]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 60,
+              "end": 60
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "ligature",
+      "description": "Presentation-form ligatures inside the quote",
+      "select": {
+        "exact": "“ﬁle ﬂow”"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "“ﬁle ﬂow”",
+          "prefix": "احظات.\nThe ligature test string ",
+          "suffix": " and the decomposed “é” (e + com"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 434,
+          "end": 443
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[6]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 25,
+              "end": 25
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[6]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 34,
+              "end": 34
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "combining",
+      "description": "Decomposed e + U+0301 inside the quote",
+      "select": {
+        "exact": "combining acute: é)"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "combining acute: é)",
+          "prefix": "ow” and the decomposed “é” (e + ",
+          "suffix": " are both in the fixtures now.\nN"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 472,
+          "end": 491
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[6]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 63,
+              "end": 63
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[6]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 82,
+              "end": 82
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "time",
+      "description": "Short quote with an emoji before it; the digits change",
+      "select": {
+        "exact": "☕ at 09:00"
+      },
+      "expected": {
+        "edited": {
+          "exact": "☕ at 09:30"
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "☕ at 09:00",
+          "prefix": "ed and twenty-three.\nNext week: ",
+          "suffix": ", then planning until 🕛.\n\n\n\n"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 605,
+          "end": 615
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[8]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 11,
+              "end": 11
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/article[1]/p[8]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 21,
+              "end": 21
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

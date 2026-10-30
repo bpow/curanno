@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PDF text layer</title>
+    <link rel="stylesheet" href="/__trial/pdfjs/pdf_viewer.css" />
+    <style>
+      body {
+        margin: 0;
+        background: #888;
+      }
+      #viewer .page {
+        position: relative;
+        margin: 8px auto;
+        background: white;
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+      }
+      #viewer .textLayer {
+        inset: 0;
+        opacity: 1;
+      }
+      #viewer .textLayer span {
+        color: #111;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="viewer" class="pdfViewer"></div>
+    <script type="module" src="/__trial/pdf-view.js"></script>
+  </body>
+</html>

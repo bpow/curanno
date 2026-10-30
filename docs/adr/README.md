@@ -28,3 +28,4 @@ An architecture decision record (ADR) captures one decision that shapes the syst
 | [0014](0014-document-identity.md)                | Document identity by a set of normalized URIs, with guarded canonical links and merging | Accepted |
 | [0015](0015-single-container.md)                 | One annotation container, with search as the main query path        | Accepted |
 | [0016](0016-structured-bodies.md)                | Structured bodies as an embedded `StructuredBody` validated by a profile registry | Accepted |
+| [0017](0017-guest-base-and-highlight-rendering.md) | Build the guest's anchoring on the Hypothesis client's code and render highlights with the CSS Custom Highlight API | Accepted |

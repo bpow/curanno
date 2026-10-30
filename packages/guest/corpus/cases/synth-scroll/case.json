@@ -1,0 +1,151 @@
+{
+  "id": "synth-scroll",
+  "title": "Text inside nested scrolling containers",
+  "kind": "html",
+  "source": {
+    "license": "Written for this corpus"
+  },
+  "tags": ["synthetic", "scroll"],
+  "variants": [
+    {
+      "id": "original",
+      "file": "original.html",
+      "description": "Two scrolling cards inside a scrolling outer panel"
+    },
+    {
+      "id": "edited",
+      "file": "edited.html",
+      "description": "A summary card inserted above, the final remark reworded"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "deep-section",
+      "description": "Heading and first words of a section far down the inner scroller",
+      "select": {
+        "exact": "Section 7When hand is selectors verbatim"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Section 7When hand is selectors verbatim",
+          "prefix": "ver page it keeps nothing user.\n",
+          "suffix": " that never it lost selectors se"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 3224,
+          "end": 3264
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[2]/div[1]/section[7]/h3[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[2]/div[1]/section[7]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 31,
+              "end": 31
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "last-section",
+      "description": "Text at the end of the inner scroller",
+      "select": {
+        "exact": "Section 12To attributable so attributable repair"
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Section 12To attributable so attributable repair",
+          "prefix": "rs never the never may both an.\n",
+          "suffix": " when by the it generations to i"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 5835,
+          "end": 5883
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[2]/div[1]/section[12]/h3[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[2]/div[1]/section[12]/p[1]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 38,
+              "end": 38
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "appendix",
+      "description": "Text in the second inner scroller, reworded in the edit",
+      "select": {
+        "exact": "Final remark: the appendix closes the document."
+      },
+      "expected": {
+        "edited": {
+          "exact": "Final remark: the appendix closes the revised document."
+        }
+      },
+      "selectors": [
+        {
+          "type": "TextQuoteSelector",
+          "exact": "Final remark: the appendix closes the document.",
+          "prefix": "e the when is generations lost.\n",
+          "suffix": "\n\n\n\n\n"
+        },
+        {
+          "type": "TextPositionSelector",
+          "start": 6864,
+          "end": 6911
+        },
+        {
+          "type": "RangeSelector",
+          "startSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[4]/div[1]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 0,
+              "end": 0
+            }
+          },
+          "endSelector": {
+            "type": "XPathSelector",
+            "value": "/div[1]/div[4]/div[1]/p[2]",
+            "refinedBy": {
+              "type": "TextPositionSelector",
+              "start": 47,
+              "end": 47
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
