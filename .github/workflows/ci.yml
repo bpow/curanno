@@ -61,3 +61,20 @@ jobs:
         with:
           name: guest-trial-results
           path: packages/guest/trial/results/
+
+  # The API image must build and the chart must render without a cluster
+  # (plan, Phase 3). Neither job pushes anything.
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -t annotations-api -f Dockerfile .
+      - run: docker run --rm annotations-api node -e "require('node:fs').accessSync('openapi.yaml'); console.log('image ok')"
+
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: azure/setup-helm@v4
+      - run: helm lint deploy/helm/annotations --set secrets.databaseUrl=postgres://ci
+      - run: helm template ci deploy/helm/annotations --set secrets.databaseUrl=postgres://ci --set ingress.enabled=true > /dev/null
