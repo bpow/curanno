@@ -92,6 +92,13 @@ importers:
         version: 7.13.0(typescript@6.0.3)
 
   packages/guest:
+    dependencies:
+      '@scale/model':
+        specifier: workspace:*
+        version: link:../model
+      approx-string-match:
+        specifier: 2.0.1
+        version: 2.0.1
     devDependencies:
       '@recogito/text-annotator':
         specifier: 4.3.7
@@ -102,9 +109,6 @@ importers:
       '@types/react-dom':
         specifier: ^19.3.0
         version: 19.3.0(@types/react@19.3.0)
-      approx-string-match:
-        specifier: 2.0.1
-        version: 2.0.1
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
