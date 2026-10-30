@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
-// Node tests here; the sidebar needs a DOM environment and the Vue plugin,
-// so it is its own project.
+// Node tests here; the sidebar and the management site need a DOM
+// environment and the Vue plugin, so each is its own project.
 export default defineConfig({
   test: {
     projects: [
@@ -16,6 +16,7 @@ export default defineConfig({
         },
       },
       'apps/sidebar/vitest.config.ts',
+      'apps/web/vitest.config.ts',
     ],
   },
 });

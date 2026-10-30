@@ -14,3 +14,8 @@ deploy/helm/**/templates/
 # Playwright output
 apps/sidebar/test-results/
 apps/sidebar/playwright-report/
+apps/web/test-results/
+apps/web/playwright-report/
+# Nuxt build output
+apps/web/.nuxt/
+apps/web/.output/

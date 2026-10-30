@@ -1,0 +1,30 @@
+{
+  "name": "@scale/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Management site (Nuxt): an ordinary client of the public API",
+  "type": "module",
+  "scripts": {
+    "dev": "tsc -b ../../packages/model ../../packages/api-client && nuxt dev",
+    "build": "tsc -b ../../packages/model ../../packages/api-client && nuxt build",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck && tsc --noEmit -p tsconfig.tools.json",
+    "test": "vitest run",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@scale/api-client": "workspace:*",
+    "@scale/model": "workspace:*",
+    "nuxt": "~4.3.1",
+    "oidc-client-ts": "^3.5.0",
+    "vue": "3.5.44",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vue/test-utils": "^2.5.1",
+    "vue-tsc": "^3.3.13"
+  }
+}
