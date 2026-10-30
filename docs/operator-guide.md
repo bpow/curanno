@@ -123,3 +123,16 @@ The OpenAPI document and the text model are versioned contracts (CONTRIBUTING.md
 ## 8. Checks on a new cluster
 
 After the first deployment: `curl https://annotations.example/readyz`; open `https://annotations.example/` and sign in; drag the bookmarklet to the bookmarks bar; annotate a page on an allowed origin and a PDF in the viewer; open the same page in another browser as another user and share an annotation across; confirm the sidebar frame is refused on a page outside `frameAncestors` (the browser's console shows the CSP refusal); scrape `/metrics` from inside the cluster; run a backup and a restore into a scratch database.
+
+## 9. Reproducing the load test
+
+[performance.md](performance.md) records the load test of ACL-filtered search: the data shape, the numbers measured on a laptop and the query plans. To repeat it against a release, or against a candidate Postgres instance:
+
+1. Point `DATABASE_URL` at an empty database you can discard. A local throwaway: `podman run -d --name load-pg --shm-size=1g -p 55432:5432 -e POSTGRES_PASSWORD=postgres postgres:17-alpine`, then `DATABASE_URL=postgres://postgres:postgres@localhost:55432/postgres`. Give the container at least 1 GB of shared memory: Postgres runs the ACL joins in parallel and the 64 MB default fails with "could not resize shared memory segment".
+2. `pnpm load:seed` applies the migrations and writes the data: by default 1 000 000 annotations over 10 000 documents by 5 000 users in 500 groups, a few minutes on a laptop and about 3 GB. `--annotations`, `--documents`, `--users`, `--groups` and `--seed` change the sizes; the same parameters always give the same rows. The database must be empty, or pass `--truncate`.
+3. `pnpm load:run -- --out results.json` builds the API, starts it in a child process against the same database, and drives it as four principals (anonymous, a user in one small group, a user in many groups including the largest, and the most prolific creator) through the container, `/x/search` and the event stream's `Last-Event-ID` replay. It prints a table of p50, p95 and p99 latencies with throughput per scenario, then `EXPLAIN (ANALYZE, BUFFERS)` for the main search queries, and writes everything to the file. `--duration` (seconds per scenario, 10) and `--connections` (10) set the load; `--only <text>` runs the scenarios whose name contains the text.
+
+Postgres settings matter: the ACL check hashes a caller's readable annotations when a query touches many candidates, and at the default `work_mem` of 4 MB that hash and its sort spill to temporary files; 32 to 64 MB keeps them in memory and took 10 to 20% off the heaviest numbers in [performance.md](performance.md).
+
+The run does not touch the identity provider: seeded users belong to an issuer that exists only for the test and the runner signs their tokens with a key it generates. Never run the seed against a database you keep.
+

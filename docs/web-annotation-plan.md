@@ -245,7 +245,7 @@ Success criteria: 1 met for HTML and PDF (bookmarklet suite, `pdf.spec.ts`, and 
 | Recogito single-maintainer dependency | Unfixed upstream bugs | Trial includes the Hypothesis-code alternative; pin versions; be prepared to vendor |
 | Copied Hypothesis or Apache code becomes ours to maintain | Ongoing cost | Keep copied code in one package with a clear provenance file; restrict to anchoring, not UI |
 | Spec-first slows early iteration | Phase 1 drags | Tag `spec-0.1` as "good enough to build"; allow minor-version changes through Phase 4 |
-| ACL filtering in SQL becomes slow at scale | Search latency | Index design in Phase 1; load test in Phase 5 with representative volumes |
+| ACL filtering in SQL becomes slow at scale | Search latency | Index design in Phase 1; load test at representative volumes, with its numbers, plans and the fixes it led to, in [performance.md](performance.md) |
 | OIDC provider differences | Login breaks on a new provider | Test against Keycloak locally and the production provider in Phase 3 |
 | Team unfamiliarity with Fastify or Kysely | Early velocity | Phase 0 spike; both have small surfaces compared with full frameworks |
 
