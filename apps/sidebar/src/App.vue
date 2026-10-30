@@ -25,7 +25,7 @@ watch(
   ([status, uri]) => {
     if (status === 'loading' || !uri) return;
     void profiles.load();
-    void store.load(uri);
+    void store.load(uri).then(() => store.startLive(uri));
   },
   { immediate: true },
 );
@@ -42,6 +42,7 @@ useGuestSync(guest, store);
   <p v-if="auth.error" class="alert" role="alert">{{ auth.error }}</p>
   <main class="content">
     <p v-if="guest.document.value" class="document muted" :title="guest.document.value.uri">
+      <span class="live" :class="store.live" :title="`Live updates: ${store.live}`"></span>
       {{ guest.document.value.title ?? guest.document.value.uri }}
     </p>
     <ProblemAlert :problem="profiles.problem" />
@@ -54,6 +55,19 @@ useGuestSync(guest, store);
 </template>
 
 <style scoped>
+.live {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: var(--muted);
+  margin-right: 0.3em;
+}
+
+.live.open {
+  background: light-dark(#1f8f4e, #5fd38d);
+}
+
 .document {
   margin: 0 0 0.5rem;
   font-size: 0.85em;

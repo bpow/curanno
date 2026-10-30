@@ -10,6 +10,7 @@ import { computed, ref } from 'vue';
 import { annotationUuid, parentIri } from '../api/annotations';
 import { useApi } from '../api/client';
 import { toProblem, unwrap, type Problem } from '../api/problems';
+import { subscribeAnnotationEvents, type LiveStatus } from '../events/subscribe';
 import type { GuestDocument } from '../guest';
 
 const PAGE = 200;
@@ -28,6 +29,8 @@ export const useAnnotationsStore = defineStore('annotations', () => {
   const loading = ref(false);
   const problem = ref<Problem>();
   const registeredDocuments = new Set<string>();
+  const live = ref<LiveStatus>('closed');
+  let liveController: AbortController | undefined;
 
   const all = computed(() => [...items.value.values()]);
   const byCreated = (a: Annotation, b: Annotation) =>
@@ -133,15 +136,44 @@ export const useAnnotationsStore = defineStore('annotations', () => {
   }
 
   /** Merges one event from the stream. Updates for annotations not yet seen are additions. */
-  function applyEvent(kind: AnnotationEventKind, iri: string, annotation?: Annotation): void {
+  function applyEvent(kind: AnnotationEventKind, id: string, annotation?: Annotation): void {
     if (kind === 'deleted') {
-      remove(iri);
+      for (const iri of items.value.keys()) {
+        if (annotationUuid(iri) === id) remove(iri);
+      }
     } else if (annotation) {
       upsert(annotation);
     }
   }
 
+  /** Follows the document's event stream until `stopLive()` or the next `startLive()`. */
+  function startLive(uri: string): void {
+    stopLive();
+    const controller = new AbortController();
+    liveController = controller;
+    void subscribeAnnotationEvents({
+      uri,
+      signal: controller.signal,
+      onStatus: (status) => {
+        if (liveController === controller) live.value = status;
+      },
+      onEvent: (event) => {
+        if (documentUri.value !== uri) return;
+        applyEvent(event.kind, event.id, event.annotation);
+      },
+    });
+  }
+
+  function stopLive(): void {
+    liveController?.abort();
+    liveController = undefined;
+    live.value = 'closed';
+  }
+
   return {
+    live,
+    startLive,
+    stopLive,
     documentUri,
     items,
     loading,
