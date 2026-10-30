@@ -84,10 +84,15 @@ export interface RegisterResult {
   created: boolean;
 }
 
+export interface WarnLogger {
+  warn(obj: unknown, msg?: string): void;
+}
+
 export async function registerDocument(
   db: Kysely<Database>,
   metadata: DocumentMetadata,
   actorId: string,
+  log: WarnLogger = console,
 ): Promise<RegisterResult> {
   const uris = normalizeLinks(metadata);
   return db.transaction().execute(async (trx) => {
@@ -96,6 +101,7 @@ export async function registerDocument(
       uris,
       metadata.title,
       actorId,
+      log,
     );
     const document = await loadDocument(trx, documentId);
     if (!document) throw new Error('document vanished during registration');
@@ -103,28 +109,37 @@ export async function registerDocument(
   });
 }
 
-/** The document a set of URIs identifies, created or merged as needed (docs/document-identity.md, 5 and 6). */
+/**
+ * The document a set of URIs identifies, created as needed (docs/document-identity.md, 5 and 6).
+ *
+ * URIs that already identify another document are left where they are: a
+ * page's links are the page's own claim, and merging the documents they
+ * name would let anyone fold two unrelated documents into one by serving a
+ * page that links to both (security review, finding 2). The conflict is
+ * recorded in the log for an operator to resolve by hand.
+ */
 export async function resolveDocumentForUris(
   trx: Kysely<Database>,
   uris: DocumentUri[],
   title: string | undefined,
   actorId: string | null,
+  log: WarnLogger = console,
 ): Promise<{ documentId: string; created: boolean }> {
   if (uris.length === 0) throw new Error('no usable URI');
   const normalized = uris.map((u) => u.normalized);
   const matches = await trx
     .selectFrom('document_uris')
     .innerJoin('documents', 'documents.id', 'document_uris.document_id')
-    .select(['documents.id', 'documents.created_at'])
-    .distinct()
+    .select(['documents.id', 'documents.created_at', 'document_uris.uri_normalized'])
     .where('uri_normalized', 'in', normalized)
     .orderBy('documents.created_at', 'asc')
     .orderBy('documents.id', 'asc')
     .execute();
+  const documentIds = [...new Set(matches.map((m) => m.id))];
 
   let documentId: string;
   let created = false;
-  if (matches.length === 0) {
+  if (documentIds.length === 0) {
     const doc = await trx
       .insertInto('documents')
       .values({ title: title ?? null })
@@ -133,13 +148,19 @@ export async function resolveDocumentForUris(
     documentId = doc.id;
     created = true;
   } else {
-    documentId = (matches[0] as { id: string }).id;
-    if (matches.length > 1) {
-      await mergeDocuments(
-        trx,
-        documentId,
-        matches.slice(1).map((m) => m.id),
-        actorId,
+    // The page's own URI picks the document when it is known; else the oldest match.
+    const self = uris.find((u) => u.relation === 'self');
+    const ownMatch = self ? matches.find((m) => m.uri_normalized === self.normalized) : undefined;
+    documentId = ownMatch?.id ?? (documentIds[0] as string);
+    if (documentIds.length > 1) {
+      log.warn(
+        {
+          chosen: documentId,
+          others: documentIds.filter((id) => id !== documentId),
+          claimant: self?.normalized,
+          uris: normalized,
+        },
+        'a page links documents that are recorded as distinct; not merged',
       );
     }
     if (title) {
@@ -173,7 +194,12 @@ export async function resolveDocumentForUris(
   return { documentId, created };
 }
 
-async function mergeDocuments(
+/**
+ * Fold documents into one: for an operator who has established that they
+ * are the same (docs/document-identity.md, section 6). Not reachable from
+ * the API.
+ */
+export async function mergeDocuments(
   trx: Kysely<Database>,
   survivor: string,
   others: string[],

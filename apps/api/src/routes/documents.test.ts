@@ -61,7 +61,7 @@ describe.skipIf(!databaseUrl)('documents', () => {
     expect(missing.statusCode).toBe(404);
   });
 
-  it('merges documents that turn out to share a URI, moving annotations', async () => {
+  it('does not merge documents already recorded as distinct when a page links them', async () => {
     const a = await ctx.as(alice, {
       method: 'POST',
       url: '/annotations/',
@@ -86,7 +86,9 @@ describe.skipIf(!databaseUrl)('documents', () => {
     });
     expect(docA.json<{ id: string }>().id).not.toBe(docB.json<{ id: string }>().id);
 
-    const merged = await ctx.as(alice, {
+    // A page at b claims a is its canonical URL. Both documents exist already, so
+    // nothing is merged: the page keeps its own document and a keeps its annotations.
+    const claimed = await ctx.as(alice, {
       method: 'POST',
       url: '/x/documents',
       payload: {
@@ -94,18 +96,34 @@ describe.skipIf(!databaseUrl)('documents', () => {
         links: [{ uri: 'https://a.example/paper', relation: 'canonical' }],
       },
     });
-    expect(merged.statusCode).toBe(200);
-    expect(merged.json<{ id: string }>().id).toBe(docA.json<{ id: string }>().id);
-    const goneDoc = await ctx.as(null, {
+    expect(claimed.statusCode).toBe(200);
+    expect(claimed.json<{ id: string }>().id).toBe(docB.json<{ id: string }>().id);
+    const stillA = await ctx.as(null, {
       method: 'GET',
-      url: `/x/documents/${docB.json<{ id: string }>().id}`,
+      url: `/x/documents/${docA.json<{ id: string }>().id}`,
     });
-    expect(goneDoc.statusCode).toBe(404);
+    expect(stillA.statusCode).toBe(200);
     const search = await ctx.as(alice, {
       method: 'GET',
       url: `/x/search?uri=${encodeURIComponent('https://a.example/paper')}`,
     });
-    expect(search.json<{ total: number }>().total).toBe(2);
+    expect(search.json<{ total: number }>().total).toBe(1);
+
+    // A link to a URI nobody has recorded extends the page's document.
+    const extended = await ctx.as(alice, {
+      method: 'POST',
+      url: '/x/documents',
+      payload: {
+        uri: 'https://b.example/mirror/paper',
+        links: [{ uri: 'https://c.example/copy/paper', relation: 'canonical' }],
+      },
+    });
+    expect(extended.statusCode).toBe(200);
+    const viaC = await ctx.as(null, {
+      method: 'GET',
+      url: `/x/documents?uri=${encodeURIComponent('https://c.example/copy/paper')}`,
+    });
+    expect(viaC.json<{ id: string }>().id).toBe(docB.json<{ id: string }>().id);
   });
 
   it('rejects metadata without a usable URI', async () => {

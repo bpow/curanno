@@ -16,7 +16,7 @@ export function documentHandlers(ctx: AppContext): Handlers {
       const metadata = request.body as DocumentMetadata;
       let result;
       try {
-        result = await registerDocument(db, metadata, caller.userId);
+        result = await registerDocument(db, metadata, caller.userId, request.log);
       } catch (err) {
         if ((err as Error).message === 'no usable URI') {
           throw badRequest('none of the reported URIs identifies a document');

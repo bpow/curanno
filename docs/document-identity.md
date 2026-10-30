@@ -78,17 +78,17 @@ select distinct document_id from document_uris where uri_normalized = any($1)
 
 - No match: create a document with every URI in `S`.
 - One match: add to it any URI in `S` not yet recorded.
-- Several matches: merge them (section 6), then add the missing URIs.
+- Several matches: the page's own URI's document is used when it is known, otherwise the oldest match; URIs in `S` that already belong to another document stay there, and the conflict is logged. Documents are never merged on a client's say-so (section 6).
 
 Search by URI (`GET /x/search?uri=`) normalizes the query URI, resolves it to a document through the same table, and returns that document's annotations. A URI that matches no document yields no results rather than an error.
 
 ## 6. Merging
 
-When one page reports URIs belonging to two or more documents, they are the same document and are merged in one transaction:
+When one page reports URIs belonging to two or more documents, the documents may well be the same, but the page is also the only witness, and any authenticated user can serve a page. Merging on that evidence would let one request fold two unrelated documents into one for everybody, irreversibly (security review, finding 2). So the server records the conflict in its log (the chosen document, the others, the claimant page and the URIs) and does not merge; an operator who has established that the documents are one merges them by hand with `mergeDocuments` in `apps/api/src/documents/service.ts`, which in one transaction:
 
-1. The oldest document survives.
-2. `annotations.document_id`, `targets.document_id` and `document_uris.document_id` of the others are re-pointed to it, and the others are deleted.
-3. An `annotation_events` row of kind `updated` is written for each re-pointed annotation so that open sidebars refresh.
+1. Keeps the oldest document.
+2. Re-points `annotations.document_id`, `targets.document_id` and `document_uris.document_id` of the others to it, and deletes the others.
+3. Writes an `annotation_events` row of kind `updated` for each re-pointed annotation so that open sidebars refresh.
 
 Merging is irreversible by design; the guards in section 4 and the `claimant_normalized` column exist so that a bad merge can be diagnosed and repaired by hand.
 
