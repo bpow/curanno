@@ -369,23 +369,20 @@ function applyFilters(query: AnnotationQuery, f: SearchFilters): AnnotationQuery
   }
   if (f.text !== undefined && f.text.trim() !== '') {
     const tsquery = sql`websearch_to_tsquery('english', ${f.text})`;
-    q = q.where((eb) =>
-      eb.or([
-        eb.exists(
-          eb
-            .selectFrom('bodies')
-            .select('bodies.id')
-            .whereRef('bodies.annotation_id', '=', 'annotations.id')
-            .where(sql<boolean>`bodies.text_search @@ ${tsquery}`),
-        ),
-        eb.exists(
+    // The matching ids come from the two GIN indexes as one set. Written as
+    // an OR of correlated EXISTS clauses the condition was evaluated per
+    // annotation and used neither index (docs/performance.md).
+    q = q.where('annotations.id', 'in', (eb) =>
+      eb
+        .selectFrom('bodies')
+        .select('bodies.annotation_id')
+        .where(sql<boolean>`bodies.text_search @@ ${tsquery}`)
+        .union(
           eb
             .selectFrom('targets')
-            .select('targets.id')
-            .whereRef('targets.annotation_id', '=', 'annotations.id')
+            .select('targets.annotation_id')
             .where(sql<boolean>`targets.quote_search @@ ${tsquery}`),
         ),
-      ]),
     );
   }
   return q;
