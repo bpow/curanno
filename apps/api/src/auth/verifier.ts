@@ -53,7 +53,11 @@ export function createTokenVerifier(options: VerifierOptions): TokenVerifier {
     const getKey = await keys;
     let payload: JWTPayload;
     try {
-      ({ payload } = await jwtVerify(token, getKey, { issuer: options.issuer }));
+      // A little tolerance for clock skew between the provider and this server.
+      ({ payload } = await jwtVerify(token, getKey, {
+        issuer: options.issuer,
+        clockTolerance: 30,
+      }));
     } catch (err) {
       if (err instanceof errors.JOSEError) throw unauthorized(`invalid bearer token: ${err.code}`);
       throw err;

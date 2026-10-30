@@ -32,6 +32,9 @@ export interface AuthOptions extends CallerOptions {
   cacheMs?: number;
 }
 
+/** Live tokens kept at most; beyond it the oldest are re-verified on their next request. */
+const MAX_CACHED = 10_000;
+
 export function installAuth(app: FastifyInstance, options: AuthOptions): void {
   const cacheMs = options.cacheMs ?? 60_000;
   const cache = new Map<string, { caller: UserCaller; expiresAt: number }>();
@@ -56,8 +59,13 @@ export function installAuth(app: FastifyInstance, options: AuthOptions): void {
     const caller = await resolveCaller(options.db, claims, options);
     const tokenExpiry = claims.expiresAt === undefined ? Infinity : claims.expiresAt * 1000;
     cache.set(token, { caller, expiresAt: Math.min(now + cacheMs, tokenExpiry) });
-    if (cache.size > 10_000) {
+    if (cache.size > MAX_CACHED) {
       for (const [key, entry] of cache) if (entry.expiresAt <= now) cache.delete(key);
+      // Still too many live entries: drop the oldest, which a Map keeps first.
+      for (const key of cache.keys()) {
+        if (cache.size <= MAX_CACHED) break;
+        cache.delete(key);
+      }
     }
     request.caller = caller;
   });
