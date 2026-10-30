@@ -81,7 +81,9 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
   let closed = false;
 
   function post(target: PortLike, message: Payload<SidebarMessage>): void {
-    target.postMessage(envelope(message));
+    // Targets arrive as reactive proxies from the store, which structured
+    // clone refuses; the protocol is plain JSON in any case.
+    target.postMessage(JSON.parse(JSON.stringify(envelope(message))));
   }
 
   /** Sends to the connected guest; dropped when there is none. */
