@@ -95,6 +95,25 @@ describe.skipIf(!databaseUrl)('authentication', () => {
     ).toEqual(['Bob Reviewer']);
   });
 
+  it('shows a user their own email and memberships, and other users neither', async () => {
+    const me = await ctx.as(
+      { ...alice, email: 'alice@partner.example', groups: ['curators'] },
+      { method: 'GET', url: '/x/me' },
+    );
+    const aliceId = me.json<{ id: string; email?: string; groups: unknown[] }>();
+    expect(aliceId.email).toBe('alice@partner.example');
+    expect(aliceId.groups.length).toBeGreaterThan(0);
+    const seenByBob = await ctx.as(bob, { method: 'GET', url: `/x/users/${aliceId.id}` });
+    const other = seenByBob.json<{ email?: string; groups: unknown[] }>();
+    expect(other.email).toBeUndefined();
+    expect(other.groups).toEqual([]);
+    // Principal search matches display names, never email addresses.
+    const byEmail = await ctx.as(bob, { method: 'GET', url: '/x/principals?q=partner.example' });
+    expect(byEmail.json<unknown[]>()).toEqual([]);
+    const byName = await ctx.as(bob, { method: 'GET', url: '/x/principals?q=alice' });
+    expect(byName.json<{ name?: string }[]>().map((p) => p.name)).toEqual(['Alice Annotator']);
+  });
+
   it('grants and withdraws administration through the admin group', async () => {
     const admin = await ctx.as(root, { method: 'GET', url: '/x/me' });
     expect(admin.json<{ isAdmin: boolean }>().isAdmin).toBe(true);

@@ -590,8 +590,10 @@ paths:
       operationId: lookupDocument
       tags: [documents]
       summary: Find the document a URI identifies
+      description: >-
+        Needs a token: the equivalent URIs of a document, intranet addresses and
+        PDF fingerprints among them, are not public information.
       security:
-        - {}
         - bearerAuth: []
       parameters:
         - name: uri
@@ -609,6 +611,8 @@ paths:
                 $ref: '#/components/schemas/Document'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
   /x/documents/{id}:
@@ -617,7 +621,6 @@ paths:
       tags: [documents]
       summary: Retrieve a document
       security:
-        - {}
         - bearerAuth: []
       parameters:
         - name: id
@@ -633,6 +636,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Document'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -764,6 +769,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /x/principals:
     get:
       operationId: searchPrincipals
@@ -1002,6 +1009,7 @@ components:
       schema:
         type: integer
         minimum: 0
+        maximum: 1000000
     iris:
       name: iris
       in: query
@@ -2008,6 +2016,7 @@ components:
           const: TextualBody
         value:
           type: string
+          maxLength: 100000
         format:
           type: string
         language:
@@ -2179,6 +2188,7 @@ components:
                 $ref: '#/components/schemas/Body'
         bodyValue:
           type: string
+          maxLength: 100000
         target:
           anyOf:
             - $ref: '#/components/schemas/Target'
@@ -2282,6 +2292,7 @@ components:
                 $ref: '#/components/schemas/Body'
         bodyValue:
           type: string
+          maxLength: 100000
         target:
           anyOf:
             - $ref: '#/components/schemas/Target'

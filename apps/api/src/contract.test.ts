@@ -197,7 +197,7 @@ describe.skipIf(!databaseUrl)('OpenAPI contract', () => {
   run('lookupDocument', [
     {
       name: 'finds by equivalent URI',
-      as: null,
+      as: alice,
       status: 200,
       request: () => ({
         method: 'GET',
@@ -206,7 +206,7 @@ describe.skipIf(!databaseUrl)('OpenAPI contract', () => {
     },
     {
       name: '404 for unknown URIs',
-      as: null,
+      as: alice,
       status: 404,
       request: () => ({
         method: 'GET',
@@ -215,23 +215,38 @@ describe.skipIf(!databaseUrl)('OpenAPI contract', () => {
     },
     {
       name: '400 without uri',
-      as: null,
+      as: alice,
       status: 400,
       request: () => ({ method: 'GET', url: '/x/documents' }),
+    },
+    {
+      name: 'needs a token',
+      as: null,
+      status: 401,
+      request: () => ({
+        method: 'GET',
+        url: `/x/documents?uri=${encodeURIComponent('https://example.org/canonical/contract')}`,
+      }),
     },
   ]);
   run('getDocument', [
     {
       name: 'by id',
-      as: null,
+      as: alice,
       status: 200,
       request: () => ({ method: 'GET', url: `/x/documents/${state['documentId']}` }),
     },
     {
       name: '404',
-      as: null,
+      as: alice,
       status: 404,
       request: () => ({ method: 'GET', url: `/x/documents/${NIL}` }),
+    },
+    {
+      name: 'needs a token',
+      as: null,
+      status: 401,
+      request: () => ({ method: 'GET', url: `/x/documents/${state['documentId']}` }),
     },
   ]);
 
@@ -720,6 +735,16 @@ describe.skipIf(!databaseUrl)('OpenAPI contract', () => {
       name: '403',
       as: alice,
       status: 403,
+      request: () => ({
+        method: 'PATCH',
+        url: `/x/users/${state['bobId']}`,
+        payload: { isAdmin: true },
+      }),
+    },
+    {
+      name: '409 when the identity provider decides who administers',
+      as: root,
+      status: 409,
       request: () => ({
         method: 'PATCH',
         url: `/x/users/${state['bobId']}`,

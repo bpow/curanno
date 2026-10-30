@@ -46,15 +46,15 @@ describe.skipIf(!databaseUrl)('documents', () => {
     expect(extended.id).toBe(doc.id);
     expect(extended.uris.map((u) => u.relation).sort()).toEqual(['self', 'shortlink']);
 
-    const lookup = await ctx.as(null, {
+    const lookup = await ctx.as(alice, {
       method: 'GET',
       url: `/x/documents?uri=${encodeURIComponent('https://example.org/short/p1')}`,
     });
     expect(lookup.statusCode).toBe(200);
     expect(lookup.json<{ id: string }>().id).toBe(doc.id);
-    const byId = await ctx.as(null, { method: 'GET', url: `/x/documents/${doc.id}` });
+    const byId = await ctx.as(alice, { method: 'GET', url: `/x/documents/${doc.id}` });
     expect(byId.statusCode).toBe(200);
-    const missing = await ctx.as(null, {
+    const missing = await ctx.as(alice, {
       method: 'GET',
       url: `/x/documents?uri=${encodeURIComponent('https://example.org/nothing')}`,
     });
@@ -76,11 +76,11 @@ describe.skipIf(!databaseUrl)('documents', () => {
     });
     expect(a.statusCode).toBe(201);
     expect(b.statusCode).toBe(201);
-    const docA = await ctx.as(null, {
+    const docA = await ctx.as(alice, {
       method: 'GET',
       url: `/x/documents?uri=${encodeURIComponent('https://a.example/paper')}`,
     });
-    const docB = await ctx.as(null, {
+    const docB = await ctx.as(alice, {
       method: 'GET',
       url: `/x/documents?uri=${encodeURIComponent('https://b.example/mirror/paper')}`,
     });
@@ -98,7 +98,7 @@ describe.skipIf(!databaseUrl)('documents', () => {
     });
     expect(claimed.statusCode).toBe(200);
     expect(claimed.json<{ id: string }>().id).toBe(docB.json<{ id: string }>().id);
-    const stillA = await ctx.as(null, {
+    const stillA = await ctx.as(alice, {
       method: 'GET',
       url: `/x/documents/${docA.json<{ id: string }>().id}`,
     });
@@ -119,7 +119,7 @@ describe.skipIf(!databaseUrl)('documents', () => {
       },
     });
     expect(extended.statusCode).toBe(200);
-    const viaC = await ctx.as(null, {
+    const viaC = await ctx.as(alice, {
       method: 'GET',
       url: `/x/documents?uri=${encodeURIComponent('https://c.example/copy/paper')}`,
     });

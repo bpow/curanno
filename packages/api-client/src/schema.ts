@@ -191,7 +191,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Find the document a URI identifies */
+        /**
+         * Find the document a URI identifies
+         * @description Needs a token: the equivalent URIs of a document, intranet addresses and PDF fingerprints among them, are not public information.
+         */
         get: operations["lookupDocument"];
         put?: never;
         /**
@@ -1612,6 +1615,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
         };
     };
@@ -1670,6 +1674,7 @@ export interface operations {
                     "application/json": components["schemas"]["Document"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
         };
     };
@@ -1802,6 +1807,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     searchPrincipals: {
