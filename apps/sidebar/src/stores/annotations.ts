@@ -93,7 +93,11 @@ export const useAnnotationsStore = defineStore('annotations', () => {
     if (registeredDocuments.has(doc.uri)) return;
     unwrap(
       await useApi().POST('/x/documents', {
-        body: { uri: doc.uri, ...(doc.title ? { title: doc.title } : {}), links: doc.links },
+        body: {
+          uri: doc.uri,
+          ...(doc.title ? { title: doc.title } : {}),
+          links: doc.links.map(({ uri, relation }) => ({ uri, relation })),
+        },
       }),
     );
     registeredDocuments.add(doc.uri);

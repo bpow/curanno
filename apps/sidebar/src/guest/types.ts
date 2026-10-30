@@ -1,39 +1,16 @@
 /**
  * Everything the sidebar needs from the in-page guest (ADR 0007). The guest
  * sees selectors and annotation identifiers only: no bodies, tags, authors or
- * tokens cross this boundary in either direction. The real implementation
- * speaks the postMessage RPC whose message types live in `@scale/model`
- * (see TODO.md); the fake in `fake.ts` serves development and tests.
+ * tokens cross this boundary in either direction. The document, selection
+ * and request shapes are the RPC protocol's own (`@scale/model`, `rpc/`),
+ * which `rpc.ts` speaks over postMessage; the fake in `fake.ts` serves
+ * development and tests.
  */
-import type { components } from '@scale/api-client';
-import type { AnchoredTarget, AnchoringState, OneOrMany, Target } from '@scale/model';
+import type { AnchoringState } from '@scale/model';
 import type { Ref } from 'vue';
 
-export type DocumentLink = components['schemas']['DocumentLink'];
-
-/** The identity of the page the guest runs in (docs/document-identity.md). */
-export interface GuestDocument {
-  /** The page's own URL. */
-  uri: string;
-  title?: string;
-  /** Equivalent identifiers found in the page, for `registerDocument`. */
-  links: DocumentLink[];
-}
-
-/** A selection the user made in the page, described per the text model. */
-export interface GuestSelection {
-  /** The target to annotate: the page as source with the selectors describing the range. */
-  target: AnchoredTarget;
-  /** The selected text, for display in the sidebar only. */
-  quote: string;
-}
-
-/** What the sidebar hands the guest to anchor: an annotation's identifier and targets. */
-export interface AnchorRequest {
-  /** The annotation IRI. */
-  id: string;
-  target: OneOrMany<Target>;
-}
+export type { AnchorRequest, DocumentLink, GuestDocument, GuestSelection } from '@scale/model';
+import type { AnchorRequest, GuestDocument, GuestSelection } from '@scale/model';
 
 export interface Guest {
   /** Undefined until the guest has reported the page. */
