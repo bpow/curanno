@@ -57,6 +57,11 @@ export type Annotation = {
   /** Groups the parts of a discontiguous selection. */
   partOf?: string;
   select: Selection;
+  /**
+   * The selection lies in content the text model excludes (ADR 0013):
+   * describing it must fail, it has no selectors and is not anchored.
+   */
+  notAnnotatable?: boolean;
   selectors?: Selector[];
   /** Keyed by variant id. A missing key means `select.exact` is expected. */
   expected?: Record<string, Expectation>;

@@ -38,6 +38,7 @@ Every case has a variant with id `original`. Selectors are always generated agai
       "description": "Short quote whose number changes in the edit",
       "partOf": "permissions",           // optional: groups parts of a discontiguous selection
       "select": { "exact": "Four members supported it", "occurrence": 1, "scope": "#acl + p" },
+      "notAnnotatable": false,           // optional: true when `select` lies in excluded content
       "expected": {
         "edited": { "exact": "Five members supported it", "prefix": "...", "suffix": "..." }
       },
@@ -48,10 +49,11 @@ Every case has a variant with id `original`. Selectors are always generated agai
 ```
 
 - **`select`** is the authoring input: the text of the original variant that the annotation covers, as the `occurrence`th (1-based, default 1) occurrence of `exact` inside the element matched by `scope` (default: the root). `exact` is matched against `textContent`, so a quote across a `<br>` or a PDF line break has no separator at the break, and a quote across source lines inside a paragraph contains the newline.
-- **`selectors`** are generated from `select` by `pnpm --filter @scale/guest corpus:describe` and committed. Three selectors are stored per annotation:
-  - `TextQuoteSelector` with `exact` and 32 characters of `prefix` and `suffix`;
-  - `TextPositionSelector` with `start` and `end`;
-  - `RangeSelector` whose `startSelector` and `endSelector` are `XPathSelector`s of the form `/article[1]/p[2]` relative to the root, each `refinedBy` a `TextPositionSelector` giving the character offset within that element. (The W3C model's shape, not the Hypothesis client's `startContainer`/`startOffset` shape; the harness converts for that candidate.)
+- **`selectors`** are generated from `select` by `pnpm --filter @scale/guest corpus:describe`, which runs the guest's own `describe`, and committed. Three selectors are stored per annotation, on the project text model (next section):
+  - `TextQuoteSelector` with `exact` and 32 code points of `prefix` and `suffix`;
+  - `TextPositionSelector` with `start` and `end` in code points;
+  - `RangeSelector` whose `startSelector` and `endSelector` are `XPathSelector`s of the form `/article[1]/p[2]` relative to the root, each `refinedBy` a `TextPositionSelector` giving the code point offset within that element's own text. (The W3C model's shape, not the Hypothesis client's `startContainer`/`startOffset` shape; the harness converts for that candidate.)
+- **`notAnnotatable`** marks a selection that lies in content the text model excludes (`<noscript>`, hidden or `aria-hidden` content, ADR 0013). `corpus:describe` checks that the guest refuses to describe it; it has no selectors and the trial does not anchor it.
 - **`expected`** says, per variant, what the right answer is. A missing entry means `select.exact` should be found. `{ "exact": "..." }` names changed text that the annotation should now cover; `prefix` and `suffix` disambiguate when the text occurs more than once in that variant. `{ "mustNotMatch": true, "reason": "..." }` means the text is gone and anything returned is a wrong anchor.
 - **`partOf`** marks the parts of one discontiguous selection (W3C: one annotation, several targets). Each part is anchored and counted on its own.
 
@@ -59,9 +61,9 @@ Annotations may also carry hand-written `selectors` without running `corpus:desc
 
 ## Text model used by the corpus
 
-Offsets are UTF-16 code units into the anchoring root's `textContent`, in document order, with hidden and excluded content counted and nothing substituted for `<br>`. That is the model the candidates under trial share (Hypothesis and Recogito both count UTF-16 units; Recogito additionally skips `.not-annotatable` subtrees, which the `synth-hidden` case exposes), so each candidate is measured on its own terms.
+The stored selectors follow the project text model ([docs/text-model.md](../../../docs/text-model.md), ADR 0012 and 0013): code points of NFC text, CSS-like whitespace collapsing, `<br>` as a line feed, and hidden, `aria-hidden`, `<noscript>` and `data-annotatable="false"` content excluded. A quote therefore reads like the rendered page (`foo bar`, not `foo \n  bar`), and a quote across hidden text omits it.
 
-The project's text model (ADR 0012 and ADR 0013 from Phase 1) is different: code points of NFC text, CSS-like whitespace collapsing, `<br>` as a line feed, and hidden, `aria-hidden` and `data-annotatable="false"` content excluded. When the guest is built on `packages/model`'s text model in Phase 4, teach `trial/src/browser/text.ts` to describe and locate through that implementation and regenerate the selectors with `corpus:describe --force`. The `select` inputs and `expected` texts are plain strings of the visible text and do not depend on the offset unit, so the corpus survives the change; only the generated `selectors` are replaced.
+The authoring inputs and the measurements use plain `textContent` instead, because every candidate can be mapped to it: `select.exact` and `expected.exact` are matched against the root's `textContent` (so they include hidden text and source whitespace where the page has them), and a candidate's answer is compared as UTF-16 offsets into that `textContent`. This is why the corpus survived the move from the Phase 2 candidates' UTF-16 model to the project model: only the generated `selectors` were replaced, with `corpus:describe --force`.
 
 ## Cases
 
