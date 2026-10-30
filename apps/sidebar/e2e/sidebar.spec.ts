@@ -1,8 +1,9 @@
 /**
  * Two users, one document: alice annotates, bob sees nothing until alice
  * shares with him, then follows her edit and deletion live over the event
- * stream. Uses the development guest (no page) and the compose Keycloak
- * users; every run annotates a fresh document URI.
+ * stream, and his guest is asked to anchor and then to unanchor the
+ * annotation as it arrives and goes. Uses the development guest (no page)
+ * and the compose Keycloak users; every run annotates a fresh document URI.
  */
 import { expect, test, type Page } from '@playwright/test';
 
@@ -60,6 +61,10 @@ test('alice annotates, shares with bob, and bob follows the changes live', async
   const bobCard = bob.locator('article.card').first();
   await expect(bobCard).toContainText('Segregation evidence from the family study');
   await expect(bobCard.getByRole('button', { name: 'Edit' })).toHaveCount(0);
+  // Bob's guest was asked to anchor it, so a real page would show the highlight.
+  await bob.getByText('Development guest').click();
+  const bobGuestCalls = bob.getByRole('list', { name: 'Guest calls' });
+  await expect(bobGuestCalls).toContainText('anchor 1');
 
   // Alice edits; bob sees the new text without reloading.
   await aliceCard.getByRole('button', { name: 'Edit' }).click();
@@ -82,6 +87,7 @@ test('alice annotates, shares with bob, and bob follows the changes live', async
   await aliceCard.getByRole('button', { name: 'Delete' }).click();
   await expect(alice.locator('article.card:not(.reply)')).toHaveCount(0);
   await expect(bob.locator('article.card:not(.reply)')).toHaveCount(0);
+  await expect(bobGuestCalls).toContainText('unanchor 1');
 
   await aliceContext.close();
   await bobContext.close();
