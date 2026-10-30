@@ -1,4 +1,4 @@
-import type { Membership, PrincipalRef } from '@scale/api-client';
+import type { Membership, PrincipalRef } from '@curanno/api-client';
 import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { API_KEY } from '../api/client';

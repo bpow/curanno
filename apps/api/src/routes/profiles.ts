@@ -1,4 +1,4 @@
-import type { components } from '@scale/api-client';
+import type { components } from '@curanno/api-client';
 import { requireAdmin } from '../auth/plugin.js';
 import { conflict, notFound } from '../problems.js';
 import { ConflictError } from '../profiles/service.js';

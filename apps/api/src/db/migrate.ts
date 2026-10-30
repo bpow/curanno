@@ -1,7 +1,7 @@
 /**
  * Applies the plain SQL migrations in apps/api/migrations in file order,
  * recording each in `schema_migrations`. Each file runs in its own
- * transaction. Run with `pnpm --filter @scale/api migrate`, or call
+ * transaction. Run with `pnpm --filter @curanno/api migrate`, or call
  * `migrate()` from tests.
  */
 import { readdirSync, readFileSync } from 'node:fs';

@@ -1,5 +1,5 @@
 {
-  "name": "@scale/pdf-viewer",
+  "name": "@curanno/pdf-viewer",
   "version": "0.0.0",
   "private": true,
   "description": "PDF.js viewer page served from our origin, with the guest built in",
@@ -11,8 +11,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json"
   },
   "dependencies": {
-    "@scale/guest": "workspace:*",
-    "@scale/model": "workspace:*",
+    "@curanno/guest": "workspace:*",
+    "@curanno/model": "workspace:*",
     "pdfjs-dist": "6.4.299"
   },
   "devDependencies": {

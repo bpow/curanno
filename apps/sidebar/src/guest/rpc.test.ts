@@ -5,7 +5,7 @@ import {
   type GuestMessage,
   type Payload,
   type SidebarMessage,
-} from '@scale/model';
+} from '@curanno/model';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createRpcGuest, type MessageEventLike, type PortLike, type WindowLike } from './rpc';
 

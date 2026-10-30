@@ -5,7 +5,7 @@
  * calls are logged so a developer can see the sidebar's side of the
  * conversation.
  */
-import type { AnchoringState } from '@scale/model';
+import type { AnchoringState } from '@curanno/model';
 import { computed, ref, shallowReadonly, shallowRef, type Ref } from 'vue';
 import type { AnchorRequest, DocumentSelection, Guest, GuestDocument } from './types';
 

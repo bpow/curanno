@@ -12,7 +12,7 @@ import {
   type Body,
   type Selector,
   type Target,
-} from '@scale/model';
+} from '@curanno/model';
 import { unprocessable } from '../problems.js';
 
 /** Marks in `targets.data` how the target was expressed, so it is returned the same way. */

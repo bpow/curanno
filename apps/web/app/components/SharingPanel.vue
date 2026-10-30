@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { AclEntry, Permission, PrincipalRef } from '@scale/api-client';
-import { PERMISSIONS } from '@scale/model';
+import type { AclEntry, Permission, PrincipalRef } from '@curanno/api-client';
+import { PERMISSIONS } from '@curanno/model';
 import { computed, ref, watch } from 'vue';
 import { useApi } from '../api/client';
 import { useAction, useRequest } from '../composables/request';

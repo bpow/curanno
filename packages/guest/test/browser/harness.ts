@@ -38,7 +38,7 @@ export async function startHarness(): Promise<Harness> {
     format: 'iife',
     target: 'es2022',
     outdir: BUILD_DIR,
-    alias: { '@scale/model': path.resolve(PACKAGE_DIR, '../model/src/index.ts') },
+    alias: { '@curanno/model': path.resolve(PACKAGE_DIR, '../model/src/index.ts') },
     logLevel: 'warning',
   });
   const [host, sidebar] = await Promise.all([

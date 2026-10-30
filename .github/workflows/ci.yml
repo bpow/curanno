@@ -61,9 +61,9 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @scale/guest exec playwright install --with-deps chromium
-      - run: pnpm --filter @scale/guest test:browser
-      - run: pnpm --filter @scale/guest trial
+      - run: pnpm --filter @curanno/guest exec playwright install --with-deps chromium
+      - run: pnpm --filter @curanno/guest test:browser
+      - run: pnpm --filter @curanno/guest trial
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -112,8 +112,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm --filter @scale/api migrate
-      - run: pnpm --filter @scale/sidebar exec playwright install --with-deps chromium
+      - run: pnpm --filter @curanno/api migrate
+      - run: pnpm --filter @curanno/sidebar exec playwright install --with-deps chromium
       - name: Wait for Keycloak
         run: |
           for i in $(seq 1 90); do
@@ -122,7 +122,7 @@ jobs:
           done
           docker logs keycloak
           exit 1
-      - run: pnpm --filter @scale/sidebar e2e
+      - run: pnpm --filter @curanno/sidebar e2e
       # Discovery, the JWKS and a real token from this Keycloak, accepted by the API.
       - run: pnpm vitest run apps/api/src/auth/oidc-live.test.ts
         env:
@@ -151,11 +151,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm --filter @scale/guest bundle
-      - run: pnpm --filter @scale/sidebar build
-      - run: pnpm --filter @scale/pdf-viewer build
-      - run: pnpm --filter @scale/sidebar exec playwright install --with-deps chromium
-      - run: pnpm --filter @scale/sidebar e2e:guest
+      - run: pnpm --filter @curanno/guest bundle
+      - run: pnpm --filter @curanno/sidebar build
+      - run: pnpm --filter @curanno/pdf-viewer build
+      - run: pnpm --filter @curanno/sidebar exec playwright install --with-deps chromium
+      - run: pnpm --filter @curanno/sidebar e2e:guest
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -202,8 +202,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm --filter @scale/api migrate
-      - run: pnpm --filter @scale/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @curanno/api migrate
+      - run: pnpm --filter @curanno/web exec playwright install --with-deps chromium
       - name: Wait for Keycloak
         run: |
           for i in $(seq 1 90); do
@@ -212,7 +212,7 @@ jobs:
           done
           docker logs keycloak
           exit 1
-      - run: pnpm --filter @scale/web e2e
+      - run: pnpm --filter @curanno/web e2e
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

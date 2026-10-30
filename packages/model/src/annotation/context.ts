@@ -22,7 +22,7 @@ const ns = EXTENSION_NAMESPACE;
 export const EXTENSION_CONTEXT_DOCUMENT = {
   '@context': {
     '@version': 1.1,
-    scale: ns,
+    curanno: ns,
     // Bodies validated against a registered profile (ADR 0016).
     StructuredBody: `${ns}StructuredBody`,
     profile: { '@id': `${ns}profile`, '@type': '@id' },

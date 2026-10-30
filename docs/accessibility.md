@@ -18,13 +18,13 @@ What the platform's clients do for people who use a keyboard, a screen reader, h
 | Keyboard: Tab reaches the quote button and every card action in order; focusing a card emphasises its highlight; Enter on the quote scrolls the page to it | same | same |
 | Forced colours: the highlighted text is drawn differently from the page beside it | same | same |
 | axe over the management site's landing page and groups page | `apps/web/e2e/groups.spec.ts` | CI `web-e2e` |
-| Accessibility tree unchanged by highlights; tab stops unchanged; forced-colours visibility of the highlight techniques | `pnpm --filter @scale/guest trial:a11y` (`packages/guest/trial/results/a11y.json`) | by hand, Phase 2 evaluation tooling |
+| Accessibility tree unchanged by highlights; tab stops unchanged; forced-colours visibility of the highlight techniques | `pnpm --filter @curanno/guest trial:a11y` (`packages/guest/trial/results/a11y.json`) | by hand, Phase 2 evaluation tooling |
 
 axe-core is MPL-2.0 and admitted as a development-only dependency by ADR 0022.
 
 ## What a person must check with a screen reader
 
-Automated rules cannot tell whether the experience makes sense. Before each release, a person runs through the following with VoiceOver (Safari and Chrome on macOS) and NVDA (Firefox and Chrome on Windows), against the compose stack with the bookmarklet on a corpus page (`pnpm --filter @scale/guest dev -- --sidebar-origin http://localhost:5173`) and on a PDF in the viewer. Record the date, software versions and findings in the release notes.
+Automated rules cannot tell whether the experience makes sense. Before each release, a person runs through the following with VoiceOver (Safari and Chrome on macOS) and NVDA (Firefox and Chrome on Windows), against the compose stack with the bookmarklet on a corpus page (`pnpm --filter @curanno/guest dev -- --sidebar-origin http://localhost:5173`) and on a PDF in the viewer. Record the date, software versions and findings in the release notes.
 
 1. **Finding the sidebar.** From the page, does the screen reader reach the "Annotations" frame, and is the frame's title read? Is the sign-in button announced, and does the popup sign-in complete with focus returning to the sidebar?
 2. **Reading the list.** Are cards announced with the author's name, the quoted text, the comment, tags and the anchoring state ("Orphaned" badge)? Does a new annotation arriving from another user get announced by the live region without stealing focus?

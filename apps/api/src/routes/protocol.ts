@@ -3,7 +3,7 @@
  * annotation resources with ETags and conditional requests.
  */
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import type { AnnotationInput } from '@scale/model';
+import type { AnnotationInput } from '@curanno/model';
 import { parseAnnotationInput } from '../annotations/input.js';
 import {
   annotationIri,

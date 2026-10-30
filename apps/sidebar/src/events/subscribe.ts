@@ -3,7 +3,7 @@
  * alive: on any disconnection it reconnects with the last event id, so
  * nothing is missed while the connection was down.
  */
-import type { Annotation } from '@scale/api-client';
+import type { Annotation } from '@curanno/api-client';
 import { useApi } from '../api/client';
 import { parseEventStream } from './sse';
 

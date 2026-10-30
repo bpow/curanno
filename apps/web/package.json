@@ -1,5 +1,5 @@
 {
-  "name": "@scale/web",
+  "name": "@curanno/web",
   "version": "0.0.0",
   "private": true,
   "description": "Management site (Nuxt): an ordinary client of the public API",
@@ -14,9 +14,9 @@
     "e2e": "playwright test"
   },
   "dependencies": {
-    "@scale/api-client": "workspace:*",
-    "@scale/guest": "workspace:*",
-    "@scale/model": "workspace:*",
+    "@curanno/api-client": "workspace:*",
+    "@curanno/guest": "workspace:*",
+    "@curanno/model": "workspace:*",
     "nuxt": "~4.6.3",
     "oidc-client-ts": "^3.5.0",
     "vue": "3.5.44",

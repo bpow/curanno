@@ -5,7 +5,7 @@
  * sidebar takes. It also keeps pretend secrets in its own DOM and storage,
  * which the isolation test checks never reach the host page.
  */
-import type { AnchorRequest, GuestMessage } from '@scale/model';
+import type { AnchorRequest, GuestMessage } from '@curanno/model';
 import { FAKE_SECRETS, FakeSidebar } from './fake-sidebar.js';
 
 declare global {

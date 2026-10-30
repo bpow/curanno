@@ -6,7 +6,7 @@ The script the bookmarklet injects into an annotated page (ADR 0007, 0008). It h
 
 | Path                 | Role                                                                                                  |
 | -------------------- | ----------------------------------------------------------------------------------------------------- |
-| `src/anchoring/`     | Selectors to ranges and back, on the text model from `@scale/model` (ADR 0012, 0013, 0017)             |
+| `src/anchoring/`     | Selectors to ranges and back, on the text model from `@curanno/model` (ADR 0012, 0013, 0017)             |
 | `src/highlights/`    | CSS Custom Highlight API renderer, overlay fallback, hit testing                                       |
 | `src/observers/`     | Mutation and selection observers                                                                      |
 | `src/integrations/`  | Where the text is and when it changed: an HTML page, or a PDF.js viewer with pages that come and go  |
@@ -16,7 +16,7 @@ The script the bookmarklet injects into an annotated page (ADR 0007, 0008). It h
 | `scripts/`           | `bundle` (esbuild), `bookmarklet`, `dev` (two-origin development server), `serve-corpus`, `serve`    |
 | `dev/`               | Sample host page and the fake sidebar page                                                            |
 | `test/browser/`      | Playwright tests: text-model fixtures in Chromium, RPC against the fake sidebar, hostile host page    |
-| `trial/`, `corpus/`  | The [anchoring regression suite](trial/README.md); `pnpm --filter @scale/guest trial` is the gate     |
+| `trial/`, `corpus/`  | The [anchoring regression suite](trial/README.md); `pnpm --filter @curanno/guest trial` is the gate     |
 | `vendor/hypothesis/` | The Hypothesis anchoring modules the port derives from, kept verbatim with their notice               |
 
 ## Frames and PDFs
@@ -30,20 +30,20 @@ The bundle runs one guest per frame. In the top frame the guest is the **host**:
 ## Trying it
 
 ```bash
-pnpm --filter @scale/guest dev
+pnpm --filter @curanno/guest dev
 ```
 
 serves a sample page on `127.0.0.1:5180` and the fake sidebar plus the bundle on `localhost:5181`, rebuilds on change, and prints a bookmarklet that works on any http page (an https page blocks the http bundle as mixed content). Corpus pages are at `/cases/<case>/<file>.html` on the first origin. In the fake sidebar, select text in the page and press "Annotate selection".
 
-With `-- --sidebar-origin http://localhost:5173` the guest opens the real sidebar from `pnpm --filter @scale/sidebar dev` instead (`--sidebar-path` defaults to `/sidebar/`, where the sidebar app lives), so the whole client runs against the API and Keycloak; the repository README has the full recipe. `pnpm --filter @scale/guest serve:corpus -- --host 127.0.0.1 --port 4180` serves the corpus and the built bundle alone, for the sidebar's bookmarklet suite.
+With `-- --sidebar-origin http://localhost:5173` the guest opens the real sidebar from `pnpm --filter @curanno/sidebar dev` instead (`--sidebar-path` defaults to `/sidebar/`, where the sidebar app lives), so the whole client runs against the API and Keycloak; the repository README has the full recipe. `pnpm --filter @curanno/guest serve:corpus -- --host 127.0.0.1 --port 4180` serves the corpus and the built bundle alone, for the sidebar's bookmarklet suite.
 
 For a deployment, build the bundle and generate the bookmarklet for where it and the sidebar are served:
 
 ```bash
-pnpm --filter @scale/guest bundle
-pnpm --filter @scale/guest bookmarklet -- --bundle-url https://annotations.example/guest.js --sidebar-origin https://annotations.example --sidebar-path /sidebar/
+pnpm --filter @curanno/guest bundle
+pnpm --filter @curanno/guest bookmarklet -- --bundle-url https://annotations.example/guest.js --sidebar-origin https://annotations.example --sidebar-path /sidebar/
 ```
 
 ## Tests
 
-`pnpm test` runs the unit tests (anchoring over happy-dom, the RPC over Node's `MessageChannel`, configuration, document metadata). `pnpm --filter @scale/guest test:browser` runs the Playwright suite and `pnpm --filter @scale/guest trial` the corpus; both need `pnpm --filter @scale/guest exec playwright install chromium` once and run in CI's `guest-trial` job.
+`pnpm test` runs the unit tests (anchoring over happy-dom, the RPC over Node's `MessageChannel`, configuration, document metadata). `pnpm --filter @curanno/guest test:browser` runs the Playwright suite and `pnpm --filter @curanno/guest trial` the corpus; both need `pnpm --filter @curanno/guest exec playwright install chromium` once and run in CI's `guest-trial` job.

@@ -7,8 +7,8 @@
  */
 import { GUEST_ATTRIBUTE, type HighlightEntry, type HighlightRenderer } from './types.js';
 
-export const HIGHLIGHT_NAME = 'scale-annotation';
-export const FOCUS_HIGHLIGHT_NAME = 'scale-annotation-focus';
+export const HIGHLIGHT_NAME = 'curanno-annotation';
+export const FOCUS_HIGHLIGHT_NAME = 'curanno-annotation-focus';
 
 const STYLE = `
 ::highlight(${HIGHLIGHT_NAME}) {

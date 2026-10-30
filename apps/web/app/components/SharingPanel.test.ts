@@ -1,4 +1,4 @@
-import type { AclEntry, PrincipalRef } from '@scale/api-client';
+import type { AclEntry, PrincipalRef } from '@curanno/api-client';
 import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { API_KEY } from '../api/client';

@@ -41,13 +41,13 @@ describe('ProfileRegistry', () => {
     expect(
       registry.validate({
         type: 'StructuredBody',
-        profile: 'https://scale.example/profiles/nope/1',
+        profile: 'https://curanno.example/profiles/nope/1',
         value: {},
       }),
     ).toMatchObject({
       ok: false,
       reason: 'unknown-profile',
-      profile: 'https://scale.example/profiles/nope/1',
+      profile: 'https://curanno.example/profiles/nope/1',
     });
   });
 
@@ -79,7 +79,7 @@ describe('ProfileRegistry', () => {
 
   it('refuses duplicate IRIs and purposes', () => {
     const other: BodyProfile = {
-      iri: 'https://scale.example/profiles/other/1',
+      iri: 'https://curanno.example/profiles/other/1',
       title: 'Other',
       schema: { type: 'object' },
     };
@@ -88,14 +88,14 @@ describe('ProfileRegistry', () => {
     expect(() =>
       r.register({
         ...evidenceExcerptProfile,
-        iri: 'https://scale.example/profiles/x/1',
+        iri: 'https://curanno.example/profiles/x/1',
         purposes: ['classifying'],
       }),
     ).not.toThrow();
     expect(() =>
       r.register({
         ...other,
-        iri: 'https://scale.example/profiles/y/1',
+        iri: 'https://curanno.example/profiles/y/1',
         purposes: ['classifying'],
       }),
     ).toThrow(/purpose classifying/);

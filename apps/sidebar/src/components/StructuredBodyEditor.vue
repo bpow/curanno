@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BodyProfile, JsonValue, ValidationError } from '@scale/model';
+import type { BodyProfile, JsonValue, ValidationError } from '@curanno/model';
 import { computed } from 'vue';
 import { fieldsOf, type SchemaField } from '../profiles/schema';
 

@@ -3,13 +3,13 @@
  * `ProfileRegistry` the server uses, compiled with Ajv from the schemas the
  * server lists, plus the field list an editor is built from.
  */
-import type { BodyProfile as ApiBodyProfile } from '@scale/api-client';
+import type { BodyProfile as ApiBodyProfile } from '@curanno/api-client';
 import {
   addAnnotationFormats,
   ProfileRegistry,
   type BodyProfile,
   type JsonSchema,
-} from '@scale/model';
+} from '@curanno/model';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 

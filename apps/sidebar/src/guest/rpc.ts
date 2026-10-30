@@ -32,7 +32,7 @@ import {
   type SidebarErrorMessage,
   type SidebarMessage,
   type SidebarReadyMessage,
-} from '@scale/model';
+} from '@curanno/model';
 import { shallowReadonly, shallowRef, type Ref } from 'vue';
 import type { AnchorRequest, DocumentSelection, Guest, GuestDocument } from './types';
 

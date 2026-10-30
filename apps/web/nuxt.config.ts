@@ -1,6 +1,6 @@
 /**
  * The management site is an ordinary client of the public API (ADR 0009):
- * every request leaves the browser through `@scale/api-client` with the
+ * every request leaves the browser through `@curanno/api-client` with the
  * user's own token. Nothing runs in Nuxt's server layer; a lint rule in the
  * root ESLint config fails on any file under apps/web/server.
  *

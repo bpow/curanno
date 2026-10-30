@@ -5,7 +5,7 @@
 #
 # `api` holds the compiled server, the OpenAPI document it binds to, the SQL
 # migrations (run with `node dist/db/migrate.js`), the production dependencies
-# of @scale/api, and the built clients it serves under STATIC_ROOT: the sidebar
+# of @curanno/api, and the built clients it serves under STATIC_ROOT: the sidebar
 # (/sidebar/), the PDF viewer (/pdf/) and the guest bundle (/guest.js).
 # `web` holds the management site's Nitro server. Both read their
 # configuration from environment variables (see .env.example and
@@ -28,12 +28,12 @@ COPY apps apps
 # The libraries, then each client; the sidebar and viewer read config.json at
 # run time, so their builds carry only development defaults.
 RUN pnpm exec tsc -b tsconfig.json \
- && pnpm --filter @scale/guest bundle \
- && pnpm --filter @scale/sidebar build \
- && pnpm --filter @scale/pdf-viewer build \
- && pnpm --filter @scale/web exec nuxt prepare \
- && pnpm --filter @scale/web build \
- && pnpm --filter @scale/api deploy --prod --legacy /out \
+ && pnpm --filter @curanno/guest bundle \
+ && pnpm --filter @curanno/sidebar build \
+ && pnpm --filter @curanno/pdf-viewer build \
+ && pnpm --filter @curanno/web exec nuxt prepare \
+ && pnpm --filter @curanno/web build \
+ && pnpm --filter @curanno/api deploy --prod --legacy /out \
  && mkdir -p /out/static \
  && cp -r apps/sidebar/dist /out/static/sidebar \
  && cp -r apps/pdf-viewer/dist /out/static/pdf \

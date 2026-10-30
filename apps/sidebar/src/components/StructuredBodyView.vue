@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { JsonValue, StructuredBody } from '@scale/model';
+import type { JsonValue, StructuredBody } from '@curanno/model';
 import { computed } from 'vue';
 import { useProfilesStore } from '../stores/profiles';
 

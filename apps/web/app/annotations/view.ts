@@ -3,7 +3,7 @@
  * everywhere) for what the site shows: creator, document, quote, bodies,
  * motivations and anchoring state.
  */
-import type { Annotation } from '@scale/api-client';
+import type { Annotation } from '@curanno/api-client';
 import type {
   AnchoringState,
   Body,
@@ -12,7 +12,7 @@ import type {
   StructuredBody,
   Target,
   TextualBody,
-} from '@scale/model';
+} from '@curanno/model';
 
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const ANNOTATION_IRI = new RegExp(`/annotations/(${UUID})$`, 'i');

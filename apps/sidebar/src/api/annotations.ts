@@ -3,7 +3,7 @@
  * (one-or-many everywhere) for what the sidebar shows and edits: a comment,
  * tags, structured bodies, the quoted text and the anchoring state.
  */
-import type { Annotation, AnnotationInput } from '@scale/api-client';
+import type { Annotation, AnnotationInput } from '@curanno/api-client';
 import type {
   AnchoringRepair,
   AnchoringState,
@@ -15,7 +15,7 @@ import type {
   StructuredBody,
   Target,
   TextualBody,
-} from '@scale/model';
+} from '@curanno/model';
 
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const ANNOTATION_IRI = new RegExp(`/annotations/(${UUID})$`, 'i');

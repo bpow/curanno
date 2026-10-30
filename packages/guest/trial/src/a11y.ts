@@ -3,7 +3,7 @@
  * for Recogito's selection handling. Writes `results/a11y.json`; findings
  * are written up in `keyboard-and-screen-reader.md`.
  *
- *   pnpm --filter @scale/guest trial:a11y
+ *   pnpm --filter @curanno/guest trial:a11y
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';

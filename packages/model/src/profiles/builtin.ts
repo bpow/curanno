@@ -1,7 +1,7 @@
 import type { BodyProfile } from './registry.js';
 
 /** Base IRI of built-in profiles. Provisional, like the project name. */
-export const PROFILE_BASE = 'https://scale.example/profiles/';
+export const PROFILE_BASE = 'https://curanno.example/profiles/';
 
 /**
  * Proof-of-concept structured profile: an excerpt tagged as evidence of a

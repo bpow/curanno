@@ -12,7 +12,7 @@ import type {
   JsonSchema,
   Permission,
   Selector,
-} from '@scale/model';
+} from '@curanno/model';
 
 type Timestamp = ColumnType<Date, Date | string | undefined, Date | string>;
 type OptionalTimestamp = ColumnType<

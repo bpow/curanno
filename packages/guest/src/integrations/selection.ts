@@ -3,7 +3,7 @@
  * stores, with collapsible whitespace and line feeds trimmed from both
  * ends so that a drag that overshoots a word does not quote the gap.
  */
-import { textOfRange, type TextRange } from '@scale/model';
+import { textOfRange, type TextRange } from '@curanno/model';
 import { describeTextRange } from '../anchoring/describe.js';
 import { textRangeOf, type AnchoringScope } from '../anchoring/scope.js';
 import type { DescribedSelection } from './types.js';

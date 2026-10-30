@@ -4,7 +4,7 @@
  * and on the nested-scroll page. Writes `results/highlights.json`; the
  * evaluation is in `highlight-rendering.md`.
  *
- *   pnpm --filter @scale/guest trial:highlights
+ *   pnpm --filter @curanno/guest trial:highlights
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';

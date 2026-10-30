@@ -3,7 +3,7 @@
  * W3C one: the definitions of this platform's extension terms, served
  * under the public URL so that the IRI dereferences.
  */
-import { EXTENSION_CONTEXT_DOCUMENT } from '@scale/model';
+import { EXTENSION_CONTEXT_DOCUMENT } from '@curanno/model';
 import type { Handlers } from './context.js';
 
 export function vocabularyHandlers(): Handlers {

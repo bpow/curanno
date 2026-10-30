@@ -1,4 +1,4 @@
-import { createApiClient, type ApiClient } from '@scale/api-client';
+import { createApiClient, type ApiClient } from '@curanno/api-client';
 import { useAuthStore } from '../auth/store';
 import { config } from '../config';
 

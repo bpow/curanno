@@ -70,7 +70,7 @@ test('the sidebar takes the document from the guest and anchors its annotations'
   // Hovering the card focuses the highlight in the page.
   await card.hover();
   await expect
-    .poll(() => page.evaluate(() => CSS.highlights.get('scale-annotation-focus')?.size ?? 0))
+    .poll(() => page.evaluate(() => CSS.highlights.get('curanno-annotation-focus')?.size ?? 0))
     .toBe(1);
 
   // A second click on the bookmarklet toggles the sidebar instead of loading again.
@@ -78,7 +78,7 @@ test('the sidebar takes the document from the guest and anchors its annotations'
   await expect
     .poll(() =>
       page.evaluate(
-        () => document.querySelector<HTMLElement>('[data-scale-guest="sidebar"]')?.hidden ?? null,
+        () => document.querySelector<HTMLElement>('[data-curanno-guest="sidebar"]')?.hidden ?? null,
       ),
     )
     .toBe(true);
@@ -89,7 +89,7 @@ test('the sidebar takes the document from the guest and anchors its annotations'
   await expect
     .poll(() =>
       page.evaluate(
-        () => document.querySelector<HTMLElement>('[data-scale-guest="sidebar"]')?.hidden ?? null,
+        () => document.querySelector<HTMLElement>('[data-curanno-guest="sidebar"]')?.hidden ?? null,
       ),
     )
     .toBe(false);

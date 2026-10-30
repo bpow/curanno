@@ -5,7 +5,7 @@
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import type { TextPositionSelector, TextQuoteSelector } from '@scale/model';
+import type { TextPositionSelector, TextQuoteSelector } from '@curanno/model';
 import type { Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { BUILD_DIR, FIXTURES_DIR, startHarness, type Harness } from './harness.ts';

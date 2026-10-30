@@ -4,15 +4,15 @@
  * rebuilds the bundle on change, and prints the bookmarklet for trying the
  * guest on other pages. By default the guest opens the fake sidebar; with
  * `--sidebar-origin` it opens a real one, such as the sidebar dev server
- * (`pnpm --filter @scale/sidebar dev`, http://localhost:5173/sidebar/). Plain http,
+ * (`pnpm --filter @curanno/sidebar dev`, http://localhost:5173/sidebar/). Plain http,
  * so https pages block the bundle as mixed content; use the served pages or
  * an http page for those.
  *
- *   pnpm --filter @scale/guest dev [--sidebar-origin http://localhost:5173 [--sidebar-path /sidebar/]]
+ *   pnpm --filter @curanno/guest dev [--sidebar-origin http://localhost:5173 [--sidebar-path /sidebar/]]
  */
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { bookmarkletUrl, validateSidebar } from '@scale/guest';
+import { bookmarkletUrl, validateSidebar } from '@curanno/guest';
 import { BUILD_DIR, watchGuest } from './bundle.ts';
 import { serve } from './serve.ts';
 

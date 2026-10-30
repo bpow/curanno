@@ -3,7 +3,7 @@
  * with Chromium, so PDF cases have real edit histories. Run it only when a
  * source changes; the PDFs are committed.
  *
- *   pnpm --filter @scale/guest corpus:pdf
+ *   pnpm --filter @curanno/guest corpus:pdf
  */
 import { glob } from 'node:fs/promises';
 import path from 'node:path';

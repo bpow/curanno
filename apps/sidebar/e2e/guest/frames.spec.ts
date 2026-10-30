@@ -40,7 +40,7 @@ function frameOn(url: string): Frame {
 
 async function highlightsIn(frame: Frame): Promise<string[]> {
   return frame.evaluate(() =>
-    [...(CSS.highlights.get('scale-annotation') ?? [])].map((r) => (r as Range).toString()),
+    [...(CSS.highlights.get('curanno-annotation') ?? [])].map((r) => (r as Range).toString()),
   );
 }
 
@@ -98,11 +98,11 @@ test('one sidebar serves the page and both of its frames', async () => {
   await expect.poll(() => highlightsIn(frameOn(CROSS_URL))).toEqual([CROSS_QUOTE]);
   expect(await highlightedTexts(page)).toEqual([]);
   expect(
-    await page.evaluate(() => document.querySelectorAll('[data-scale-guest="sidebar"]').length),
+    await page.evaluate(() => document.querySelectorAll('[data-curanno-guest="sidebar"]').length),
   ).toBe(1);
   expect(
     await frameOn(SAME_URL).evaluate(
-      () => document.querySelectorAll('[data-scale-guest="sidebar"]').length,
+      () => document.querySelectorAll('[data-curanno-guest="sidebar"]').length,
     ),
   ).toBe(0);
 
@@ -110,7 +110,7 @@ test('one sidebar serves the page and both of its frames', async () => {
   await cards.filter({ hasText: CROSS_BODY }).hover();
   await expect
     .poll(() =>
-      frameOn(CROSS_URL).evaluate(() => CSS.highlights.get('scale-annotation-focus')?.size ?? 0),
+      frameOn(CROSS_URL).evaluate(() => CSS.highlights.get('curanno-annotation-focus')?.size ?? 0),
     )
     .toBe(1);
 

@@ -1,4 +1,4 @@
-import type { HighlightTechnique } from '@scale/model';
+import type { HighlightTechnique } from '@curanno/model';
 
 /** The highlights of one annotation: its identifier and nothing else (ADR 0007). */
 export interface HighlightEntry {
@@ -18,4 +18,4 @@ export interface HighlightRenderer {
 }
 
 /** Identifies elements the guest owns, which the text model and observers skip. */
-export const GUEST_ATTRIBUTE = 'data-scale-guest';
+export const GUEST_ATTRIBUTE = 'data-curanno-guest';

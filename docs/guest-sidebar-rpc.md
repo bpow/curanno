@@ -1,6 +1,6 @@
 # Guest/sidebar RPC protocol
 
-**Protocol `scale-annotation/guest-sidebar`, version 1.** How the in-page guest and the sidebar iframe talk ([ADR 0007](adr/0007-guest-sidebar-split.md)). The message types are in `packages/model/src/rpc/`, which both sides compile against; the guest side is implemented in `packages/guest/src/rpc/`, with an in-memory fake sidebar for tests and development, and the sidebar side in `apps/sidebar/src/guest/rpc.ts`. Hypothesis's `frame-sync` was the reference design; nothing was copied from it.
+**Protocol `curanno/guest-sidebar`, version 1.** How the in-page guest and the sidebar iframe talk ([ADR 0007](adr/0007-guest-sidebar-split.md)). The message types are in `packages/model/src/rpc/`, which both sides compile against; the guest side is implemented in `packages/guest/src/rpc/`, with an in-memory fake sidebar for tests and development, and the sidebar side in `apps/sidebar/src/guest/rpc.ts`. Hypothesis's `frame-sync` was the reference design; nothing was copied from it.
 
 ## 1. Principles
 
@@ -18,11 +18,11 @@ Every message is a JSON object with:
 
 | Field      | Value                                   |
 | ---------- | --------------------------------------- |
-| `protocol` | `"scale-annotation/guest-sidebar"`       |
+| `protocol` | `"curanno/guest-sidebar"`       |
 | `version`  | `1`                                     |
 | `type`     | one of the types below                  |
 
-`envelope(payload)` in `@scale/model` adds the first two; `parseWindowMessage`, `parseSidebarMessage` and `parseGuestMessage` check a received value and return it typed, or `undefined` for anything that is not a well-formed message of the expected direction.
+`envelope(payload)` in `@curanno/model` adds the first two; `parseWindowMessage`, `parseSidebarMessage` and `parseGuestMessage` check a received value and return it typed, or `undefined` for anything that is not a well-formed message of the expected direction.
 
 ## 3. Connection
 

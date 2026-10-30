@@ -1,6 +1,6 @@
 # Highlight rendering: wrapped elements, overlay spans, CSS Custom Highlight API
 
-Part of the Phase 2 guest trial. Measured by `pnpm --filter @scale/guest trial:highlights` on the corpus pages that re-render their DOM (`react-rerender`, `vue-rerender`) and on the nested-scroll page (`synth-scroll`); raw numbers in [`results/highlights.json`](results/highlights.json). The recommendation is recorded in [ADR 0017](../../../docs/adr/0017-guest-base-and-highlight-rendering.md).
+Part of the Phase 2 guest trial. Measured by `pnpm --filter @curanno/guest trial:highlights` on the corpus pages that re-render their DOM (`react-rerender`, `vue-rerender`) and on the nested-scroll page (`synth-scroll`); raw numbers in [`results/highlights.json`](results/highlights.json). The recommendation is recorded in [ADR 0017](../../../docs/adr/0017-guest-base-and-highlight-rendering.md).
 
 ## The three techniques
 

@@ -3,7 +3,7 @@
  * openapi-fetch hands back as the parsed `error` of a response. Network
  * failures become a problem with status 0 so that one shape reaches the UI.
  */
-import type { Problem } from '@scale/api-client';
+import type { Problem } from '@curanno/api-client';
 
 export type { Problem };
 

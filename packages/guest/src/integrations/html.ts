@@ -3,7 +3,7 @@
  * by default), re-extracted before every anchoring pass, and a mutation
  * observer that asks for a pass whenever the page changes.
  */
-import type { Selector } from '@scale/model';
+import type { Selector } from '@curanno/model';
 import { anchor, type AnchorOptions } from '../anchoring/anchor.js';
 import { createScope, domRangeOf, type AnchoringScope } from '../anchoring/scope.js';
 import { collectDocument } from '../document-metadata.js';

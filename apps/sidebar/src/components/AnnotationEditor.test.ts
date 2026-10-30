@@ -1,4 +1,4 @@
-import { PROFILE_BASE, evidenceExcerptProfile } from '@scale/model';
+import { PROFILE_BASE, evidenceExcerptProfile } from '@curanno/model';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';

@@ -33,7 +33,7 @@ function main(): void {
   }
   const config = readConfig(document.currentScript);
   if (typeof config === 'string') {
-    console.error(`[scale guest] ${config}`);
+    console.error(`[curanno guest] ${config}`);
     return;
   }
   const guest = new Guest({

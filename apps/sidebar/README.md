@@ -1,6 +1,6 @@
 # Sidebar
 
-The Vue 3 single-page application that the guest loads in an iframe from our origin (ADR 0007, ADR 0009). It holds the login session, makes every API call through `@scale/api-client`, and renders all annotation content; the guest in the host page only ever sees selectors and annotation identifiers, over the [guest/sidebar RPC protocol](../../docs/guest-sidebar-rpc.md).
+The Vue 3 single-page application that the guest loads in an iframe from our origin (ADR 0007, ADR 0009). It holds the login session, makes every API call through `@curanno/api-client`, and renders all annotation content; the guest in the host page only ever sees selectors and annotation identifiers, over the [guest/sidebar RPC protocol](../../docs/guest-sidebar-rpc.md).
 
 The build is Vite 7; Vite 8 (whose CSS minifier is MPL-2.0, admitted by ADR 0022 as build tooling) can follow when convenient.
 
@@ -11,12 +11,12 @@ State lives in Pinia stores (`src/stores`, `src/auth/store.ts`): the team knows 
 With the compose stack up, the database migrated and the API running (see the repository README):
 
 ```bash
-pnpm --filter @scale/sidebar dev
+pnpm --filter @curanno/sidebar dev
 ```
 
 Open <http://localhost:5173/sidebar/?uri=https://example.test/sample-document> and log in as `alice` or `bob`. Run top-level like this the sidebar has no page, so it uses a development guest: the **Development guest** panel picks the document to annotate and turns typed text into a selection, so annotations can be created, edited, replied to, shared and deleted against the real API, and a second window on the same document shows them arriving live.
 
-Inside a page, the guest loads the sidebar in its iframe and the sidebar talks to it over the RPC: the document comes from the guest's report of the page, never from the URL. To try that, keep the dev server running and start the guest's dev script pointed at it (`pnpm --filter @scale/guest dev -- --sidebar-origin http://localhost:5173`; see the repository README).
+Inside a page, the guest loads the sidebar in its iframe and the sidebar talks to it over the RPC: the document comes from the guest's report of the page, never from the URL. To try that, keep the dev server running and start the guest's dev script pointed at it (`pnpm --filter @curanno/guest dev -- --sidebar-origin http://localhost:5173`; see the repository README).
 
 The app lives under `/sidebar/`, the path the API serves it from in a deployment (ADR 0021), so development URLs are the deployed ones. The dev server proxies `/annotations` and `/x` to the API, so the sidebar talks to its own origin as the OpenAPI document assumes.
 
@@ -39,7 +39,7 @@ Configuration is read at run time from `config.json` next to the app (`public/co
 
 ### Serving in production
 
-The built assets (`pnpm --filter @scale/sidebar build`, output in `dist/`) are static. Whatever serves them must:
+The built assets (`pnpm --filter @curanno/sidebar build`, output in `dist/`) are static. Whatever serves them must:
 
 1. Send `Content-Security-Policy: frame-ancestors <origin> <origin> …` with the origins allowed to embed the sidebar on every response, `index.html` included. `frame-ancestors` is not honoured in a `<meta>` tag, so this has to be a response header. `X-Frame-Options` is unnecessary once it is set.
 2. Serve the API under the same origin (`/annotations/`, `/x/`), or build with `VITE_API_URL` and enable CORS on the API with `ETag` exposed, which the API does not do today.
@@ -67,8 +67,8 @@ Replies are annotations whose target is the parent's IRI; they are threaded clie
 
 ```bash
 pnpm vitest run --project sidebar       # component and transport tests (happy-dom), part of `pnpm test`
-pnpm --filter @scale/sidebar e2e        # Playwright; needs compose, a migrated database and the built API
-pnpm --filter @scale/sidebar e2e:guest  # Playwright; needs `pnpm build`, the guest bundle and `pnpm --filter @scale/sidebar build`
+pnpm --filter @curanno/sidebar e2e        # Playwright; needs compose, a migrated database and the built API
+pnpm --filter @curanno/sidebar e2e:guest  # Playwright; needs `pnpm build`, the guest bundle and `pnpm --filter @curanno/sidebar build`
 ```
 
 The transport test (`src/guest/rpc.test.ts`) drives the RPC guest with hand-made window messages and a `MessageChannel`: connect, hello, document report, anchoring results, hover and activation, a connect from the wrong source, an unknown protocol version, a reconnecting guest, a second guest in another frame with its own document, the refusal of a document on another origin, and requests routed by document.

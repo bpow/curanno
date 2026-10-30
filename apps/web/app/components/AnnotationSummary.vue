@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Annotation } from '@scale/api-client';
+import type { Annotation } from '@curanno/api-client';
 import { computed } from 'vue';
 import { NuxtLink } from '#components';
 import {

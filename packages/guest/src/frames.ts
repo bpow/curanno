@@ -16,7 +16,7 @@ export interface FrameInjectorOptions {
   sidebarPath: string;
 }
 
-export const INJECTED_ATTRIBUTE = 'data-scale-guest-injected';
+export const INJECTED_ATTRIBUTE = 'data-curanno-guest-injected';
 
 /** The script element the bundle is injected with, in a frame's document. */
 export function injectionScript(doc: Document, options: FrameInjectorOptions): HTMLScriptElement {

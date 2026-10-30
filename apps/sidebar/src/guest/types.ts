@@ -4,15 +4,15 @@
  * or tokens cross this boundary in either direction. One sidebar serves the
  * page's host frame and any other frames with guests of their own, each
  * with a document of its own; this interface merges them. The document,
- * selection and request shapes are the RPC protocol's own (`@scale/model`,
+ * selection and request shapes are the RPC protocol's own (`@curanno/model`,
  * `rpc/`), which `rpc.ts` speaks over postMessage; the fake in `fake.ts`
  * serves development and tests.
  */
-import type { AnchoringState } from '@scale/model';
+import type { AnchoringState } from '@curanno/model';
 import type { Ref } from 'vue';
 
-export type { AnchorRequest, DocumentLink, GuestDocument, GuestSelection } from '@scale/model';
-import type { AnchorRequest, GuestDocument, GuestSelection } from '@scale/model';
+export type { AnchorRequest, DocumentLink, GuestDocument, GuestSelection } from '@curanno/model';
+import type { AnchorRequest, GuestDocument, GuestSelection } from '@curanno/model';
 
 /** A selection with the document of the frame it was made in. */
 export interface DocumentSelection extends GuestSelection {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { bookmarkletUrl } from '@scale/guest';
+import { bookmarkletUrl } from '@curanno/guest';
 import { onMounted, ref } from 'vue';
 import { NuxtLink } from '#components';
 import { useRuntimeConfig } from '#imports';

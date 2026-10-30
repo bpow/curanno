@@ -4,7 +4,7 @@ import {
   parseGuestMessage,
   type GuestMessage,
   type SidebarMessage,
-} from '@scale/model';
+} from '@curanno/model';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Host, type FrameWindowLike } from './host.js';
 import { SubGuestConnection } from './sub-connection.js';

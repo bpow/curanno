@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { User } from '@scale/api-client';
+import type { User } from '@curanno/api-client';
 import { NuxtLink } from '#components';
 import { formatDate } from '../util/time';
 

@@ -72,6 +72,6 @@ Reviewed against success criterion 6 with the automated hostile-page tests (`pac
 
 - A page may attach its own URL to an existing document through a canonical link (finding 3 stops merges, not additions). A reader of that page then sees the public annotations of the linked document in a sidebar on the wrong page. Hypothesis has the same property; a stricter rule (same registrable domain) would break DOI and publisher links. Revisit if it is abused.
 - The overlay highlight fallback and the browsers without the CSS Custom Highlight API are untested in CI (Chromium only).
-- The guest exposes `window.__scaleGuest` with `toggleSidebar` and `destroy`; the page can do both by other means, so this grants nothing (ADR 0007).
+- The guest exposes `window.__curannoGuest` with `toggleSidebar` and `destroy`; the page can do both by other means, so this grants nothing (ADR 0007).
 - Rate limiting and connection limits are left to the ingress; the chart documents the SSE timeouts but sets no limits.
 - The review was done by reading and by tests, not by penetration testing of a deployment. The operator guide lists what to check on a real cluster.

@@ -117,14 +117,14 @@ test('the sidebar is operable from the keyboard and focus follows the highlight'
   }
   await expect(quoteButton).toBeFocused();
   await expect
-    .poll(() => page.evaluate(() => CSS.highlights.get('scale-annotation-focus')?.size ?? 0))
+    .poll(() => page.evaluate(() => CSS.highlights.get('curanno-annotation-focus')?.size ?? 0))
     .toBe(1);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.keyboard.press('Enter');
   await expect
     .poll(() =>
       page.evaluate(() => {
-        const range = [...(CSS.highlights.get('scale-annotation') ?? [])][0] as Range | undefined;
+        const range = [...(CSS.highlights.get('curanno-annotation') ?? [])][0] as Range | undefined;
         const rect = range?.getBoundingClientRect();
         return rect ? rect.top >= 0 && rect.bottom <= window.innerHeight : false;
       }),
@@ -152,7 +152,7 @@ test('highlights stay visible in forced-colors mode', async ({ context }) => {
   await expect.poll(() => highlightedTexts(page)).toEqual([PUBLIC_QUOTE]);
   // The highlighted text's pixels differ from the page background next to it.
   const box = await page.evaluate(() => {
-    const range = [...(CSS.highlights.get('scale-annotation') ?? [])][0] as Range;
+    const range = [...(CSS.highlights.get('curanno-annotation') ?? [])][0] as Range;
     const r = range.getBoundingClientRect();
     return { x: r.left, y: r.top, width: r.width, height: r.height };
   });

@@ -7,7 +7,7 @@
  * creates. A session is seeded into the sidebar's `sessionStorage` the way
  * oidc-client-ts stores one, so the sidebar is signed in without a provider.
  */
-import { bookmarkletSource } from '@scale/guest';
+import { bookmarkletSource } from '@curanno/guest';
 import type { BrowserContext, Frame, Page } from '@playwright/test';
 
 export const SIDEBAR_ORIGIN = 'http://localhost:4173';
@@ -243,14 +243,14 @@ export async function selectText(page: Page, text: string): Promise<void> {
 /** The text of every highlight the guest drew. */
 export function highlightedTexts(page: Page): Promise<string[]> {
   return page.evaluate(() =>
-    [...(CSS.highlights.get('scale-annotation') ?? [])].map((r) => (r as Range).toString()),
+    [...(CSS.highlights.get('curanno-annotation') ?? [])].map((r) => (r as Range).toString()),
   );
 }
 
 /** The centre of the first highlight, in viewport coordinates. */
 export function highlightCentre(page: Page): Promise<{ x: number; y: number }> {
   return page.evaluate(() => {
-    const range = [...(CSS.highlights.get('scale-annotation') ?? [])][0] as Range | undefined;
+    const range = [...(CSS.highlights.get('curanno-annotation') ?? [])][0] as Range | undefined;
     if (!range) throw new Error('no highlight');
     const rect = range.getBoundingClientRect();
     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };

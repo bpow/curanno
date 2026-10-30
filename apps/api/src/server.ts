@@ -13,7 +13,7 @@ import openapiGlue from 'fastify-openapi-glue';
 import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
 import { parse } from 'yaml';
-import { TEXT_MODEL_VERSION } from '@scale/model';
+import { TEXT_MODEL_VERSION } from '@curanno/model';
 import { createCoercingAjv, createStrictAjv } from './ajv.js';
 import { AnnotationStore } from './annotations/store.js';
 import { installAuth, securityHandlers } from './auth/plugin.js';

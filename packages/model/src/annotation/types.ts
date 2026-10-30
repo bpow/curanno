@@ -16,7 +16,7 @@ export const WEB_ANNOTATION_CONTEXT = 'http://www.w3.org/ns/anno.jsonld';
  * deployments share a vocabulary. The context document that defines them is
  * served by each deployment at `/x/context.jsonld` (`context.ts`).
  */
-export const EXTENSION_NAMESPACE = 'https://scale.example/ns/anno#';
+export const EXTENSION_NAMESPACE = 'https://curanno.example/ns/anno#';
 
 export type JsonLdContextValue = string | Record<string, unknown>;
 export type JsonLdContext = JsonLdContextValue | JsonLdContextValue[];

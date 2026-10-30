@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AnchoringState } from '@scale/model';
+import type { AnchoringState } from '@curanno/model';
 
 defineProps<{ state: AnchoringState | undefined }>();
 

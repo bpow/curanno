@@ -9,7 +9,7 @@ The W3C model allows a body to be any resource. For data our tools produce and c
 ```json
 {
   "type": "StructuredBody",
-  "profile": "https://scale.example/profiles/evidence-excerpt/1",
+  "profile": "https://curanno.example/profiles/evidence-excerpt/1",
   "purpose": "classifying",
   "value": { "kind": "case", "identifiers": ["PMID:12345"] }
 }

@@ -3,7 +3,7 @@
  * section 4), collected exactly as found and turned into the links the
  * sidebar registers, through the model's derivation (ADR 0014).
  */
-import { deriveDocumentUris, type GuestDocument, type PageMetadata } from '@scale/model';
+import { deriveDocumentUris, type GuestDocument, type PageMetadata } from '@curanno/model';
 
 /** Content of the first `meta` whose `name` or `property` equals `key`, case-insensitively. */
 function metas(doc: Document, key: string): string[] {

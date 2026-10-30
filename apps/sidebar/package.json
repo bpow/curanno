@@ -1,5 +1,5 @@
 {
-  "name": "@scale/sidebar",
+  "name": "@curanno/sidebar",
   "version": "0.0.0",
   "private": true,
   "description": "Sidebar app (Vue 3 + Vite) served from our origin in an iframe",
@@ -14,8 +14,8 @@
     "e2e:guest": "playwright test -c playwright.guest.config.ts"
   },
   "dependencies": {
-    "@scale/api-client": "workspace:*",
-    "@scale/model": "workspace:*",
+    "@curanno/api-client": "workspace:*",
+    "@curanno/model": "workspace:*",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "oidc-client-ts": "^3.5.0",
@@ -25,7 +25,7 @@
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
     "@playwright/test": "1.64.1",
-    "@scale/guest": "workspace:*",
+    "@curanno/guest": "workspace:*",
     "@vitejs/plugin-vue": "^6.0.10",
     "@vue/test-utils": "^2.5.1",
     "vite": "^7.3.7",

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { GroupRole, Membership, PrincipalRef } from '@scale/api-client';
+import type { GroupRole, Membership, PrincipalRef } from '@curanno/api-client';
 import { ref, watch } from 'vue';
 import { NuxtLink } from '#components';
 import { useApi } from '../api/client';

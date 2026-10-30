@@ -17,7 +17,7 @@ import {
   type GuestDisconnectMessage,
   type HostPortMessage,
   type HostReadyMessage,
-} from '@scale/model';
+} from '@curanno/model';
 
 /** The subset of a cross-origin `WindowProxy` the host uses. */
 export interface FrameWindowLike {

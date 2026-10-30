@@ -1,4 +1,4 @@
-import { evidenceExcerptProfile } from '@scale/model';
+import { evidenceExcerptProfile } from '@curanno/model';
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import StructuredBodyEditor from './StructuredBodyEditor.vue';

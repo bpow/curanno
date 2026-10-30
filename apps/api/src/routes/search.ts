@@ -1,4 +1,4 @@
-import type { AnchoringState } from '@scale/model';
+import type { AnchoringState } from '@curanno/model';
 import { toAnnotation } from '../annotations/serialize.js';
 import { findDocumentIdByUri } from '../documents/service.js';
 import type { AppContext, Handlers } from './context.js';

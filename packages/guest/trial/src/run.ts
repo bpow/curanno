@@ -2,7 +2,7 @@
  * Runs every candidate against every case and variant of the corpus and
  * writes `trial/results/results.json` and `summary.md`.
  *
- *   pnpm --filter @scale/guest trial [--all] [--candidate id] [case-id ...]
+ *   pnpm --filter @curanno/guest trial [--all] [--candidate id] [case-id ...]
  *
  * Runs the guest candidates unless `--all` adds the Phase 2 ones. Exits 1
  * when the guest guesses on a `mustNotMatch` annotation (plan, section 8,

@@ -62,7 +62,7 @@ Values worth knowing (`deploy/helm/annotations/values.yaml` documents each):
 - `config.frameAncestors`: the origins allowed to embed the sidebar, as CSP source expressions. This is the clickjacking defence (ADR 0007): list the sites your users annotate, or `https:` for any https site if you accept the trade. The viewer's origin is added for you.
 - `pdfViewer.host`: a second host name for the PDF viewer, with its own certificate, so a PDF.js defect never runs on the sidebar's origin (ADR 0021). Point its DNS at the ingress; the chart adds the ingress rule.
 - `ingress.metrics`: whether `/metrics` is reachable from outside (default no). Scrape the API Service inside the cluster instead.
-- `web.enabled`: the management site; off, the API still serves the sidebar and viewer, and users install the bookmarklet from `pnpm --filter @scale/guest bookmarklet` output instead of the landing page.
+- `web.enabled`: the management site; off, the API still serves the sidebar and viewer, and users install the bookmarklet from `pnpm --filter @curanno/guest bookmarklet` output instead of the landing page.
 
 ### Ingress requirements
 
@@ -94,7 +94,7 @@ TARGET_DATABASE_URL=postgres://... scripts/db-restore.sh backups/annotations-202
 ```
 
 ```bash
-DATABASE_URL=postgres://... pnpm --filter @scale/api migrate
+DATABASE_URL=postgres://... pnpm --filter @curanno/api migrate
 ```
 
 The test `apps/api/src/db/backup-restore.test.ts` does exactly this in CI: it dumps a database, restores it into a fresh one, checks that the API answers from the restored copy as it did from the original, and runs the whole OpenAPI contract suite against a restored database. Run it yourself after changing the procedure.

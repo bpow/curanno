@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import type { InjectOptions, LightMyRequestResponse } from 'fastify';
 import { parse } from 'yaml';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { PROFILE_BASE } from '@scale/model';
+import { PROFILE_BASE } from '@curanno/model';
 import { createStrictAjv } from './ajv.js';
 import { PUBLIC_PRINCIPAL_ID } from './db/index.js';
 import {
@@ -38,7 +38,7 @@ interface Operation {
 
 const METHODS = new Set(['get', 'put', 'post', 'delete', 'patch']);
 
-const DOCUMENT_ID = 'https://scale.example/openapi.yaml';
+const DOCUMENT_ID = 'https://curanno.example/openapi.yaml';
 const SCHEMA_PREFIX = '#/components/schemas/';
 
 /** Follow `$ref` to responses, parameters and request bodies; point schema refs at the Ajv copy of the components. */
@@ -176,7 +176,7 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
         then: (res) => {
           expect(res.headers['content-type']).toMatch(/^application\/ld\+json/);
           const context = res.json<{ '@context': Record<string, unknown> }>()['@context'];
-          expect(context['StructuredBody']).toBe('https://scale.example/ns/anno#StructuredBody');
+          expect(context['StructuredBody']).toBe('https://curanno.example/ns/anno#StructuredBody');
           expect(context['permissions']).toMatchObject({ '@container': '@set' });
         },
       },

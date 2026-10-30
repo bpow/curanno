@@ -1,4 +1,4 @@
-import type { ApiClient } from '@scale/api-client';
+import type { ApiClient } from '@curanno/api-client';
 import { inject, type InjectionKey } from 'vue';
 
 /**

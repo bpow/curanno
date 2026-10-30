@@ -18,7 +18,7 @@ import {
   type Payload,
   type SidebarMessage,
   type SidebarReadyMessage,
-} from '@scale/model';
+} from '@curanno/model';
 import type { PortLike } from './connection.js';
 
 export interface FakeSidebarOptions {

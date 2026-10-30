@@ -5,14 +5,14 @@
  * `body_profiles` at start so that the API lists one registry.
  */
 import type { Kysely } from 'kysely';
-import type { components } from '@scale/api-client';
+import type { components } from '@curanno/api-client';
 import {
   ProfileRegistry,
   builtinProfiles,
   type Body,
   type BodyProfile,
   type SchemaCompiler,
-} from '@scale/model';
+} from '@curanno/model';
 import type { Database } from '../db/index.js';
 import { isoDate } from '../annotations/serialize.js';
 import { badRequest, unprocessable, type ValidationIssue } from '../problems.js';

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { JsonValue, ValidationError } from '@scale/model';
+import type { JsonValue, ValidationError } from '@curanno/model';
 import { computed, ref, shallowRef, watch } from 'vue';
 import type { AnnotationDraft } from '../api/annotations';
 import type { Problem } from '../api/problems';

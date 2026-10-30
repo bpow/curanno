@@ -1,4 +1,4 @@
-import { createApiClient, type ApiClient } from '@scale/api-client';
+import { createApiClient, type ApiClient } from '@curanno/api-client';
 import { setApiClient } from '../api/client';
 
 export interface Call {

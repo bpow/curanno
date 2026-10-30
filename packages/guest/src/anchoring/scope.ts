@@ -13,7 +13,7 @@ import {
   type TextPoint,
   type TextRange,
   type TextTreeAdapter,
-} from '@scale/model';
+} from '@curanno/model';
 
 /**
  * A root and its text map. `N` is a DOM node in the browser; the PDF

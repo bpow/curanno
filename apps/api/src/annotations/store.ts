@@ -6,7 +6,7 @@
  */
 import { sql, type Kysely, type SelectQueryBuilder } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/postgres';
-import type { AnchoringState, Permission } from '@scale/model';
+import type { AnchoringState, Permission } from '@curanno/model';
 import type { Caller, UserCaller } from '../auth/caller.js';
 import type { Database } from '../db/index.js';
 import { documentForSource } from '../documents/service.js';

@@ -11,7 +11,7 @@
  */
 import { ANCHORING_STATES, MOTIVATIONS, PERMISSIONS } from './types.js';
 
-export const SCHEMA_BASE = 'https://scale.example/schemas/annotation/';
+export const SCHEMA_BASE = 'https://curanno.example/schemas/annotation/';
 
 export type JsonSchema = Record<string, unknown>;
 

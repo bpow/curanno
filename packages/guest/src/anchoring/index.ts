@@ -23,4 +23,4 @@ export {
   type AnchoringScope,
 } from './scope.js';
 export { nodeFromXPath, xpathFromNode } from './xpath.js';
-export { DEFAULT_CONTEXT_LENGTH as CONTEXT_LENGTH } from '@scale/model';
+export { DEFAULT_CONTEXT_LENGTH as CONTEXT_LENGTH } from '@curanno/model';

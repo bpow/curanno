@@ -12,8 +12,8 @@ import {
   resolveLink,
   type DocumentUri,
   type DocumentUriRelation,
-} from '@scale/model';
-import type { components } from '@scale/api-client';
+} from '@curanno/model';
+import type { components } from '@curanno/api-client';
 import type { Database } from '../db/index.js';
 import { isoDate } from '../annotations/serialize.js';
 

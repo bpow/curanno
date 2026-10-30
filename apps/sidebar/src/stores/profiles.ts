@@ -1,4 +1,4 @@
-import type { Body, BodyProfile, Motivation, ValidationError } from '@scale/model';
+import type { Body, BodyProfile, Motivation, ValidationError } from '@curanno/model';
 import { defineStore } from 'pinia';
 import { ref, shallowRef } from 'vue';
 import { useApi } from '../api/client';

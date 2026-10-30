@@ -5,7 +5,7 @@ The page that shows a PDF so that it can be annotated ([ADR 0021](../../docs/adr
 ## Running it
 
 ```bash
-pnpm --filter @scale/pdf-viewer dev
+pnpm --filter @curanno/pdf-viewer dev
 ```
 
 serves the viewer at <http://localhost:5174/pdf/>; open `?file=<absolute URL of a PDF>` or use the form to pick a file. The sidebar comes from `public/config.json` (the sidebar dev server on port 5173 by default). A deployment serves the viewer from the API image on its own host name and generates `config.json` from the API's environment.
@@ -22,4 +22,4 @@ PDF.js renders with forms and XFA off. The viewer takes nothing from its URL but
 
 ## Tests
 
-`pnpm test` runs the unit tests of the URL handling; the PDF integration's tests are in the guest package (`packages/guest/src/integrations/pdf.test.ts`); the bookmarklet suite's `pdf.spec.ts` (`pnpm --filter @scale/sidebar e2e:guest`) drives the built viewer on its preview server with the built sidebar and a stubbed API.
+`pnpm test` runs the unit tests of the URL handling; the PDF integration's tests are in the guest package (`packages/guest/src/integrations/pdf.test.ts`); the bookmarklet suite's `pdf.spec.ts` (`pnpm --filter @curanno/sidebar e2e:guest`) drives the built viewer on its preview server with the built sidebar and a stubbed API.

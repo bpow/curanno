@@ -5,6 +5,6 @@ import type { FakeSidebar } from '../../src/rpc/fake-sidebar.ts';
 declare global {
   interface Window {
     __fakeSidebar: FakeSidebar;
-    __scaleGuest?: GuestHandle;
+    __curannoGuest?: GuestHandle;
   }
 }

@@ -18,7 +18,7 @@ import {
   type Selector,
   type TargetAnchoringResult,
   type TextRange,
-} from '@scale/model';
+} from '@curanno/model';
 import type { AnchorOptions } from '../anchoring/anchor.js';
 import { createScope, type AnchoringScope } from '../anchoring/scope.js';
 import { anchorInScope } from './html.js';

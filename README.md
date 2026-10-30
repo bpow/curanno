@@ -1,6 +1,6 @@
-# Web annotation platform
+# CurAnno
 
-An annotation system built on the [W3C Web Annotation Data Model](https://www.w3.org/TR/annotation-model/) and [Protocol](https://www.w3.org/TR/annotation-protocol/), with structured annotation bodies, per-annotation access control, and a Hypothesis-style guest/sidebar client split. The project name and the `@scale` package scope are provisional.
+An annotation system built on the [W3C Web Annotation Data Model](https://www.w3.org/TR/annotation-model/) and [Protocol](https://www.w3.org/TR/annotation-protocol/), with structured annotation bodies, per-annotation access control, and a Hypothesis-style guest/sidebar client split. The project is named CurAnno, for curation annotations; its packages use the `@curanno` scope.
 
 - [Analysis and architecture](docs/web-annotation-replacement.md)
 - [Project plan](docs/web-annotation-plan.md)
@@ -12,13 +12,13 @@ An annotation system built on the [W3C Web Annotation Data Model](https://www.w3
 
 | Path                  | Package             | Role                                                       |
 | --------------------- | ------------------- | ---------------------------------------------------------- |
-| `packages/model`      | `@scale/model`      | Annotation types, text model, selectors, RPC message types |
-| `packages/api-client` | `@scale/api-client` | Client generated from the OpenAPI document                 |
-| `packages/guest`      | `@scale/guest`      | Framework-free in-page guest, its bundle and bookmarklet   |
-| `apps/api`            | `@scale/api`        | Fastify server                                             |
-| `apps/sidebar`        | `@scale/sidebar`    | Vue sidebar app ([README](apps/sidebar/README.md))         |
-| `apps/pdf-viewer`     | `@scale/pdf-viewer` | PDF.js viewer page with the guest built in ([README](apps/pdf-viewer/README.md)) |
-| `apps/web`            | `@scale/web`        | Nuxt management site ([README](apps/web/README.md))        |
+| `packages/model`      | `@curanno/model`      | Annotation types, text model, selectors, RPC message types |
+| `packages/api-client` | `@curanno/api-client` | Client generated from the OpenAPI document                 |
+| `packages/guest`      | `@curanno/guest`      | Framework-free in-page guest, its bundle and bookmarklet   |
+| `apps/api`            | `@curanno/api`        | Fastify server                                             |
+| `apps/sidebar`        | `@curanno/sidebar`    | Vue sidebar app ([README](apps/sidebar/README.md))         |
+| `apps/pdf-viewer`     | `@curanno/pdf-viewer` | PDF.js viewer page with the guest built in ([README](apps/pdf-viewer/README.md)) |
+| `apps/web`            | `@curanno/web`        | Nuxt management site ([README](apps/web/README.md))        |
 | `deploy/`             |                     | Compose stack and Keycloak development realm               |
 | `docs/`               |                     | Analysis, plan and ADRs                                    |
 
@@ -30,8 +30,8 @@ Requires Node 24 or later, pnpm 11, and podman (or docker) with the compose plug
 pnpm install
 podman compose up -d
 cp .env.example .env
-pnpm --filter @scale/api migrate
-pnpm --filter @scale/api dev
+pnpm --filter @curanno/api migrate
+pnpm --filter @curanno/api dev
 pnpm check
 ```
 
@@ -41,21 +41,21 @@ Other scripts:
 
 | Script                                    | Does                                                                   |
 | ----------------------------------------- | ---------------------------------------------------------------------- |
-| `pnpm --filter @scale/api migrate`        | Applies `apps/api/migrations/*.sql` to `DATABASE_URL`                  |
-| `pnpm --filter @scale/api dev`            | Builds and runs the API, restarting on changes to the build output     |
-| `pnpm --filter @scale/sidebar dev`        | Runs the sidebar on port 5173, proxying the API (`apps/sidebar/README.md`) |
-| `pnpm --filter @scale/sidebar e2e`        | Playwright test of the sidebar against Keycloak and the API           |
-| `pnpm --filter @scale/sidebar e2e:guest`  | Playwright test of the bookmarklet, guest, sidebar and PDF viewer on corpus pages, API stubbed |
-| `pnpm --filter @scale/pdf-viewer dev`     | Runs the PDF viewer on port 5174 (`apps/pdf-viewer/README.md`)        |
-| `pnpm --filter @scale/web dev`            | Runs the management site on port 3001, proxying the API (`apps/web/README.md`) |
-| `pnpm --filter @scale/web e2e`            | Playwright test of the management site against Keycloak and the API   |
+| `pnpm --filter @curanno/api migrate`        | Applies `apps/api/migrations/*.sql` to `DATABASE_URL`                  |
+| `pnpm --filter @curanno/api dev`            | Builds and runs the API, restarting on changes to the build output     |
+| `pnpm --filter @curanno/sidebar dev`        | Runs the sidebar on port 5173, proxying the API (`apps/sidebar/README.md`) |
+| `pnpm --filter @curanno/sidebar e2e`        | Playwright test of the sidebar against Keycloak and the API           |
+| `pnpm --filter @curanno/sidebar e2e:guest`  | Playwright test of the bookmarklet, guest, sidebar and PDF viewer on corpus pages, API stubbed |
+| `pnpm --filter @curanno/pdf-viewer dev`     | Runs the PDF viewer on port 5174 (`apps/pdf-viewer/README.md`)        |
+| `pnpm --filter @curanno/web dev`            | Runs the management site on port 3001, proxying the API (`apps/web/README.md`) |
+| `pnpm --filter @curanno/web e2e`            | Playwright test of the management site against Keycloak and the API   |
 | `pnpm openapi:lint`                       | Lints `apps/api/openapi.yaml` with Redocly                             |
 | `pnpm api-client:generate`                | Regenerates `packages/api-client/src/schema.ts` from the OpenAPI document |
-| `pnpm --filter @scale/guest bundle`       | Builds the guest bundle `packages/guest/build/guest.js`                 |
-| `pnpm --filter @scale/guest bookmarklet -- --bundle-url URL --sidebar-origin ORIGIN` | Prints the bookmarklet for a deployed bundle and sidebar |
-| `pnpm --filter @scale/guest dev [-- --sidebar-origin ORIGIN]` | Serves a sample page and the bundle, opens the fake or a real sidebar, prints a bookmarklet |
-| `pnpm --filter @scale/guest test:browser` | Browser tests: text-model fixtures through the guest, RPC, hostile page |
-| `pnpm --filter @scale/guest trial`        | Anchoring regression corpus; fails on a guessed must-not-match anchor  |
+| `pnpm --filter @curanno/guest bundle`       | Builds the guest bundle `packages/guest/build/guest.js`                 |
+| `pnpm --filter @curanno/guest bookmarklet -- --bundle-url URL --sidebar-origin ORIGIN` | Prints the bookmarklet for a deployed bundle and sidebar |
+| `pnpm --filter @curanno/guest dev [-- --sidebar-origin ORIGIN]` | Serves a sample page and the bundle, opens the fake or a real sidebar, prints a bookmarklet |
+| `pnpm --filter @curanno/guest test:browser` | Browser tests: text-model fixtures through the guest, RPC, hostile page |
+| `pnpm --filter @curanno/guest trial`        | Anchoring regression corpus; fails on a guessed must-not-match anchor  |
 | `pnpm load:seed -- [--annotations N ...]`  | Fills `DATABASE_URL` with load-test data at representative volumes (`docs/performance.md`) |
 | `pnpm load:run -- [--out results.json]`   | Runs the load test against that database and explains the search queries |
 | `podman build -t annotations-api -f Dockerfile .` | Builds the API image                                           |
@@ -77,10 +77,10 @@ Release 1.0: Phases 0 to 6 of the [project plan](docs/web-annotation-plan.md) ar
 To try the bookmarklet locally: start the compose stack, migrate and run the API (above), then
 
 ```bash
-pnpm --filter @scale/sidebar dev
-pnpm --filter @scale/guest dev -- --sidebar-origin http://localhost:5173
+pnpm --filter @curanno/sidebar dev
+pnpm --filter @curanno/guest dev -- --sidebar-origin http://localhost:5173
 ```
 
-Open <http://127.0.0.1:5180/> (or a corpus page under `/cases/`), press "Load the guest" or drag the printed bookmarklet to the bookmarks bar, and log in as `alice` in the popup. For a PDF, `pnpm --filter @scale/pdf-viewer dev` and open <http://localhost:5174/pdf/>. The local sidebar is plain http on `localhost`, so browsers embed it only from http pages on this machine (an https page blocks it as mixed content, and Chromium's local-network-access check stops pages elsewhere); other host origins also need `VITE_FRAME_ANCESTORS` to list them (`apps/sidebar/README.md`). A deployed sidebar on https has neither limit.
+Open <http://127.0.0.1:5180/> (or a corpus page under `/cases/`), press "Load the guest" or drag the printed bookmarklet to the bookmarks bar, and log in as `alice` in the popup. For a PDF, `pnpm --filter @curanno/pdf-viewer dev` and open <http://localhost:5174/pdf/>. The local sidebar is plain http on `localhost`, so browsers embed it only from http pages on this machine (an https page blocks it as mixed content, and Chromium's local-network-access check stops pages elsewhere); other host origins also need `VITE_FRAME_ANCESTORS` to list them (`apps/sidebar/README.md`). A deployed sidebar on https has neither limit.
 
 Open after 1.0: a manual screen-reader pass per [accessibility.md](docs/accessibility.md), a load test of the ACL-filtered search at representative volumes, and deployment to a real cluster (the chart is lint- and template-checked and the images run; no cluster was available during development).

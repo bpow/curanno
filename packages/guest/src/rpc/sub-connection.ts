@@ -19,7 +19,7 @@ import {
   type GuestMessage,
   type Payload,
   type SidebarMessage,
-} from '@scale/model';
+} from '@curanno/model';
 import type { Connection, PortLike } from './connection.js';
 
 export interface SubGuestConnectionOptions {

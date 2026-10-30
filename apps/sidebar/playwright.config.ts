@@ -4,7 +4,7 @@ import { defineConfig } from '@playwright/test';
  * End-to-end tests against the real stack: the compose Postgres and
  * Keycloak (see the repository README), the API and the Vite dev server.
  * The API is started from its build output unless one is already listening;
- * run `pnpm build` and `pnpm --filter @scale/api migrate` first.
+ * run `pnpm build` and `pnpm --filter @curanno/api migrate` first.
  */
 const ci = !!process.env['CI'];
 

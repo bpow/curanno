@@ -7,7 +7,7 @@
  * the text model walk this tree gives the same normalized text and offsets
  * as the rendered layer, so pages that are not rendered yet can be anchored.
  */
-import { createDomAdapter, extractText, type DomLikeNode } from '@scale/model';
+import { createDomAdapter, extractText, type DomLikeNode } from '@curanno/model';
 import type { AnchoringScope } from '../anchoring/scope.js';
 
 /** The parts of a PDF.js text content item the layout mirrors. */

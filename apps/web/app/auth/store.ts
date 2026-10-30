@@ -1,4 +1,4 @@
-import type { ApiClient, User as ApiUser } from '@scale/api-client';
+import type { ApiClient, User as ApiUser } from '@curanno/api-client';
 import type { User, UserManager } from 'oidc-client-ts';
 import { computed, ref, shallowRef } from 'vue';
 import { toProblem, unwrap } from '../api/problems';

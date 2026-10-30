@@ -18,7 +18,7 @@ import {
   type TextPositionSelector,
   type TextQuoteSelector,
   type TextRange,
-} from '@scale/model';
+} from '@curanno/model';
 import { matchQuote, type ScoredMatch } from './match-quote.js';
 import type { AnchoringScope } from './scope.js';
 import { nodeFromXPath } from './xpath.js';

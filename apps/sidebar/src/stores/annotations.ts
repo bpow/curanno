@@ -5,7 +5,7 @@
  * protocol with the ETag the caller last saw (`If-Match`), so a 412 reaches
  * the UI as a conflict rather than a silent overwrite.
  */
-import type { Annotation, AnnotationInput } from '@scale/api-client';
+import type { Annotation, AnnotationInput } from '@curanno/api-client';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { annotationUuid, parentIri } from '../api/annotations';

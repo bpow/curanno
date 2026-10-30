@@ -4,7 +4,7 @@
  * `fixtures-runtime.js` by the harness; `fixtures.test.ts` compares what
  * comes back with the fixture's expectations.
  */
-import { textOfRange, type TextPositionSelector, type TextQuoteSelector } from '@scale/model';
+import { textOfRange, type TextPositionSelector, type TextQuoteSelector } from '@curanno/model';
 import { anchor } from '../../../src/anchoring/anchor.ts';
 import { describe } from '../../../src/anchoring/describe.ts';
 import { createScope, domRangeOf } from '../../../src/anchoring/scope.ts';

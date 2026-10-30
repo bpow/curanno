@@ -8,7 +8,7 @@
  */
 import { Ajv2020, type Options } from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
-import { addAnnotationFormats } from '@scale/model';
+import { addAnnotationFormats } from '@curanno/model';
 
 const common: Options = {
   allErrors: true,

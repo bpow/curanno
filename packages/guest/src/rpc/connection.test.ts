@@ -1,4 +1,4 @@
-import { RPC_PROTOCOL_VERSION, envelope, type SidebarMessage } from '@scale/model';
+import { RPC_PROTOCOL_VERSION, envelope, type SidebarMessage } from '@curanno/model';
 import { describe, expect, it, vi } from 'vitest';
 import { GuestConnection } from './connection.js';
 import { FakeSidebar } from './fake-sidebar.js';

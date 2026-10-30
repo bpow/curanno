@@ -1,13 +1,13 @@
 /**
  * Prints the bookmarklet for a deployed guest bundle and sidebar.
  *
- *   pnpm --filter @scale/guest bookmarklet --bundle-url https://annotations.example/guest.js \
+ *   pnpm --filter @curanno/guest bookmarklet --bundle-url https://annotations.example/guest.js \
  *       --sidebar-origin https://annotations.example [--sidebar-path /sidebar/] \
  *       [--pdf-viewer-url https://pdf.annotations.example/pdf/]
  */
 // The built package: the scripts run under Node, which cannot load the
 // library's TypeScript sources directly. `pnpm build` first.
-import { bookmarkletUrl, type BookmarkletOptions } from '@scale/guest';
+import { bookmarkletUrl, type BookmarkletOptions } from '@curanno/guest';
 
 function option(args: string[], name: string): string | undefined {
   const index = args.indexOf(name);

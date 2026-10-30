@@ -5,7 +5,7 @@
  * than injected; the PDF is the untrusted input, and PDF.js renders it with
  * scripting and XFA forms off (PDF.js 6 has no eval path left to disable).
  */
-import { Guest, PdfIntegration, pdfUrn } from '@scale/guest';
+import { Guest, PdfIntegration, pdfUrn } from '@curanno/guest';
 import * as pdfjs from 'pdfjs-dist';
 import { EventBus, PDFLinkService, PDFViewer } from 'pdfjs-dist/web/pdf_viewer.mjs';
 import 'pdfjs-dist/web/pdf_viewer.css';
@@ -113,7 +113,7 @@ element('toggle-sidebar').addEventListener('click', () => guest?.toggleSidebar()
 
 // Make room for the sidebar frame while it is shown.
 new MutationObserver(() => {
-  const frame = document.querySelector<HTMLElement>('[data-scale-guest="sidebar"]');
+  const frame = document.querySelector<HTMLElement>('[data-curanno-guest="sidebar"]');
   const open = frame !== null && !frame.hidden;
   document.documentElement.style.setProperty('--sidebar-width', open ? 'min(420px, 100vw)' : '0px');
 }).observe(document.body, { childList: true, attributes: true, attributeFilter: ['hidden'] });

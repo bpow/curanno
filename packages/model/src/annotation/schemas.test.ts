@@ -27,7 +27,7 @@ const annotation: Annotation = {
     { type: 'TextualBody', value: 'A comment', format: 'text/plain', purpose: 'commenting' },
     {
       type: 'StructuredBody',
-      profile: 'https://scale.example/profiles/evidence-excerpt/1',
+      profile: 'https://curanno.example/profiles/evidence-excerpt/1',
       value: { kind: 'case', identifiers: ['PMID:12345'] },
     },
   ],

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import type { Selector, TextQuoteSelector } from '@scale/model';
+import type { Selector, TextQuoteSelector } from '@curanno/model';
 import { describe, expect, it } from 'vitest';
 import { createScope } from '../anchoring/scope.js';
 import { PdfIntegration, pageFragmentSelector, pageOfFragment, pdfUrn } from './pdf.js';

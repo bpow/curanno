@@ -34,7 +34,7 @@ describe('bookmarklet', () => {
       bundleUrl: 'https://sidebar.example/guest.js',
       sidebarOrigin: 'https://sidebar.example',
     });
-    expect(source).toContain('window.__scaleGuest');
+    expect(source).toContain('window.__curannoGuest');
     expect(source).toContain('toggleSidebar()');
     expect(source).toContain('"https://sidebar.example/guest.js"');
     expect(source).toContain(`'data-sidebar-origin',"https://sidebar.example"`);

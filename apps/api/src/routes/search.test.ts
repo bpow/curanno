@@ -4,7 +4,7 @@
  * totals. Permission filtering is covered in acl.test.ts.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { PROFILE_BASE } from '@scale/model';
+import { PROFILE_BASE } from '@curanno/model';
 import {
   alice,
   annotationOn,
