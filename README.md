@@ -18,6 +18,7 @@ An annotation system built on the [W3C Web Annotation Data Model](https://www.w3
 | `apps/api`            | `@curanno/api`        | Fastify server                                             |
 | `apps/sidebar`        | `@curanno/sidebar`    | Vue sidebar app ([README](apps/sidebar/README.md))         |
 | `apps/pdf-viewer`     | `@curanno/pdf-viewer` | PDF.js viewer page with the guest built in ([README](apps/pdf-viewer/README.md)) |
+| `apps/extension`      | `@curanno/extension`  | Chromium extension running the guest in every frame ([README](apps/extension/README.md)) |
 | `apps/web`            | `@curanno/web`        | Nuxt management site ([README](apps/web/README.md))        |
 | `deploy/`             |                     | Compose stack and Keycloak development realm               |
 | `docs/`               |                     | Analysis, plan and ADRs                                    |
@@ -47,6 +48,8 @@ Other scripts:
 | `pnpm --filter @curanno/sidebar e2e`        | Playwright test of the sidebar against Keycloak and the API           |
 | `pnpm --filter @curanno/sidebar e2e:guest`  | Playwright test of the bookmarklet, guest, sidebar and PDF viewer on corpus pages, API stubbed |
 | `pnpm --filter @curanno/pdf-viewer dev`     | Runs the PDF viewer on port 5174 (`apps/pdf-viewer/README.md`)        |
+| `pnpm --filter @curanno/extension build`    | Builds the unpacked extension into `apps/extension/dist` (`apps/extension/README.md`) |
+| `pnpm --filter @curanno/extension test:browser` | Playwright test of the built extension in Chromium against the fake sidebar |
 | `pnpm --filter @curanno/web dev`            | Runs the management site on port 3001, proxying the API (`apps/web/README.md`) |
 | `pnpm --filter @curanno/web e2e`            | Playwright test of the management site against Keycloak and the API   |
 | `pnpm openapi:lint`                       | Lints `apps/api/openapi.yaml` with Redocly                             |

@@ -59,7 +59,7 @@ helm upgrade --install annotations deploy/helm/annotations \
 Values worth knowing (`deploy/helm/annotations/values.yaml` documents each):
 
 - `secrets.databaseUrl` or `secrets.existingSecret`: the Postgres connection string. Migrations run from an init container before each API pod starts and take an advisory lock, so replicas starting together are safe.
-- `config.frameAncestors`: the origins allowed to embed the sidebar, as CSP source expressions. This is the clickjacking defence (ADR 0007): list the sites your users annotate, or `https:` for any https site if you accept the trade. The viewer's origin is added for you.
+- `config.frameAncestors`: the origins allowed to embed the sidebar, as CSP source expressions. This is the clickjacking defence (ADR 0007): list the sites your users annotate, or `https:` for any https site if you accept the trade. Users of the browser extension annotate whatever site they are on, so serving them needs `https:`. The viewer's origin is added for you.
 - `pdfViewer.host`: a second host name for the PDF viewer, with its own certificate, so a PDF.js defect never runs on the sidebar's origin (ADR 0021). Point its DNS at the ingress; the chart adds the ingress rule.
 - `ingress.metrics`: whether `/metrics` is reachable from outside (default no). Scrape the API Service inside the cluster instead.
 - `web.enabled`: the management site; off, the API still serves the sidebar and viewer, and users install the bookmarklet from `pnpm --filter @curanno/guest bookmarklet` output instead of the landing page.
