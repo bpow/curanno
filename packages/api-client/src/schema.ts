@@ -559,7 +559,7 @@ export interface components {
          */
         DocumentUriRelation: "self" | "canonical" | "shortlink" | "alternate" | "og_url" | "dc_identifier" | "doi" | "pdf_fingerprint" | "pdf_url";
         DocumentLink: {
-            /** Format: iri */
+            /** @description The identifier exactly as the page reported it: a relative link, a bare DOI or a PDF fingerprint are all accepted and normalized by the server (docs/document-identity.md). */
             uri: string;
             relation: components["schemas"]["DocumentUriRelation"];
         } & {
