@@ -1,9 +1,15 @@
-# API image. Build from the repository root:
-#   podman build -t annotations-api -f Dockerfile .
-# The image contains the compiled server, the OpenAPI document it binds to,
-# the SQL migrations (run with `node apps/api/dist/db/migrate.js`) and only
-# the production dependencies of @scale/api and the workspace packages it
-# uses. Configuration is read from environment variables (see .env.example).
+# Images for the platform, built from the repository root (ADR 0021):
+#
+#   podman build --target api -t annotations-api -f Dockerfile .
+#   podman build --target web -t annotations-web -f Dockerfile .
+#
+# `api` holds the compiled server, the OpenAPI document it binds to, the SQL
+# migrations (run with `node dist/db/migrate.js`), the production dependencies
+# of @scale/api, and the built clients it serves under STATIC_ROOT: the sidebar
+# (/sidebar/), the PDF viewer (/pdf/) and the guest bundle (/guest.js).
+# `web` holds the management site's Nitro server. Both read their
+# configuration from environment variables (see .env.example and
+# deploy/helm/annotations/values.yaml); nothing is baked in.
 
 FROM docker.io/library/node:24-alpine AS build
 RUN npm install --global pnpm@11.9.0
@@ -14,14 +20,26 @@ COPY packages/api-client/package.json packages/api-client/
 COPY packages/guest/package.json packages/guest/
 COPY apps/api/package.json apps/api/
 COPY apps/sidebar/package.json apps/sidebar/
-RUN pnpm install --frozen-lockfile --ignore-scripts --filter @scale/api...
-COPY packages/model packages/model
-COPY packages/api-client packages/api-client
-COPY apps/api apps/api
-RUN pnpm exec tsc -b apps/api/tsconfig.json \
- && pnpm --filter @scale/api deploy --prod --legacy /out
+COPY apps/pdf-viewer/package.json apps/pdf-viewer/
+COPY apps/web/package.json apps/web/
+RUN pnpm install --frozen-lockfile --ignore-scripts
+COPY packages packages
+COPY apps apps
+# The libraries, then each client; the sidebar and viewer read config.json at
+# run time, so their builds carry only development defaults.
+RUN pnpm exec tsc -b tsconfig.json \
+ && pnpm --filter @scale/guest bundle \
+ && pnpm --filter @scale/sidebar build \
+ && pnpm --filter @scale/pdf-viewer build \
+ && pnpm --filter @scale/web exec nuxt prepare \
+ && pnpm --filter @scale/web build \
+ && pnpm --filter @scale/api deploy --prod --legacy /out \
+ && mkdir -p /out/static \
+ && cp -r apps/sidebar/dist /out/static/sidebar \
+ && cp -r apps/pdf-viewer/dist /out/static/pdf \
+ && cp packages/guest/build/guest.js /out/static/guest.js
 
-FROM docker.io/library/node:24-alpine
+FROM docker.io/library/node:24-alpine AS api
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /out/package.json ./
@@ -29,7 +47,19 @@ COPY --from=build /out/node_modules ./node_modules
 COPY --from=build /out/dist ./dist
 COPY --from=build /out/openapi.yaml ./openapi.yaml
 COPY --from=build /out/migrations ./migrations
+COPY --from=build /out/static ./static
 USER node
 EXPOSE 3000
 ENV PORT=3000
+ENV STATIC_ROOT=/app/static
 CMD ["node", "dist/index.js"]
+
+FROM docker.io/library/node:24-alpine AS web
+ENV NODE_ENV=production
+WORKDIR /app
+COPY --from=build /src/apps/web/.output ./
+USER node
+EXPOSE 3001
+ENV PORT=3001
+ENV HOST=0.0.0.0
+CMD ["node", "server/index.mjs"]

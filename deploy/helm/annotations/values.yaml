@@ -1,6 +1,13 @@
-# Default values for the annotations API chart. Postgres is not part of this
-# chart (plan, section 9): point `config.databaseUrl` or `existingSecret` at
+# Default values for the annotations chart. Postgres is not part of this
+# chart (plan, section 9): point `secrets.databaseUrl` or `existingSecret` at
 # a database provided by the cluster or a managed service.
+#
+# Two deployments (ADR 0021): the API, which also serves the sidebar, the PDF
+# viewer and the guest bundle from its image, and the management site. One
+# ingress host carries them all: /annotations, /x, /sidebar, /pdf, /guest.js
+# and /metrics go to the API, everything else to the site. The PDF viewer is
+# served on a second host of its own, so a PDF.js bug never runs on the
+# sidebar's origin.
 
 replicaCount: 2
 
@@ -18,15 +25,21 @@ config:
   # Issuer IRI of the OpenID Connect provider; discovery runs at
   # <issuer>/.well-known/openid-configuration (ADR 0005).
   oidcIssuer: https://idp.example/realms/annotations
-  # The client the sidebar authenticates as; tokens with this `azp` are accepted.
+  # The public client the sidebar and the site authenticate as; tokens with this `azp` are accepted.
   oidcClientId: annotations-sidebar
   # Accepted `aud` claim. Defaults to the client id when empty.
   oidcAudience: ''
   # Members of this group (from the `groups` claim) are platform administrators.
   oidcAdminGroup: ''
-  # Origin under which annotation IRIs are minted: the ingress host.
+  # Origin under which annotation IRIs are minted: the ingress host, with its scheme.
   publicUrl: https://annotations.example
   logLevel: info
+  # Origins allowed to embed the sidebar, as Content-Security-Policy source
+  # expressions (space-separated). The PDF viewer's origin is added automatically.
+  frameAncestors: "'self'"
+  # Prometheus metrics at /metrics on the API. Keep them off the ingress
+  # (see ingress.metrics below) or turn them off.
+  metricsEnabled: true
 
 # The database URL is a secret. Either set it here (rendered into a Secret
 # managed by the chart) or name an existing Secret holding DATABASE_URL.
@@ -39,6 +52,26 @@ secrets:
 # starts; the runner takes an advisory lock so replicas starting together are safe.
 migrations:
   enabled: true
+
+# The PDF viewer, served by the API image for this host name only (ADR 0021).
+# Needs a DNS name and a certificate of its own; empty serves no viewer.
+pdfViewer:
+  host: pdf.annotations.example
+
+# The management site (apps/web), a Nitro server from the `web` image target.
+web:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ghcr.io/example/annotations-web
+    tag: '' # defaults to the chart's appVersion
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
 
 service:
   type: ClusterIP
@@ -56,11 +89,11 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-send-timeout: '3600'
     nginx.ingress.kubernetes.io/proxy-buffering: 'off'
     nginx.ingress.kubernetes.io/proxy-http-version: '1.1'
-  hosts:
-    - host: annotations.example
-      paths:
-        - path: /
-          pathType: Prefix
+  # The main host: `config.publicUrl` without the scheme.
+  host: annotations.example
+  # Whether /metrics is reachable through the ingress. Off by default: scrape
+  # the API Service inside the cluster instead (port http, path /metrics).
+  metrics: false
   tls: []
 
 resources:

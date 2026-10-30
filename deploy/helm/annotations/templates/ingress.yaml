@@ -1,8 +1,10 @@
 {{- if .Values.ingress.enabled }}
+{{- $api := include "annotations.fullname" . }}
+{{- $web := printf "%s-web" $api }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "annotations.fullname" . }}
+  name: {{ $api }}
   labels:
     {{- include "annotations.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
@@ -18,18 +20,41 @@ spec:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   rules:
-    {{- range .Values.ingress.hosts }}
-    - host: {{ .host | quote }}
+    - host: {{ .Values.ingress.host | quote }}
       http:
         paths:
-          {{- range .paths }}
-          - path: {{ .path }}
-            pathType: {{ .pathType }}
+          {{- $paths := list "/annotations" "/x" "/sidebar" "/guest.js" "/healthz" "/readyz" }}
+          {{- if .Values.ingress.metrics }}
+          {{- $paths = append $paths "/metrics" }}
+          {{- end }}
+          {{- range $paths }}
+          - path: {{ . }}
+            pathType: Prefix
             backend:
               service:
-                name: {{ include "annotations.fullname" $ }}
+                name: {{ $api }}
                 port:
                   name: http
           {{- end }}
+          {{- if .Values.web.enabled }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $web }}
+                port:
+                  name: http
+          {{- end }}
+    {{- with .Values.pdfViewer.host }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - path: /pdf
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $api }}
+                port:
+                  name: http
     {{- end }}
 {{- end }}

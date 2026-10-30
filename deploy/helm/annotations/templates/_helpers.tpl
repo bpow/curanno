@@ -31,6 +31,10 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- printf "%s:%s" .Values.image.repository (default .Chart.AppVersion .Values.image.tag) }}
 {{- end }}
 
+{{- define "annotations.webImage" -}}
+{{- printf "%s:%s" .Values.web.image.repository (default .Chart.AppVersion .Values.web.image.tag) }}
+{{- end }}
+
 {{- define "annotations.secretName" -}}
 {{- default (include "annotations.fullname" .) .Values.secrets.existingSecret }}
 {{- end }}

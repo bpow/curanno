@@ -16,3 +16,9 @@ data:
   {{- end }}
   PUBLIC_URL: {{ required "config.publicUrl is required" .Values.config.publicUrl | quote }}
   LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  STATIC_ROOT: /app/static
+  FRAME_ANCESTORS: {{ .Values.config.frameAncestors | quote }}
+  {{- with .Values.pdfViewer.host }}
+  PDF_VIEWER_ORIGIN: {{ printf "https://%s" . | quote }}
+  {{- end }}
+  METRICS_ENABLED: {{ .Values.config.metricsEnabled | quote }}

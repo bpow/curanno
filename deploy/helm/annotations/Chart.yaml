@@ -1,7 +1,7 @@
 apiVersion: v2
 name: annotations
-description: W3C Web Annotation platform API (Fastify) against an existing Postgres
+description: W3C Web Annotation platform (API with the sidebar, PDF viewer and guest; management site) against an existing Postgres
 type: application
-version: 0.1.0
-appVersion: '0.1.0'
+version: 1.0.0
+appVersion: '1.0.0'
 keywords: [annotation, w3c, fastify]

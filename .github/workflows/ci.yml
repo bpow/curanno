@@ -24,6 +24,10 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgres://annotations:annotations@localhost:5432/annotations
+      # The backup and restore test runs pg_dump and pg_restore from the
+      # Postgres container, whose major version matches the server's.
+      PG_DUMP: docker exec -i ${{ job.services.postgres.id }} pg_dump
+      PG_RESTORE: docker exec -i ${{ job.services.postgres.id }} pg_restore
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -119,6 +123,10 @@ jobs:
           docker logs keycloak
           exit 1
       - run: pnpm --filter @scale/sidebar e2e
+      # Discovery, the JWKS and a real token from this Keycloak, accepted by the API.
+      - run: pnpm vitest run apps/api/src/auth/oidc-live.test.ts
+        env:
+          OIDC_LIVE_ISSUER: http://localhost:8080/realms/annotations-dev
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -213,14 +221,19 @@ jobs:
             apps/web/playwright-report/
             apps/web/test-results/
 
-  # The API image must build and the chart must render without a cluster
-  # (plan, Phase 3). Neither job pushes anything.
+  # Both images must build and the chart must render without a cluster
+  # (plan, Phase 3 and 5). Neither job pushes anything: publishing is the
+  # operator's release step (docs/operator-guide.md).
   image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - run: docker build -t annotations-api -f Dockerfile .
-      - run: docker run --rm annotations-api node -e "require('node:fs').accessSync('openapi.yaml'); console.log('image ok')"
+      - run: docker build --target api -t annotations-api -f Dockerfile .
+      - run: docker build --target web -t annotations-web -f Dockerfile .
+      - run: >-
+          docker run --rm annotations-api node -e
+          "const fs = require('node:fs'); for (const f of ['openapi.yaml', 'static/sidebar/index.html', 'static/pdf/index.html', 'static/guest.js']) fs.accessSync(f); console.log('api image ok')"
+      - run: docker run --rm annotations-web node -e "require('node:fs').accessSync('server/index.mjs'); console.log('web image ok')"
 
   helm:
     runs-on: ubuntu-latest

@@ -1,0 +1,16 @@
+{{- if .Values.web.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "annotations.fullname" . }}-web
+  labels:
+    {{- include "annotations.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+data:
+  PORT: '3001'
+  HOST: 0.0.0.0
+  # The site is an ordinary client of the API on the same origin (ADR 0020).
+  NUXT_PUBLIC_API_BASE: ''
+  NUXT_PUBLIC_OIDC_ISSUER: {{ .Values.config.oidcIssuer | quote }}
+  NUXT_PUBLIC_OIDC_CLIENT_ID: {{ .Values.config.oidcClientId | quote }}
+{{- end }}
