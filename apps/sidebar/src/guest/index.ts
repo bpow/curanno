@@ -1,9 +1,11 @@
 import { inject, provide, type InjectionKey } from 'vue';
 import { createFakeGuest, documentFromLocation, type FakeGuest } from './fake';
+import { createRpcGuest } from './rpc';
 import type { Guest } from './types';
 
 export * from './types';
 export { createFakeGuest, documentFromLocation, type FakeGuest } from './fake';
+export { createRpcGuest, type RpcGuest, type RpcGuestOptions } from './rpc';
 
 export const GUEST_KEY: InjectionKey<Guest> = Symbol('guest');
 
@@ -22,10 +24,13 @@ export function isFakeGuest(guest: Guest): guest is FakeGuest {
 }
 
 /**
- * The guest this sidebar instance talks to. Until the postMessage transport
- * exists (TODO.md) every instance gets the fake, with the document taken
- * from the `uri` query parameter.
+ * The guest this sidebar instance talks to: the real one over the RPC when
+ * the sidebar is framed, where the document's identity comes from the
+ * guest's report and never from the URL (ADR 0007); the fake when it runs
+ * top-level (development, tests), where the `uri` query parameter picks the
+ * document.
  */
-export function createGuest(): Guest {
-  return createFakeGuest({ document: documentFromLocation() });
+export function createGuest(win: Window = window): Guest {
+  if (win.parent !== win) return createRpcGuest({ window: win });
+  return createFakeGuest({ document: documentFromLocation(win.location.search) });
 }
