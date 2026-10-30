@@ -38,7 +38,7 @@ test.beforeEach(async ({ context }) => {
 
 test('the sidebar takes the document from the guest and anchors its annotations', async () => {
   // The document identity comes from the guest's report of the page, not from the URL.
-  await expect(sidebar.getByText('Minutes of the review board', { exact: true })).toBeVisible();
+  await expect(sidebar.locator('.document')).toContainText('Minutes of the review board');
   const search = api.calls.find((c) => c.method === 'GET' && c.url.pathname === '/x/search');
   expect(search?.url.searchParams.get('uri')).toBe(PAGE_URL);
   expect(search?.authorization).toBe(`Bearer ${SECRETS.token}`);

@@ -29,29 +29,31 @@ function select(): void {
 </script>
 
 <template>
-  <details class="fake-guest">
-    <summary>Development guest</summary>
-    <p class="muted">
-      No page is attached. Pick the document to annotate and type a selection to annotate it.
-    </p>
-    <form class="row" @submit.prevent="applyDocument">
-      <label>
-        Document URI
-        <input v-model="uri" name="uri" type="url" required />
-      </label>
-      <button type="submit">Open</button>
-    </form>
-    <form class="row" @submit.prevent="select">
-      <label>
-        Selected text
-        <input v-model="quote" name="quote" type="text" placeholder="Text selected in the page" />
-      </label>
-      <button type="submit">Select</button>
-    </form>
-    <ul class="log" aria-label="Guest calls">
-      <li v-for="(line, i) in guest.log.value" :key="i">{{ line }}</li>
-    </ul>
-  </details>
+  <aside aria-label="Development tools">
+    <details class="fake-guest">
+      <summary>Development guest</summary>
+      <p class="muted">
+        No page is attached. Pick the document to annotate and type a selection to annotate it.
+      </p>
+      <form class="row" @submit.prevent="applyDocument">
+        <label>
+          Document URI
+          <input v-model="uri" name="uri" type="url" required />
+        </label>
+        <button type="submit">Open</button>
+      </form>
+      <form class="row" @submit.prevent="select">
+        <label>
+          Selected text
+          <input v-model="quote" name="quote" type="text" placeholder="Text selected in the page" />
+        </label>
+        <button type="submit">Select</button>
+      </form>
+      <ul class="log" aria-label="Guest calls" tabindex="0">
+        <li v-for="(line, i) in guest.log.value" :key="i">{{ line }}</li>
+      </ul>
+    </details>
+  </aside>
 </template>
 
 <style scoped>

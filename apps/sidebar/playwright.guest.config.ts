@@ -21,6 +21,7 @@ export default defineConfig({
   retries: ci ? 1 : 0,
   reporter: ci ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
+    actionTimeout: 15_000,
     trace: 'retain-on-failure',
   },
   webServer: [

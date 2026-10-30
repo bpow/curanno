@@ -22,6 +22,11 @@ const ALLOWED = new Set([
 // actual license has been checked by hand. Keep this list short and dated.
 const EXCEPTIONS = new Map([
   // ['package-name', 'reason, checked YYYY-MM-DD'],
+  ['axe-core', 'MPL-2.0; development-only accessibility tests, ADR 0022, checked 2026-10-30'],
+  [
+    '@axe-core/playwright',
+    'MPL-2.0; development-only accessibility tests, ADR 0022, checked 2026-10-30',
+  ],
 ]);
 
 function allowedExpression(expr) {

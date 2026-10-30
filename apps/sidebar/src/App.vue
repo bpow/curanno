@@ -45,7 +45,8 @@ useGuestSync(guest, store);
   <p v-if="auth.error" class="alert" role="alert">{{ auth.error }}</p>
   <main class="content">
     <p v-if="guest.document.value" class="document muted" :title="guest.document.value.uri">
-      <span class="live" :class="store.live" :title="`Live updates: ${store.live}`"></span>
+      <span class="live" :class="store.live" aria-hidden="true"></span>
+      <span class="visually-hidden" role="status">Live updates: {{ store.live }}.</span>
       {{ guest.document.value.title ?? guest.document.value.uri }}
       <span v-if="guest.documents.value.length > 1" class="frames">
         and {{ guest.documents.value.length - 1 }} framed document{{

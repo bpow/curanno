@@ -40,6 +40,8 @@ body {
 
 .toolbar .title {
   flex: 1;
+  margin: 0;
+  font-size: 1rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

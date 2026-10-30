@@ -8,7 +8,7 @@
   </head>
   <body>
     <header id="toolbar" class="toolbar" data-annotatable="false">
-      <span id="title" class="title">PDF</span>
+      <h1 id="title" class="title">PDF</h1>
       <span class="pages">
         <label
           >Page <input id="page" type="number" min="1" value="1" aria-label="Page number"
@@ -30,32 +30,40 @@
       </span>
       <button id="toggle-sidebar" type="button">Annotations</button>
     </header>
-    <section id="open" class="open" hidden data-annotatable="false">
-      <h1>Open a PDF</h1>
-      <p class="muted">
-        Annotations on a PDF follow the file, not where it came from: the same file opened from a
-        URL or from your computer shows the same annotations.
-      </p>
-      <form id="open-url" class="row">
-        <label for="url">URL of a PDF</label>
-        <input
-          id="url"
-          name="url"
-          type="url"
-          required
-          placeholder="https://example.org/paper.pdf"
-        />
-        <button type="submit">Open</button>
-      </form>
-      <p class="row">
-        <label for="file">Or a file from your computer</label>
-        <input id="file" name="file" type="file" accept="application/pdf,.pdf" />
-      </p>
-      <p id="open-error" class="error" role="alert" hidden></p>
-    </section>
-    <div id="viewerContainer" class="viewerContainer" tabindex="0">
-      <div id="viewer" class="pdfViewer"></div>
-    </div>
+    <main>
+      <section id="open" class="open" hidden data-annotatable="false">
+        <h2>Open a PDF</h2>
+        <p class="muted">
+          Annotations on a PDF follow the file, not where it came from: the same file opened from a
+          URL or from your computer shows the same annotations.
+        </p>
+        <form id="open-url" class="row">
+          <label for="url">URL of a PDF</label>
+          <input
+            id="url"
+            name="url"
+            type="url"
+            required
+            placeholder="https://example.org/paper.pdf"
+          />
+          <button type="submit">Open</button>
+        </form>
+        <p class="row">
+          <label for="file">Or a file from your computer</label>
+          <input id="file" name="file" type="file" accept="application/pdf,.pdf" />
+        </p>
+        <p id="open-error" class="error" role="alert" hidden></p>
+      </section>
+      <div
+        id="viewerContainer"
+        class="viewerContainer"
+        tabindex="0"
+        role="region"
+        aria-label="Document"
+      >
+        <div id="viewer" class="pdfViewer"></div>
+      </div>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

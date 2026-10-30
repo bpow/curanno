@@ -61,6 +61,14 @@ const repairable = computed(
     guest.selection.value !== undefined,
 );
 
+/** Focus leaving the card altogether un-emphasises its highlight. */
+function onFocusOut(event: FocusEvent): void {
+  const card = event.currentTarget as HTMLElement;
+  if (!(event.relatedTarget instanceof Node) || !card.contains(event.relatedTarget)) {
+    guest.focus([]);
+  }
+}
+
 function setMode(next: Mode): void {
   mode.value = mode.value === next ? 'view' : next;
   problem.value = undefined;
@@ -175,8 +183,11 @@ async function repair(): Promise<void> {
     class="card"
     :class="{ reply, hovered }"
     tabindex="-1"
+    :aria-label="`Annotation by ${creatorName(annotation)}`"
     @mouseenter="guest.focus([annotation.id])"
     @mouseleave="guest.focus([])"
+    @focusin="guest.focus([annotation.id])"
+    @focusout="onFocusOut"
   >
     <header>
       <span class="creator">{{ creatorName(annotation) }}</span>
@@ -187,8 +198,15 @@ async function repair(): Promise<void> {
       <AnchoringBadge v-if="!reply" :state="anchoring" />
     </header>
 
-    <blockquote v-if="quote && !reply" class="quote" @click="guest.scrollTo(annotation.id)">
-      {{ quote }}
+    <blockquote v-if="quote && !reply" class="quote">
+      <button
+        type="button"
+        class="quote-button"
+        :title="'Show in the page'"
+        @click="guest.scrollTo(annotation.id)"
+      >
+        {{ quote }}
+      </button>
     </blockquote>
 
     <template v-if="mode === 'edit'">
@@ -301,12 +319,26 @@ header {
 
 .quote {
   margin: 0.4rem 0;
-  padding: 0.2rem 0.6rem;
+  padding: 0;
   border-left: 3px solid light-dark(#f2c94c, #a67c00);
+}
+
+.quote-button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  padding: 0.2rem 0.6rem;
   color: var(--muted);
   font-style: italic;
-  cursor: pointer;
   overflow-wrap: anywhere;
+}
+
+.quote-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .comment {

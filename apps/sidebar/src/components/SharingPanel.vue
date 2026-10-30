@@ -175,7 +175,7 @@ onMounted(() => void load());
         aria-label="Share with"
         :disabled="busy"
       />
-      <ul v-if="candidates.length" class="candidates" role="listbox">
+      <ul v-if="candidates.length" class="candidates" aria-label="Matching principals">
         <li v-for="c in candidates" :key="c.id">
           <button type="button" class="link" @click="add(c)">{{ label(c) }}</button>
         </li>

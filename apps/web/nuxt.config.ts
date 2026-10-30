@@ -18,6 +18,17 @@ export default defineNuxtConfig({
   // plain @vue/test-utils and the code reads the same with or without Nuxt.
   imports: { autoImport: false },
   devServer: { port: 3001 },
+  // Every page has a language and a title (axe: html-has-lang, document-title).
+  app: {
+    head: {
+      htmlAttrs: { lang: 'en' },
+      title: 'Annotation platform',
+      titleTemplate: (title) =>
+        title && title !== 'Annotation platform'
+          ? `${title} · Annotation platform`
+          : 'Annotation platform',
+    },
+  },
   runtimeConfig: {
     // Overridable at run time through NUXT_PUBLIC_API_BASE, NUXT_PUBLIC_OIDC_ISSUER
     // and NUXT_PUBLIC_OIDC_CLIENT_ID. Defaults match the compose stack.
