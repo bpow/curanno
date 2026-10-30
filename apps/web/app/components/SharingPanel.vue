@@ -19,6 +19,8 @@ const acl = useRequest(
   [() => props.annotationId],
 );
 const action = useAction();
+/** Bumped on every reload so that checkboxes re-sync with the ACL after a refused change. */
+const version = ref(0);
 
 interface Row {
   principal: PrincipalRef;
@@ -39,6 +41,7 @@ const nameOf = (p: PrincipalRef): string => p.name ?? p.kind;
 
 async function changed(): Promise<void> {
   await acl.run();
+  version.value += 1;
   emit('changed');
 }
 
@@ -99,7 +102,7 @@ const has = (entries: AclEntry[] | null, id: string, permission: Permission): bo
           <th v-for="permission in PERMISSIONS" :key="permission">{{ permission }}</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody :key="version">
         <tr v-for="row in rows" :key="row.principal.id">
           <td>
             {{ nameOf(row.principal) }}

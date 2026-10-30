@@ -7,7 +7,12 @@ import { defineConfig } from 'vitest/config';
 // needed here.
 export default defineConfig({
   plugins: [vue()],
-  resolve: { alias: { '~': fileURLToPath(new URL('./app', import.meta.url)) } },
+  resolve: {
+    alias: {
+      '~': fileURLToPath(new URL('./app', import.meta.url)),
+      '#components': fileURLToPath(new URL('./app/test/nuxt-components.ts', import.meta.url)),
+    },
+  },
   test: {
     name: 'web',
     environment: 'happy-dom',
