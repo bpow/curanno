@@ -48,7 +48,7 @@ describe.skipIf(!databaseUrl)('W3C protocol', () => {
       expect(body['id']).toMatch(new RegExp(`^${PUBLIC_URL}/annotations/[0-9a-f-]{36}$`));
       expect(body['@context']).toEqual([
         'http://www.w3.org/ns/anno.jsonld',
-        'https://scale.example/ns/anno.jsonld',
+        `${PUBLIC_URL}/x/context.jsonld`,
       ]);
       expect(body['creator']).toMatchObject({ type: 'Person', name: 'Alice Annotator' });
       expect(body['created']).toBe(body['modified']);

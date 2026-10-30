@@ -7,6 +7,7 @@ import { profileHandlers } from './profiles.js';
 import { protocolHandlers } from './protocol.js';
 import { searchHandlers } from './search.js';
 import { userHandlers } from './users.js';
+import { vocabularyHandlers } from './vocabulary.js';
 
 /** Every operationId in apps/api/openapi.yaml, bound by fastify-openapi-glue. */
 export function createHandlers(ctx: AppContext): Handlers {
@@ -19,5 +20,6 @@ export function createHandlers(ctx: AppContext): Handlers {
     ...eventHandlers(ctx),
     ...userHandlers(ctx),
     ...groupHandlers(ctx),
+    ...vocabularyHandlers(),
   };
 }

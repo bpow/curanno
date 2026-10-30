@@ -10,11 +10,12 @@
 export const WEB_ANNOTATION_CONTEXT = 'http://www.w3.org/ns/anno.jsonld';
 
 /**
- * JSON-LD context for the extension terms (`StructuredBody`, `profile`,
+ * Namespace of the extension terms (`StructuredBody`, `profile`,
  * `anchoring`, `permissions`). The host name is provisional, like the
- * project name; the term definitions are what matter.
+ * project name; the terms are fixed so that annotations from different
+ * deployments share a vocabulary. The context document that defines them is
+ * served by each deployment at `/x/context.jsonld` (`context.ts`).
  */
-export const EXTENSION_CONTEXT = 'https://scale.example/ns/anno.jsonld';
 export const EXTENSION_NAMESPACE = 'https://scale.example/ns/anno#';
 
 export type JsonLdContextValue = string | Record<string, unknown>;

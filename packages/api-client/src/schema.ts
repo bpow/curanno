@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/x/context.jsonld": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The JSON-LD context for the extension terms
+         * @description Every annotation's `@context` names this document after the W3C context. It defines `StructuredBody`, `profile`, `anchoring` and `permissions` (ADR 0010, 0016, 0006).
+         */
+        get: operations["getExtensionContext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/annotations/": {
         parameters: {
             query?: never;
@@ -1157,6 +1177,30 @@ export type HeaderVary = components['headers']['Vary'];
 export type HeaderAllow = components['headers']['Allow'];
 export type $defs = Record<string, never>;
 export interface operations {
+    getExtensionContext: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The context document */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/ld+json": {
+                        "@context": Record<string, unknown>;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
     listContainer: {
         parameters: {
             query?: {

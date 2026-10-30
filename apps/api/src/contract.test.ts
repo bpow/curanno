@@ -165,6 +165,20 @@ describe.skipIf(!databaseUrl)('OpenAPI contract', () => {
   const idOf = (res: LightMyRequestResponse): string =>
     res.json<{ id: string }>().id.split('/').pop() as string;
 
+  run('getExtensionContext', [
+    {
+      name: 'serves the context',
+      as: null,
+      status: 200,
+      request: () => ({ method: 'GET', url: '/x/context.jsonld' }),
+      then: (res) => {
+        expect(res.headers['content-type']).toMatch(/^application\/ld\+json/);
+        const context = res.json<{ '@context': Record<string, unknown> }>()['@context'];
+        expect(context['StructuredBody']).toBe('https://scale.example/ns/anno#StructuredBody');
+        expect(context['permissions']).toMatchObject({ '@container': '@set' });
+      },
+    },
+  ]);
   run('registerDocument', [
     {
       name: 'creates a document',

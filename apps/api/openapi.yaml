@@ -37,9 +37,32 @@ tags:
     description: Users and principals
   - name: groups
     description: Groups and memberships
+  - name: vocabulary
+    description: The JSON-LD context of the platform's extension terms
 security:
   - bearerAuth: []
 paths:
+  /x/context.jsonld:
+    get:
+      operationId: getExtensionContext
+      tags: [vocabulary]
+      summary: The JSON-LD context for the extension terms
+      description: >-
+        Every annotation's `@context` names this document after the W3C context. It defines
+        `StructuredBody`, `profile`, `anchoring` and `permissions` (ADR 0010, 0016, 0006).
+      security:
+        - {}
+      responses:
+        '200':
+          description: The context document
+          content:
+            application/ld+json:
+              schema:
+                type: object
+                required: ['@context']
+                properties:
+                  '@context':
+                    type: object
   /annotations/:
     get:
       operationId: listContainer

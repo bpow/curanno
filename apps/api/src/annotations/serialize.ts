@@ -4,7 +4,7 @@
  * and whatever extension properties were stored with it.
  */
 import {
-  EXTENSION_CONTEXT,
+  extensionContextIri,
   WEB_ANNOTATION_CONTEXT,
   type AnchoringRepair,
   type AnchoringState,
@@ -47,7 +47,10 @@ export interface AnnotationRecord {
   permissions: Permission[];
 }
 
-export const ANNOTATION_CONTEXT = [WEB_ANNOTATION_CONTEXT, EXTENSION_CONTEXT];
+/** The W3C context, then this deployment's extension context (served at `/x/context.jsonld`). */
+export function annotationContext(publicUrl: string): string[] {
+  return [WEB_ANNOTATION_CONTEXT, extensionContextIri(publicUrl)];
+}
 
 export function annotationIri(publicUrl: string, id: string): string {
   return `${publicUrl}/annotations/${id}`;
@@ -90,7 +93,7 @@ export function toAnnotation(record: AnnotationRecord, publicUrl: string): Annot
     [...record.targets].sort((a, b) => a.position - b.position).map(toTarget),
   ) as Target | Target[];
   return {
-    '@context': ANNOTATION_CONTEXT,
+    '@context': annotationContext(publicUrl),
     id: annotationIri(publicUrl, record.id),
     type: (type as Annotation['type'] | undefined) ?? 'Annotation',
     creator: {
