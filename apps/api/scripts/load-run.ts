@@ -360,7 +360,8 @@ async function startServer(
       stdio: ['ignore', 'pipe', 'inherit'],
     },
   );
-  const lines = createInterface({ input: child.stdout as NodeJS.ReadableStream });
+  if (!child.stdout) throw new Error('the API process has no stdout');
+  const lines = createInterface({ input: child.stdout });
   return new Promise((resolve, reject) => {
     lines.on('line', (line) => {
       const parsed = parseJsonLine(line);
@@ -418,7 +419,9 @@ function cannon(
   const samples: number[] = [];
   return new Promise((resolve, reject) => {
     const instance = autocannon({ url, headers, connections, duration: seconds }, (err, result) =>
-      err ? reject(err) : resolve({ result, samples }),
+      err
+        ? reject(err instanceof Error ? err : new Error(String(err)))
+        : resolve({ result, samples }),
     );
     // The tracker emits (client, statusCode, resBytes, responseTime); the typings omit the client.
     (instance as unknown as { on(event: string, fn: (...a: unknown[]) => void): void }).on(
@@ -478,7 +481,7 @@ async function replayOnce(
   const started = performance.now();
   const res = await fetch(url, { headers, signal: controller.signal });
   if (!res.ok || !res.body) throw new Error(`event stream answered ${res.status}`);
-  const reader = res.body.getReader();
+  const reader = (res.body as ReadableStream<Uint8Array>).getReader();
   const decoder = new TextDecoder();
   let buffer = '';
   let ids = 0;

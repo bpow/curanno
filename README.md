@@ -56,6 +56,8 @@ Other scripts:
 | `pnpm --filter @scale/guest dev [-- --sidebar-origin ORIGIN]` | Serves a sample page and the bundle, opens the fake or a real sidebar, prints a bookmarklet |
 | `pnpm --filter @scale/guest test:browser` | Browser tests: text-model fixtures through the guest, RPC, hostile page |
 | `pnpm --filter @scale/guest trial`        | Anchoring regression corpus; fails on a guessed must-not-match anchor  |
+| `pnpm load:seed -- [--annotations N ...]`  | Fills `DATABASE_URL` with load-test data at representative volumes (`docs/performance.md`) |
+| `pnpm load:run -- [--out results.json]`   | Runs the load test against that database and explains the search queries |
 | `podman build -t annotations-api -f Dockerfile .` | Builds the API image                                           |
 | `helm lint deploy/helm/annotations`       | Validates the Helm chart (see `deploy/helm/annotations/values.yaml`)   |
 
