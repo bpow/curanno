@@ -19,6 +19,16 @@ notice is in [LICENSE](LICENSE) and both parts of it apply to this directory.
 | `anchoring/xpath.ts`        | `src/annotator/anchoring/xpath.ts`        | None                                                                 |
 | `types/api.ts`              | `src/types/api.ts`                        | Excerpt: only the four selector types the anchoring modules use      |
 
+## Ported
+
+Phase 4 ported the parts the guest needs onto the text model in
+`packages/guest/src/anchoring/` (ADR 0017): `xpath.ts` (simple XPath
+generation and evaluation) and the scoring of `match-quote.ts` are derived
+from the files here and say so in their headers; the selector order and
+quote check of `html.ts` are reimplemented over `packages/model`. The copies
+in this directory stay verbatim as the reference and as the trial's
+`hypothesis` candidate.
+
 ## Left out
 
 - `src/annotator/anchoring/pdf.ts`, `placeholder.ts`, `text-in-rect.ts`:
