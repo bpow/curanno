@@ -12,7 +12,7 @@ import {
   HOST_ORIGIN,
   PAGE_PATH,
   SECRETS,
-  SIDEBAR_ORIGIN,
+  SIDEBAR_URL,
   UNLISTED_ORIGIN,
   highlightCentre,
   highlightedTexts,
@@ -87,7 +87,7 @@ test('a hostile page observes the traffic but never a token, body, tag or creato
   const page = await context.newPage();
   const responses: Response[] = [];
   page.on('response', (r) => {
-    if (r.url() === `${SIDEBAR_ORIGIN}/`) responses.push(r);
+    if (r.url() === SIDEBAR_URL) responses.push(r);
   });
   await page.goto(PAGE_URL);
   const sidebar = await injectGuest(page);

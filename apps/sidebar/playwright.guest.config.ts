@@ -25,7 +25,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'pnpm preview',
-      url: 'http://localhost:4173',
+      url: 'http://localhost:4173/sidebar/',
       reuseExistingServer: !ci,
       timeout: 30_000,
     },

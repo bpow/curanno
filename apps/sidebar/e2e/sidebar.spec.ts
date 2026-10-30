@@ -9,7 +9,7 @@ import { expect, test, type Page } from '@playwright/test';
 const DOCUMENT = `https://example.test/e2e/${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 async function login(page: Page, user: 'alice' | 'bob'): Promise<void> {
-  await page.goto(`/?uri=${encodeURIComponent(DOCUMENT)}`);
+  await page.goto(`/sidebar/?uri=${encodeURIComponent(DOCUMENT)}`);
   await page.getByRole('button', { name: 'Log in' }).click();
   await page.getByLabel('Username or email').fill(user);
   await page.getByLabel('Password', { exact: true }).fill(user);

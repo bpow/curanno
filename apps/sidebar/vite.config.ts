@@ -6,8 +6,9 @@ import { defineConfig, loadEnv } from 'vite';
  * In development the API is proxied under the sidebar's own origin, which is
  * how production serves the two as well (the OpenAPI document's server URL
  * is `/`). `frame-ancestors` is the clickjacking defence from ADR 0007: only
- * the listed host origins may embed the sidebar. See README.md for the
- * production equivalent.
+ * the listed host origins may embed the sidebar. The app lives under
+ * `/sidebar/`, where the API serves it in production (ADR 0021), so the
+ * development URLs are the deployed ones. See README.md.
  */
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, fileURLToPath(new URL('.', import.meta.url)), 'VITE_');
@@ -19,6 +20,7 @@ export default defineConfig(({ mode }) => {
     ['/annotations', '/x'].map((prefix) => [prefix, { target: apiTarget, changeOrigin: false }]),
   );
   return {
+    base: '/sidebar/',
     plugins: [vue()],
     server: { port: 5173, strictPort: true, headers, proxy },
     preview: { port: 4173, strictPort: true, headers, proxy },

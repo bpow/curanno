@@ -29,7 +29,7 @@ export default defineConfig({
     },
     {
       command: 'pnpm dev',
-      url: 'http://localhost:5173',
+      url: 'http://localhost:5173/sidebar/',
       reuseExistingServer: !ci,
       timeout: 60_000,
     },

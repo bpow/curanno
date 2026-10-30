@@ -3,8 +3,10 @@
  * to after a framed sign-in or sign-out. The authorization code (never a
  * token) goes back to the opener on this same origin, which exchanges it.
  */
+import { loadConfig } from '../config';
 import { createUserManager } from './user-manager';
 
+await loadConfig();
 const manager = createUserManager();
 const params = new URLSearchParams(window.location.search);
 const isSignin = params.has('code') || params.has('error');

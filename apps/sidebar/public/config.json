@@ -1,0 +1,5 @@
+{
+  "oidcIssuer": "http://localhost:8080/realms/annotations-dev",
+  "oidcClientId": "annotations-sidebar",
+  "apiUrl": ""
+}

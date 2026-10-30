@@ -11,6 +11,8 @@ import { bookmarkletSource } from '@scale/guest';
 import type { BrowserContext, Frame, Page } from '@playwright/test';
 
 export const SIDEBAR_ORIGIN = 'http://localhost:4173';
+export const SIDEBAR_PATH = '/sidebar/';
+export const SIDEBAR_URL = `${SIDEBAR_ORIGIN}${SIDEBAR_PATH}`;
 export const HOST_ORIGIN = 'http://127.0.0.1:4180';
 /** A loopback origin the sidebar's `frame-ancestors` policy does not list. */
 export const UNLISTED_ORIGIN = 'http://[::1]:4181';
@@ -174,7 +176,7 @@ export async function seedSession(context: BrowserContext, token = SECRETS.token
 
 /** The script the bookmarklet runs, for the sidebar on the preview server. */
 export function injectSource(bundleUrl = BUNDLE_URL): string {
-  return bookmarkletSource({ bundleUrl, sidebarOrigin: SIDEBAR_ORIGIN, sidebarPath: '/' });
+  return bookmarkletSource({ bundleUrl, sidebarOrigin: SIDEBAR_ORIGIN, sidebarPath: SIDEBAR_PATH });
 }
 
 /** Injects the guest as the bookmarklet does and returns the sidebar's frame once it has loaded. */
@@ -185,7 +187,7 @@ export async function injectGuest(page: Page): Promise<Frame> {
 
 export async function sidebarFrame(page: Page): Promise<Frame> {
   for (let i = 0; i < 200; i++) {
-    const frame = page.frames().find((f) => f.url().startsWith(SIDEBAR_ORIGIN));
+    const frame = page.frames().find((f) => f.url().startsWith(SIDEBAR_URL));
     if (frame) {
       await frame.waitForLoadState();
       return frame;

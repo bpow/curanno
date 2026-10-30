@@ -14,11 +14,13 @@ With the compose stack up, the database migrated and the API running (see the re
 pnpm --filter @scale/sidebar dev
 ```
 
-Open <http://localhost:5173/?uri=https://example.test/sample-document> and log in as `alice` or `bob`. Run top-level like this the sidebar has no page, so it uses a development guest: the **Development guest** panel picks the document to annotate and turns typed text into a selection, so annotations can be created, edited, replied to, shared and deleted against the real API, and a second window on the same document shows them arriving live.
+Open <http://localhost:5173/sidebar/?uri=https://example.test/sample-document> and log in as `alice` or `bob`. Run top-level like this the sidebar has no page, so it uses a development guest: the **Development guest** panel picks the document to annotate and turns typed text into a selection, so annotations can be created, edited, replied to, shared and deleted against the real API, and a second window on the same document shows them arriving live.
 
 Inside a page, the guest loads the sidebar in its iframe and the sidebar talks to it over the RPC: the document comes from the guest's report of the page, never from the URL. To try that, keep the dev server running and start the guest's dev script pointed at it (`pnpm --filter @scale/guest dev -- --sidebar-origin http://localhost:5173`; see the repository README).
 
-The dev server proxies `/annotations` and `/x` to the API, so the sidebar talks to its own origin as the OpenAPI document assumes. Build-time settings, all optional:
+The app lives under `/sidebar/`, the path the API serves it from in a deployment (ADR 0021), so development URLs are the deployed ones. The dev server proxies `/annotations` and `/x` to the API, so the sidebar talks to its own origin as the OpenAPI document assumes.
+
+Configuration is read at run time from `config.json` next to the app (`public/config.json` in development, with the compose stack's values; the API serves it from its environment in a deployment), with these build-time defaults behind it, all optional:
 
 | Variable                | Default                                            | Meaning                                                      |
 | ----------------------- | -------------------------------------------------- | ------------------------------------------------------------ |

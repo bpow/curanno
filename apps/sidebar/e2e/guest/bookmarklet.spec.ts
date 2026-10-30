@@ -42,7 +42,7 @@ test('the sidebar takes the document from the guest and anchors its annotations'
   const search = api.calls.find((c) => c.method === 'GET' && c.url.pathname === '/x/search');
   expect(search?.url.searchParams.get('uri')).toBe(PAGE_URL);
   expect(search?.authorization).toBe(`Bearer ${SECRETS.token}`);
-  expect(sidebar.url()).toBe('http://localhost:4173/');
+  expect(sidebar.url()).toBe('http://localhost:4173/sidebar/');
 
   const card = sidebar.locator('article.card');
   await expect(card).toHaveCount(1);

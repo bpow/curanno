@@ -4,11 +4,11 @@
  * rebuilds the bundle on change, and prints the bookmarklet for trying the
  * guest on other pages. By default the guest opens the fake sidebar; with
  * `--sidebar-origin` it opens a real one, such as the sidebar dev server
- * (`pnpm --filter @scale/sidebar dev`, http://localhost:5173). Plain http,
+ * (`pnpm --filter @scale/sidebar dev`, http://localhost:5173/sidebar/). Plain http,
  * so https pages block the bundle as mixed content; use the served pages or
  * an http page for those.
  *
- *   pnpm --filter @scale/guest dev [--sidebar-origin http://localhost:5173 [--sidebar-path /]]
+ *   pnpm --filter @scale/guest dev [--sidebar-origin http://localhost:5173 [--sidebar-path /sidebar/]]
  */
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -37,7 +37,8 @@ const guestServer = await serve({
 const bundleUrl = `${guestServer.origin}/guest.js`;
 const sidebarOrigin = option(args, '--sidebar-origin') ?? guestServer.origin;
 const sidebarPath =
-  option(args, '--sidebar-path') ?? (sidebarOrigin === guestServer.origin ? '/sidebar.html' : '/');
+  option(args, '--sidebar-path') ??
+  (sidebarOrigin === guestServer.origin ? '/sidebar.html' : '/sidebar/');
 const problem = validateSidebar(sidebarOrigin, sidebarPath);
 if (problem) {
   console.error(problem);
