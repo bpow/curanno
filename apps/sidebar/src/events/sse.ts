@@ -4,6 +4,7 @@
  * `Last-Event-ID` header, unlike EventSource).
  */
 export interface ServerSentEvent {
+  /** Empty for an id-only block, which carries no event but moves the last event id on. */
   event: string;
   id?: string;
   data: string;
@@ -19,10 +20,14 @@ export async function* parseEventStream(
   let id: string | undefined;
   let data: string[] = [];
 
+  let idChanged = false;
   const flush = (): ServerSentEvent | undefined => {
     if (data.length === 0) {
+      // Per the specification the id still takes effect; report it as an empty block.
+      const out = idChanged && id !== undefined ? { event: '', data: '', id } : undefined;
       event = '';
-      return undefined;
+      idChanged = false;
+      return out;
     }
     const out: ServerSentEvent = {
       event: event || 'message',
@@ -31,6 +36,7 @@ export async function* parseEventStream(
     };
     event = '';
     data = [];
+    idChanged = false;
     return out;
   };
 
@@ -56,7 +62,10 @@ export async function* parseEventStream(
         if (value.startsWith(' ')) value = value.slice(1);
         if (field === 'event') event = value;
         else if (field === 'data') data.push(value);
-        else if (field === 'id' && !value.includes('\0')) id = value;
+        else if (field === 'id' && !value.includes('\0')) {
+          id = value;
+          idChanged = true;
+        }
       }
       if (done) break;
     }

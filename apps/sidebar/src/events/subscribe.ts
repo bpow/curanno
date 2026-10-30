@@ -48,10 +48,12 @@ export async function subscribeAnnotationEvents(options: SubscribeOptions): Prom
       status('open');
       delay = options.retryMs ?? 1000;
       for await (const message of parseEventStream(data)) {
+        // An id moves the reconnection point on even when the block carries no event
+        // (the server skipped something this subscriber may not see).
+        if (message.id !== undefined) lastEventId = message.id;
         if (!message.event.startsWith(EVENT_PREFIX)) continue;
         const kind = message.event.slice(EVENT_PREFIX.length) as AnnotationEvent['kind'];
         const payload = JSON.parse(message.data) as { id: string; annotation?: Annotation };
-        if (message.id !== undefined) lastEventId = message.id;
         options.onEvent(
           {
             kind,

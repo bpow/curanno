@@ -28,6 +28,10 @@ interface SseEvent {
 interface Stream {
   next(timeoutMs?: number): Promise<SseEvent>;
   expectSilence(ms: number): Promise<void>;
+  /** Ids of id-only blocks: events the server skipped for this subscriber. */
+  skipped: string[];
+  /** Resolves when the server ends the response. */
+  ended: Promise<void>;
   close(): void;
 }
 
@@ -48,7 +52,12 @@ async function openStream(
   const decoder = new TextDecoder();
   const queue: SseEvent[] = [];
   const waiters: ((e: SseEvent) => void)[] = [];
+  const skipped: string[] = [];
   let buffer = '';
+  let onEnd: () => void = () => undefined;
+  const ended = new Promise<void>((resolve) => {
+    onEnd = resolve;
+  });
   void (async () => {
     try {
       for (;;) {
@@ -65,6 +74,10 @@ async function openStream(
             const colon = line.indexOf(':');
             fields[line.slice(0, colon)] = line.slice(colon + 1).trimStart();
           }
+          if (fields['data'] === undefined) {
+            if (fields['id'] !== undefined) skipped.push(fields['id']);
+            continue;
+          }
           const event: SseEvent = {
             event: fields['event'] ?? 'message',
             id: fields['id'] ?? '',
@@ -77,9 +90,13 @@ async function openStream(
       }
     } catch {
       // closed
+    } finally {
+      onEnd();
     }
   })();
   return {
+    skipped,
+    ended,
     next(timeoutMs = 5000) {
       const queued = queue.shift();
       if (queued) return Promise.resolve(queued);
@@ -176,6 +193,55 @@ describe.skipIf(!databaseUrl)('events', () => {
 
     await asBob.expectSilence(300);
     await anonymous.expectSilence(100);
+    // The private creation was skipped for bob and the public: their ids moved on regardless.
+    expect(asBob.skipped.length).toBeGreaterThan(0);
+    expect(anonymous.skipped.length).toBeGreaterThan(0);
+    expect(asAlice.skipped).toEqual([]);
+  });
+
+  it('stops delivering to a subscriber whose membership is withdrawn, and ends at token expiry', async () => {
+    const path = `/x/events?uri=${encodeURIComponent(PAGE)}`;
+    const asBob = await openStream(base, path, await ctx.token(bob));
+    streams.push(asBob);
+    const reviewers = await ctx.db
+      .selectFrom('groups')
+      .select('principal_id')
+      .where('name', '=', 'reviewers')
+      .executeTakeFirstOrThrow();
+    const shared = await create(alice, 'for reviewers');
+    const grant = await ctx.as(alice, {
+      method: 'POST',
+      url: `/x/annotations/${shared.id}/acl`,
+      payload: { principal: reviewers.principal_id, permission: 'read' },
+    });
+    expect(grant.statusCode).toBe(201);
+    expect((await asBob.next()).data.id).toBe(shared.id);
+
+    // Bob leaves the group (as the provider's next login would record); the
+    // stream learns at its next keepalive (200 ms here) and skips the edit.
+    await ctx.db
+      .deleteFrom('group_memberships')
+      .where('group_id', '=', reviewers.principal_id)
+      .execute();
+    await new Promise((r) => setTimeout(r, 500));
+    const before = asBob.skipped.length;
+    const edited = await ctx.as(alice, {
+      method: 'PUT',
+      url: `/annotations/${shared.id}`,
+      headers: { ...LD_JSON, 'if-match': shared.etag },
+      payload: annotationOn(PAGE, 'for reviewers, revised'),
+    });
+    expect(edited.statusCode).toBe(200);
+    await asBob.expectSilence(400);
+    expect(asBob.skipped.length).toBeGreaterThan(before);
+
+    // A stream outlives its token by one keepalive at most.
+    const shortLived = await openStream(base, path, await ctx.token(alice, { expiresIn: '1s' }));
+    streams.push(shortLived);
+    await Promise.race([
+      shortLived.ended,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('stream did not end')), 3000)),
+    ]);
   });
 
   it('ignores other documents and replays from Last-Event-ID', async () => {

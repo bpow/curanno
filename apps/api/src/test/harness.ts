@@ -35,7 +35,7 @@ export interface TestContext {
   app: FastifyInstance;
   db: Kysely<Database>;
   config: Config;
-  token(user: TestUser): Promise<string>;
+  token(user: TestUser, options?: { expiresIn?: string }): Promise<string>;
   /** `app.inject` with a bearer token for `user`, or anonymous when `user` is null. */
   as(user: TestUser | null, options: InjectOptions): Promise<LightMyRequestResponse>;
   close(): Promise<void>;
@@ -79,7 +79,7 @@ export async function createTestContext(
   });
   await app.ready();
 
-  const token = (user: TestUser): Promise<string> =>
+  const token = (user: TestUser, options: { expiresIn?: string } = {}): Promise<string> =>
     new SignJWT({
       ...(user.name ? { name: user.name } : {}),
       ...(user.email ? { email: user.email } : {}),
@@ -91,7 +91,7 @@ export async function createTestContext(
       .setSubject(user.sub)
       .setAudience(CLIENT_ID)
       .setIssuedAt()
-      .setExpirationTime('1h')
+      .setExpirationTime(options.expiresIn ?? '1h')
       .sign(privateKey);
 
   return {
