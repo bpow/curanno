@@ -70,6 +70,19 @@ jobs:
           name: guest-trial-results
           path: packages/guest/trial/results/
 
+  extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @curanno/extension exec playwright install --with-deps chromium
+      - run: pnpm --filter @curanno/extension test:browser
+
   # The sidebar's end-to-end test needs Postgres, Keycloak, the API and the
   # Vite dev server. Keycloak is not a `services:` container because
   # `--import-realm` needs deploy/keycloak/realm-dev.json from the checkout,

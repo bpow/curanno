@@ -14,6 +14,8 @@ export default defineConfig({
             'apps/api/src/**/*.test.ts',
             'apps/api/scripts/**/*.test.ts',
             'apps/pdf-viewer/src/**/*.test.ts',
+            'apps/extension/src/**/*.test.ts',
+            'apps/extension/scripts/**/*.test.ts',
           ],
         },
       },

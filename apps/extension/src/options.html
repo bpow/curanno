@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>CurAnno settings</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --muted: #5f6368;
+        --error: #b3261e;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --muted: #9aa0a6;
+          --error: #f2b8b5;
+        }
+      }
+      body {
+        font:
+          14px/1.45 system-ui,
+          sans-serif;
+        margin: 1rem;
+        min-width: 26rem;
+        max-width: 36rem;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin-top: 1rem;
+      }
+      input[type='url'] {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 0.35rem 0.5rem;
+        margin-top: 0.25rem;
+        font: inherit;
+      }
+      .hint {
+        color: var(--muted);
+        margin: 0.25rem 0 0;
+      }
+      .error {
+        color: var(--error);
+        margin: 0.25rem 0 0;
+      }
+      .error:empty {
+        display: none;
+      }
+      .check {
+        display: flex;
+        gap: 0.5rem;
+        align-items: baseline;
+        margin-top: 1rem;
+      }
+      .check label {
+        margin-top: 0;
+      }
+      button {
+        margin-top: 1.25rem;
+        font: inherit;
+        padding: 0.35rem 1rem;
+      }
+      #status {
+        margin-left: 0.75rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <form id="settings" novalidate>
+      <label for="sidebarUrl">Sidebar URL</label>
+      <input
+        id="sidebarUrl"
+        name="sidebarUrl"
+        type="url"
+        required
+        aria-describedby="sidebarUrl-hint sidebarUrl-error"
+      />
+      <p class="hint" id="sidebarUrl-hint">
+        Where the deployment serves the sidebar, such as https://annotations.example/sidebar/.
+      </p>
+      <p class="error" id="sidebarUrl-error" role="alert"></p>
+
+      <label for="pdfViewerUrl">PDF viewer URL</label>
+      <input
+        id="pdfViewerUrl"
+        name="pdfViewerUrl"
+        type="url"
+        aria-describedby="pdfViewerUrl-hint pdfViewerUrl-error"
+      />
+      <p class="hint" id="pdfViewerUrl-hint">
+        PDFs opened while the guest is on go here. Leave it empty to turn the redirect off.
+      </p>
+      <p class="error" id="pdfViewerUrl-error" role="alert"></p>
+
+      <div class="check">
+        <input
+          id="publicCounts"
+          name="publicCounts"
+          type="checkbox"
+          aria-describedby="publicCounts-hint"
+        />
+        <label for="publicCounts">Show public annotation counts</label>
+      </div>
+      <p class="hint" id="publicCounts-hint">
+        While the guest is off, the badge shows how many public annotations each page has. This
+        sends the address of every page you visit to the API.
+      </p>
+
+      <label for="apiUrl">API origin</label>
+      <input id="apiUrl" name="apiUrl" type="url" aria-describedby="apiUrl-hint apiUrl-error" />
+      <p class="hint" id="apiUrl-hint">
+        Used only for public counts. Leave it empty when the API is on the sidebar's origin.
+      </p>
+      <p class="error" id="apiUrl-error" role="alert"></p>
+
+      <button type="submit">Save</button><span id="status" role="status"></span>
+    </form>
+    <script src="options.js"></script>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "@curanno/extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chromium extension that runs the guest in every frame of a tab (ADR 0023)",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.ts",
+    "dev": "node scripts/build.ts --no-minify --watch",
+    "typecheck": "tsc -b ../../packages/model ../../packages/guest && tsc --noEmit -p tsconfig.json",
+    "test:browser": "vitest run -c test/vitest.config.ts"
+  },
+  "dependencies": {
+    "@curanno/guest": "workspace:*",
+    "@curanno/model": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.3.7",
+    "esbuild": "0.28.2",
+    "playwright": "1.64.1"
+  }
+}
