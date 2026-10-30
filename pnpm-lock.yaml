@@ -85,6 +85,22 @@ importers:
         specifier: ^8.23.1
         version: 8.23.1
 
+  apps/pdf-viewer:
+    dependencies:
+      '@scale/guest':
+        specifier: workspace:*
+        version: link:../../packages/guest
+      '@scale/model':
+        specifier: workspace:*
+        version: link:../../packages/model
+      pdfjs-dist:
+        specifier: 6.4.299
+        version: 6.4.299
+    devDependencies:
+      vite:
+        specifier: ^7.3.7
+        version: 7.3.7(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
+
   apps/sidebar:
     dependencies:
       '@scale/api-client':
