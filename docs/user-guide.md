@@ -12,6 +12,10 @@ The platform works through a bookmarklet: a bookmark that, when clicked on any p
 
 The bookmarklet runs on `http` and `https` pages. It cannot run on your browser's own pages (settings, new tab, the built-in PDF viewer) or on pages whose security policy forbids added scripts; for PDFs see section 3.
 
+### Or use the browser extension
+
+In Chrome and other Chromium browsers, the CurAnno extension does the same job without those limits: it works on pages that refuse the bookmarklet, in frames from other sites, and sends PDFs to the viewer. Your administrator tells you how to install it. Then open its options (right-click its toolbar button, **Options**), enter the sidebar address (`https://annotations.example/sidebar/`) and the viewer address, and save. Click the button to turn the annotation tools on in a tab; they stay on as you move between pages in that tab until you click it again. The number on the button is how many annotations the sidebar shows for the page. The options can also show the number of public annotations on every page while the tools are off, which tells the platform each address you visit, so it is off unless you turn it on.
+
 ## 2. Annotate a web page
 
 1. Click the bookmark. The sidebar shows the annotations on this page that you may read, newest first, and highlights their text in the page.
@@ -41,7 +45,7 @@ Annotations other people create, change or delete on the page appear, change or 
 
 PDFs are annotated in the platform's own viewer, so that the annotations follow the file rather than the address it was downloaded from.
 
-- **From a link**: open the viewer address (`https://pdf.annotations.example/pdf/`, the administrator's) and paste the PDF's web address into the form. Clicking the bookmark while your browser shows a PDF opens the viewer directly in browsers that run bookmarklets on PDFs (Firefox); in others, copy the address into the viewer's form.
+- **From a link**: open the viewer address (`https://pdf.annotations.example/pdf/`, the administrator's) and paste the PDF's web address into the form. Clicking the bookmark while your browser shows a PDF opens the viewer directly in browsers that run bookmarklets on PDFs (Firefox); in others, copy the address into the viewer's form. With the extension on in a tab, opening a PDF goes to the viewer by itself.
 - **From your computer**: open the viewer address and choose the file. The file is read in your browser and is not uploaded; the platform identifies it by a fingerprint of its content, so the same PDF opened by anyone else, from anywhere, shows the same annotations.
 - Some sites do not allow their PDFs to be fetched by other sites. If the viewer says the PDF could not be loaded, download the file and open it from your computer instead.
 

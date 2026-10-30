@@ -23,7 +23,7 @@ Build an annotation platform for our own use that implements the W3C Web Annotat
 ### Deferred beyond 1.0
 
 - Management site for users, groups and sharing (release 1.1)
-- Browser extension packaging
+- Browser extension packaging (a first Chromium extension is in `apps/extension`, [ADR 0023](adr/0023-browser-extension.md))
 - Media Fragment selectors for audio and video
 - Ebook and other non-HTML, non-PDF document types
 - Hypothesis-compatible API layer (built only if it shortens the path to end-to-end testing; see Phase 3)

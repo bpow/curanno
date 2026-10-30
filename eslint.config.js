@@ -16,6 +16,7 @@ export default tseslint.config(
       // Trial build output and third-party code kept verbatim (see its PROVENANCE.md).
       'packages/guest/trial/.build/**',
       'packages/guest/test/.build/**',
+      'apps/extension/test/.build/**',
       'packages/guest/build/**',
       'packages/guest/vendor/**',
       'apps/sidebar/playwright-report/**',
@@ -48,6 +49,10 @@ export default tseslint.config(
   {
     files: ['apps/sidebar/src/**', 'apps/web/app/**', 'apps/pdf-viewer/src/**'],
     languageOptions: { globals: { ...globals.browser } },
+  },
+  {
+    files: ['apps/extension/src/**'],
+    languageOptions: { globals: { ...globals.browser, ...globals.webextensions } },
   },
   {
     // Nuxt names pages and layouts by file path.

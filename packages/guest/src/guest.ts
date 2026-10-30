@@ -60,6 +60,12 @@ export interface GuestOptions {
   selectionDebounceMs?: number;
   /** Supplies the message channel; tests inject one. */
   createChannel?: GuestConnectionOptions['createChannel'];
+  /**
+   * Called with the number of annotations the sidebar has asked this guest
+   * to anchor whenever it changes; the browser extension shows it on its
+   * badge. A count is all it gets, never identifiers or selectors.
+   */
+  onAnchorCount?: (count: number) => void;
 }
 
 interface Anchored {
@@ -266,6 +272,7 @@ export class Guest {
     switch (message.type) {
       case 'annotations.anchor':
         for (const request of message.requests) this.requests.set(request.id, request);
+        this.options.onAnchorCount?.(this.requests.size);
         this.enqueue(async () => {
           const results = await this.anchorAll(message.requests.map((r) => r.id));
           this.send({ type: 'anchoring.results', results });
@@ -276,6 +283,7 @@ export class Guest {
           this.requests.delete(id);
           this.anchored.delete(id);
         }
+        this.options.onAnchorCount?.(this.requests.size);
         this.draw();
         break;
       case 'highlights.focus':
