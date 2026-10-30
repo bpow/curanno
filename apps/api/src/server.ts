@@ -5,6 +5,7 @@
  * `application/ld+json` media type the W3C protocol uses, problem details
  * for every error, and the OIDC bearer-token security handler (ADR 0005).
  */
+import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
@@ -20,10 +21,12 @@ import type { TokenVerifier } from './auth/verifier.js';
 import type { Config } from './config.js';
 import type { Database } from './db/index.js';
 import { EventBridge } from './events/bridge.js';
+import { installMetrics } from './metrics.js';
 import { Problem, installProblemHandlers, sendProblem, serviceUnavailable } from './problems.js';
 import { ProfileService } from './profiles/service.js';
 import { createHandlers } from './routes/index.js';
 import type { AppContext } from './routes/context.js';
+import { installStatic } from './static.js';
 
 export const OPENAPI_PATH = fileURLToPath(new URL('../openapi.yaml', import.meta.url));
 
@@ -46,7 +49,22 @@ const METHODS = new Set(['get', 'put', 'post', 'delete', 'patch']);
 
 export async function buildServer(options: ServerOptions): Promise<FastifyInstance> {
   const { config, db } = options;
-  const app = Fastify({ logger: options.logger ?? false });
+  const app = Fastify({
+    logger: options.logger ?? false,
+    // One id per request, taken from the proxy's X-Request-Id when there is
+    // one, in every log line (`reqId`) and echoed to the client.
+    requestIdHeader: 'x-request-id',
+    requestIdLogLabel: 'reqId',
+    genReqId: () => randomUUID(),
+    // Behind the ingress; the client address in logs is the one it forwarded.
+    trustProxy: true,
+  });
+  app.addHook('onRequest', (request, reply, done) => {
+    reply.header('x-request-id', request.id);
+    done();
+  });
+  installSecurityHeaders(app, config);
+  const metrics = installMetrics(app, { enabled: config.metricsEnabled });
 
   const strict = createStrictAjv();
   const coercing = createCoercingAjv();
@@ -80,6 +98,7 @@ export async function buildServer(options: ServerOptions): Promise<FastifyInstan
     store: new AnnotationStore(db, config.publicUrl),
     profiles,
     bridge,
+    metrics,
     keepaliveMs: options.keepaliveMs ?? 30_000,
   };
 
@@ -89,6 +108,7 @@ export async function buildServer(options: ServerOptions): Promise<FastifyInstan
     securityHandlers,
   });
   installOptions(app);
+  if (config.staticRoot) await installStatic(app, { root: config.staticRoot, config });
 
   app.get('/healthz', () => ({ status: 'ok', textModelVersion: TEXT_MODEL_VERSION }));
   app.get('/readyz', async (request, reply) => {
@@ -110,6 +130,27 @@ export async function buildServer(options: ServerOptions): Promise<FastifyInstan
   });
 
   return app;
+}
+
+/**
+ * Headers every response carries. The JSON origin needs no scripts or
+ * framing; bearer-authenticated answers are not for shared caches; the
+ * static clients set their own Content-Security-Policy in `static.ts`.
+ */
+function installSecurityHeaders(app: FastifyInstance, config: Config): void {
+  const https = config.publicUrl.startsWith('https://');
+  app.addHook('onSend', (request, reply, payload, done) => {
+    reply.header('x-content-type-options', 'nosniff');
+    reply.header('referrer-policy', 'no-referrer');
+    if (https) reply.header('strict-transport-security', 'max-age=31536000; includeSubDomains');
+    if (!reply.hasHeader('content-security-policy')) {
+      reply.header('content-security-policy', "default-src 'none'; frame-ancestors 'none'");
+    }
+    if (request.headers.authorization && !reply.hasHeader('cache-control')) {
+      reply.header('cache-control', 'no-store');
+    }
+    done(null, payload);
+  });
 }
 
 /**

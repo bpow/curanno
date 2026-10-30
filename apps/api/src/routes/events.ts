@@ -23,7 +23,7 @@ interface EventsQuery {
 const REPLAY_LIMIT = 1000;
 
 export function eventHandlers(ctx: AppContext): Handlers {
-  const { db, store, bridge, config } = ctx;
+  const { db, store, bridge, config, metrics } = ctx;
   return {
     async streamEvents(request, reply) {
       const query = request.query as EventsQuery;
@@ -52,6 +52,7 @@ export function eventHandlers(ctx: AppContext): Handlers {
         'x-accel-buffering': 'no',
       });
       raw.write(': connected\n\n');
+      metrics.eventStreams.inc();
 
       let closed = false;
       let lastSent = lastEventId ?? 0;
@@ -81,6 +82,7 @@ export function eventHandlers(ctx: AppContext): Handlers {
         raw.write(
           `event: annotation.${event.kind}\nid: ${event.id}\ndata: ${JSON.stringify(data)}\n\n`,
         );
+        metrics.eventsDelivered.inc({ kind: event.kind });
       };
       const deliver = (event: EventPayload): void => {
         queue = queue
@@ -92,6 +94,7 @@ export function eventHandlers(ctx: AppContext): Handlers {
       const end = (): void => {
         if (closed) return;
         closed = true;
+        metrics.eventStreams.dec();
         unsubscribe();
         clearInterval(keepalive);
         raw.end();

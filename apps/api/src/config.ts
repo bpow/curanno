@@ -18,6 +18,14 @@ export interface Config {
   /** Origin and base path under which annotation IRIs are minted, without a trailing slash. */
   publicUrl: string;
   logLevel: string;
+  /** Directory holding the built clients to serve (`sidebar/`, `pdf/`, `guest.js`); unset serves none. */
+  staticRoot: string | undefined;
+  /** Origins allowed to embed the sidebar (`frame-ancestors`), as CSP source expressions. */
+  frameAncestors: string[];
+  /** The PDF viewer's origin, served for that host only and trusted by the sidebar (ADR 0021). */
+  pdfViewerOrigin: string | undefined;
+  /** Whether `/metrics` is served. */
+  metricsEnabled: boolean;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -35,7 +43,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     port,
     publicUrl: (env['PUBLIC_URL'] || `http://localhost:${port}`).replace(/\/$/, ''),
     logLevel: env['LOG_LEVEL'] || 'info',
+    staticRoot: env['STATIC_ROOT'] || undefined,
+    frameAncestors: (env['FRAME_ANCESTORS'] || "'self'").split(/\s+/).filter(Boolean),
+    pdfViewerOrigin: env['PDF_VIEWER_ORIGIN'] ? origin(env['PDF_VIEWER_ORIGIN']) : undefined,
+    metricsEnabled: env['METRICS_ENABLED'] !== 'false',
   };
+}
+
+function origin(value: string): string {
+  try {
+    return new URL(value).origin;
+  } catch {
+    throw new Error(`PDF_VIEWER_ORIGIN is not a URL: ${value}`);
+  }
 }
 
 function required(env: NodeJS.ProcessEnv, name: string): string {

@@ -4,6 +4,7 @@ import type { AnnotationStore } from '../annotations/store.js';
 import type { Config } from '../config.js';
 import type { Database } from '../db/index.js';
 import type { EventBridge } from '../events/bridge.js';
+import type { Metrics } from '../metrics.js';
 import type { ProfileService } from '../profiles/service.js';
 
 export interface AppContext {
@@ -12,6 +13,7 @@ export interface AppContext {
   store: AnnotationStore;
   profiles: ProfileService;
   bridge: EventBridge;
+  metrics: Metrics;
   /** Interval between `: keepalive` comments on event streams. */
   keepaliveMs: number;
 }

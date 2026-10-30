@@ -9,7 +9,11 @@ const app = await buildServer({
   config,
   db,
   verifyToken: createTokenVerifier(config.oidc),
-  logger: { level: config.logLevel },
+  // JSON lines from pino, one per request with its `reqId`; tokens never reach the log.
+  logger: {
+    level: config.logLevel,
+    redact: { paths: ['req.headers.authorization', 'req.headers.cookie'], censor: '[redacted]' },
+  },
 });
 
 const shutdown = (signal: string): void => {

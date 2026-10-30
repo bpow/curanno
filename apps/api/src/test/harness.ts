@@ -43,22 +43,38 @@ export interface TestContext {
 
 export const databaseUrl = process.env['DATABASE_URL'];
 
-function withDatabase(url: string, name: string): string {
+export function withDatabase(url: string, name: string): string {
   const u = new URL(url);
   u.pathname = `/${name}`;
   return u.href;
 }
 
-export async function createTestContext(
-  options: { keepaliveMs?: number } = {},
-): Promise<TestContext> {
+export interface TestContextOptions {
+  keepaliveMs?: number;
+  /** Serving the clients, the viewer origin, metrics: overrides of the test configuration. */
+  config?: Partial<
+    Pick<Config, 'staticRoot' | 'frameAncestors' | 'pdfViewerOrigin' | 'metricsEnabled'>
+  >;
+  /**
+   * Run against this database as it is (already migrated, say a restored
+   * backup) instead of a scratch one; it is not dropped at `close()`.
+   */
+  existingDatabaseUrl?: string;
+}
+
+export async function createTestContext(options: TestContextOptions = {}): Promise<TestContext> {
   if (!databaseUrl) throw new Error('DATABASE_URL is not set');
   const dbName = `annotations_test_${randomBytes(6).toString('hex')}`;
   const admin = new pg.Client({ connectionString: databaseUrl });
   await admin.connect();
-  await admin.query(`create database ${dbName}`);
-  const testUrl = withDatabase(databaseUrl, dbName);
-  await migrate(testUrl);
+  let testUrl: string;
+  if (options.existingDatabaseUrl) {
+    testUrl = options.existingDatabaseUrl;
+  } else {
+    await admin.query(`create database ${dbName}`);
+    testUrl = withDatabase(databaseUrl, dbName);
+    await migrate(testUrl);
+  }
 
   const { publicKey, privateKey } = await generateKeyPair('ES256');
   const jwk = { ...(await exportJWK(publicKey)), kid: 'test', alg: 'ES256' };
@@ -68,6 +84,11 @@ export async function createTestContext(
     port: 0,
     publicUrl: PUBLIC_URL,
     logLevel: 'silent',
+    staticRoot: undefined,
+    frameAncestors: ["'self'"],
+    pdfViewerOrigin: undefined,
+    metricsEnabled: true,
+    ...options.config,
   };
   const db = createDb(testUrl);
   const app = await buildServer({
@@ -107,7 +128,9 @@ export async function createTestContext(
     async close() {
       await app.close();
       await db.destroy();
-      await admin.query(`drop database if exists ${dbName} with (force)`);
+      if (!options.existingDatabaseUrl) {
+        await admin.query(`drop database if exists ${dbName} with (force)`);
+      }
       await admin.end();
     },
   };
