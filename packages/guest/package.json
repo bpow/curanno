@@ -32,7 +32,11 @@
     "trial:highlights": "node trial/src/highlights.ts",
     "trial:a11y": "node trial/src/a11y.ts",
     "corpus:describe": "node trial/src/describe.ts",
-    "corpus:pdf": "node trial/src/make-pdf.ts"
+    "corpus:pdf": "node trial/src/make-pdf.ts",
+    "bundle": "node scripts/bundle.ts",
+    "bookmarklet": "node scripts/bookmarklet.ts",
+    "dev": "node scripts/dev.ts",
+    "test:browser": "vitest run -c test/vitest.config.ts"
   },
   "dependencies": {
     "@scale/model": "workspace:*",

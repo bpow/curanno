@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
-    "typecheck": "tsc -b && tsc -p apps/api/spike/tsconfig.json && tsc -p packages/guest/trial/tsconfig.json",
+    "typecheck": "tsc -b && tsc -p apps/api/spike/tsconfig.json && tsc -p packages/guest/trial/tsconfig.json && tsc -p packages/guest/scripts/tsconfig.json && tsc -p packages/guest/test/tsconfig.json",
     "test": "vitest run",
     "licenses:check": "node scripts/check-licenses.mjs",
     "check": "pnpm typecheck && pnpm lint && pnpm format && pnpm test && pnpm licenses:check && pnpm openapi:lint && pnpm api-client:check",

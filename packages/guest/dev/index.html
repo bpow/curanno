@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Guest development page</title>
+    <link rel="canonical" href="https://example.test/articles/guest-dev" />
+    <style>
+      body {
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+        max-width: 60ch;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      .scroller {
+        height: 8rem;
+        overflow: auto;
+        border: 1px solid #ccc;
+        padding: 0 1rem;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Guest development page</h1>
+    <p>
+      <button id="load" type="button">Load the guest</button>
+      Or drag this to your bookmarks bar: <a id="bookmarklet" href="#">Annotate</a>. The sidebar is
+      the fake one from <code>dev/sidebar.html</code>; select text here, then use “Annotate
+      selection” in it.
+    </p>
+    <article>
+      <h2>Release notes for version 3.2</h2>
+      <p>
+        Version 3.2 is a <em>maintenance</em> release. It fixes the
+        <span class="hidden">(internal ticket 4411)</span> crash on startup when the configuration
+        file is empty, and a 😀 rendering problem in the emoji picker.
+      </p>
+      <p>Two lines:<br />Flat 4, 12 Harbour Street<br />Kingstown</p>
+      <div class="scroller">
+        <p>Notes inside a nested scroller, to check that highlights follow the text.</p>
+        <p>Second paragraph of notes. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+        <p>Third paragraph. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        <p>Fourth paragraph. Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
+      </div>
+      <p>
+        <button id="mutate" type="button">Edit the page</button>
+        rewrites the first paragraph in place, to watch re-anchoring.
+      </p>
+    </article>
+    <script>
+      const config = {
+        bundleUrl: '__BUNDLE_URL__',
+        sidebarOrigin: '__SIDEBAR_ORIGIN__',
+        sidebarPath: '__SIDEBAR_PATH__',
+      };
+      function load() {
+        if (window.__scaleGuest) {
+          window.__scaleGuest.toggleSidebar();
+          return;
+        }
+        const s = document.createElement('script');
+        s.src = config.bundleUrl;
+        s.setAttribute('data-sidebar-origin', config.sidebarOrigin);
+        s.setAttribute('data-sidebar-path', config.sidebarPath);
+        document.body.appendChild(s);
+      }
+      document.getElementById('load').addEventListener('click', load);
+      document.getElementById('bookmarklet').href =
+        'javascript:' +
+        encodeURIComponent(`(${load.toString().replace('config', JSON.stringify(config))})()`);
+      document.getElementById('mutate').addEventListener('click', () => {
+        const p = document.querySelector('article p');
+        p.innerHTML = p.innerHTML.replace('crash on startup', 'crash at startup');
+      });
+    </script>
+  </body>
+</html>
