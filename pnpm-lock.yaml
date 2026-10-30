@@ -47,15 +47,15 @@ importers:
 
   apps/api:
     dependencies:
+      '@curanno/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
+      '@curanno/model':
+        specifier: workspace:*
+        version: link:../../packages/model
       '@fastify/static':
         specifier: ^10.1.8
         version: 10.1.8
-      '@scale/api-client':
-        specifier: workspace:*
-        version: link:../../packages/api-client
-      '@scale/model':
-        specifier: workspace:*
-        version: link:../../packages/model
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
@@ -96,10 +96,10 @@ importers:
 
   apps/pdf-viewer:
     dependencies:
-      '@scale/guest':
+      '@curanno/guest':
         specifier: workspace:*
         version: link:../../packages/guest
-      '@scale/model':
+      '@curanno/model':
         specifier: workspace:*
         version: link:../../packages/model
       pdfjs-dist:
@@ -112,10 +112,10 @@ importers:
 
   apps/sidebar:
     dependencies:
-      '@scale/api-client':
+      '@curanno/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
-      '@scale/model':
+      '@curanno/model':
         specifier: workspace:*
         version: link:../../packages/model
       ajv:
@@ -137,12 +137,12 @@ importers:
       '@axe-core/playwright':
         specifier: 4.14.0
         version: 4.14.0(playwright-core@1.64.1)
+      '@curanno/guest':
+        specifier: workspace:*
+        version: link:../../packages/guest
       '@playwright/test':
         specifier: 1.64.1
         version: 1.64.1
-      '@scale/guest':
-        specifier: workspace:*
-        version: link:../../packages/guest
       '@vitejs/plugin-vue':
         specifier: ^6.0.10
         version: 6.0.10(vite@7.3.7(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.1))(vue@3.5.44(typescript@6.0.3))
@@ -158,13 +158,13 @@ importers:
 
   apps/web:
     dependencies:
-      '@scale/api-client':
+      '@curanno/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
-      '@scale/guest':
+      '@curanno/guest':
         specifier: workspace:*
         version: link:../../packages/guest
-      '@scale/model':
+      '@curanno/model':
         specifier: workspace:*
         version: link:../../packages/model
       nuxt:
@@ -208,7 +208,7 @@ importers:
 
   packages/guest:
     dependencies:
-      '@scale/model':
+      '@curanno/model':
         specifier: workspace:*
         version: link:../model
       approx-string-match:
