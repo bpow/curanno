@@ -6,6 +6,5 @@ allowBuilds:
   esbuild: true
 
 overrides:
-  # The CLI and devtools releases matching Nuxt 4.3 (apps/web/README.md says why 4.3).
-  '@nuxt/cli': ~3.33.0
+  # The devtools release matching Nuxt 4.3 (apps/web/README.md says why 4.3).
   '@nuxt/devtools': 3.2.3

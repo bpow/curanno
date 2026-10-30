@@ -61,4 +61,4 @@ Auto-imports are off (`nuxt.config.ts`): components import what they use from `v
 
 ## Why Nuxt 4.3
 
-Nuxt 4.4 and later build with Vite 8, which depends on `lightningcss` (MPL-2.0), a license the dependency policy does not allow. Nuxt 4.3 builds with Vite 7, as the sidebar does. `pnpm-workspace.yaml` pins `@nuxt/cli` and `@nuxt/devtools` to the releases that match.
+Nuxt 4.4 and later build with Vite 8, which depends on `lightningcss` (MPL-2.0), a license the dependency policy does not allow. Nuxt 4.3 builds with Vite 7, as the sidebar does. `pnpm-workspace.yaml` pins `@nuxt/devtools` to the release that matches.
