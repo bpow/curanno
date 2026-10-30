@@ -151,10 +151,23 @@ export class AnnotationStore {
         ).as('ids'),
       ]);
     const records = (ids: string[]) =>
-      this.withRecord(this.visible(this.db, caller), caller)
-        .where('annotations.deleted_at', 'is', null)
-        .where('annotations.id', 'in', ids);
+      this.byIds(ids, caller).where('annotations.deleted_at', 'is', null);
     return { page, records };
+  }
+
+  /** The annotations among `ids` the caller may read, deleted ones included, by id. */
+  async getMany(ids: string[], caller: Caller): Promise<Map<string, AnnotationRecord>> {
+    if (ids.length === 0) return new Map();
+    const rows = await this.byIds(ids, caller).execute();
+    return new Map(rows.map((row) => [row.id, row]));
+  }
+
+  private byIds(ids: string[], caller: Caller) {
+    return this.withRecord(this.visible(this.db, caller), caller).where(
+      'annotations.id',
+      'in',
+      ids,
+    );
   }
 
   /** Readable, undeleted annotations matching the filters, with the total and the latest modification. */

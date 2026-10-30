@@ -64,6 +64,13 @@ export function eventHandlers(ctx: AppContext): Handlers {
         lastSent = event.id;
         raw.write(`id: ${event.id}\n\n`);
       };
+      const write = (event: EventPayload, data: Record<string, unknown>): void => {
+        lastSent = event.id;
+        raw.write(
+          `event: annotation.${event.kind}\nid: ${event.id}\ndata: ${JSON.stringify(data)}\n\n`,
+        );
+        metrics.eventsDelivered.inc({ kind: event.kind });
+      };
       const send = async (event: EventPayload): Promise<void> => {
         if (closed || event.id <= lastSent) return;
         if (filtered) {
@@ -78,11 +85,30 @@ export function eventHandlers(ctx: AppContext): Handlers {
           data['annotation'] = toAnnotation(record, config.publicUrl);
         }
         if (closed) return;
-        lastSent = event.id;
-        raw.write(
-          `event: annotation.${event.kind}\nid: ${event.id}\ndata: ${JSON.stringify(data)}\n\n`,
-        );
-        metrics.eventsDelivered.inc({ kind: event.kind });
+        write(event, data);
+      };
+      /**
+       * Replayed events passed the document filter and the ACL in the
+       * replay query, so their annotations are loaded in one query rather
+       * than two per event (docs/performance.md).
+       */
+      const sendReplayed = async (events: EventPayload[]): Promise<void> => {
+        const ids = events.filter((e) => e.kind !== 'deleted').map((e) => e.annotation_id);
+        const records = await store.getMany([...new Set(ids)], caller);
+        for (const event of events) {
+          if (closed) return;
+          if (event.id <= lastSent) continue;
+          const data: Record<string, unknown> = { id: event.annotation_id };
+          if (event.kind !== 'deleted') {
+            const record = records.get(event.annotation_id);
+            if (!record || record.deleted_at !== null) {
+              skip(event);
+              continue;
+            }
+            data['annotation'] = toAnnotation(record, config.publicUrl);
+          }
+          write(event, data);
+        }
       };
       const deliver = (event: EventPayload): void => {
         queue = queue
@@ -143,7 +169,9 @@ export function eventHandlers(ctx: AppContext): Handlers {
           newest = newest.where('document_id', '=', documentId ?? NIL_UUID);
         }
         const rows = await replay.execute();
-        for (const row of rows) deliver({ ...row, id: Number(row.id) });
+        queue = queue
+          .then(() => sendReplayed(rows.map((row) => ({ ...row, id: Number(row.id) }))))
+          .catch((err: unknown) => request.log.error({ err }, 'event replay failed'));
         if (rows.length < REPLAY_LIMIT) {
           const last = await newest.executeTakeFirst();
           const id = last?.id === null || last?.id === undefined ? undefined : Number(last.id);
