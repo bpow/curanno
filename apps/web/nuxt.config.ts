@@ -10,6 +10,36 @@
  */
 const apiProxyTarget = process.env['API_PROXY_TARGET'] ?? 'http://localhost:3000';
 
+/**
+ * Sent with every page by Nitro. Scripts come from the site itself, plus
+ * Nuxt's own inline bootstrap (its payload and preload scripts, which vary
+ * per page, so neither a hash nor a nonce fits without a module for it:
+ * docs/security-review.md, finding 19); inline styles are Nuxt's own;
+ * connections go to the API on this origin and to the identity provider,
+ * which is also the one frame source (silent renewal) and form target
+ * (sign-in). The dev server's client needs eval and a websocket as well.
+ */
+const dev = process.env['NODE_ENV'] !== 'production';
+const issuerOrigin = new URL(
+  process.env['NUXT_PUBLIC_OIDC_ISSUER'] ?? 'http://localhost:8080/realms/annotations-dev',
+).origin;
+const securityHeaders = {
+  'Content-Security-Policy': [
+    "default-src 'self'",
+    dev ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'" : "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    `connect-src 'self' ${issuerOrigin}${dev ? ' ws: wss:' : ''}`,
+    `frame-src ${issuerOrigin}`,
+    `form-action 'self' ${issuerOrigin}`,
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+  ].join('; '),
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'no-referrer',
+};
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: false },
@@ -23,10 +53,6 @@ export default defineNuxtConfig({
     head: {
       htmlAttrs: { lang: 'en' },
       title: 'Annotation platform',
-      titleTemplate: (title) =>
-        title && title !== 'Annotation platform'
-          ? `${title} · Annotation platform`
-          : 'Annotation platform',
     },
   },
   runtimeConfig: {
@@ -41,8 +67,8 @@ export default defineNuxtConfig({
   // The landing page is public and server-rendered. Every other page needs
   // the user's token, which only the browser has, so those render there.
   routeRules: {
-    '/': { ssr: true },
-    '/**': { ssr: false },
+    '/': { ssr: true, headers: securityHeaders },
+    '/**': { ssr: false, headers: securityHeaders },
   },
   nitro: {
     devProxy: {
