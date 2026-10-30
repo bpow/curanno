@@ -11,3 +11,6 @@ packages/guest/trial/results/*.json
 .claude/
 # Helm templates are Go templates, not YAML
 deploy/helm/**/templates/
+# Playwright output
+apps/sidebar/test-results/
+apps/sidebar/playwright-report/

@@ -30,3 +30,4 @@ An architecture decision record (ADR) captures one decision that shapes the syst
 | [0016](0016-structured-bodies.md)                | Structured bodies as an embedded `StructuredBody` validated by a profile registry | Accepted |
 | [0017](0017-guest-base-and-highlight-rendering.md) | Build the guest's anchoring on the Hypothesis client's code and render highlights with the CSS Custom Highlight API | Accepted |
 | [0018](0018-no-hypothesis-compatible-layer.md) | Do not build a Hypothesis-compatible API layer                      | Proposed |
+| [0019](0019-sidebar-session-and-origin.md) | Sidebar sessions: public PKCE client, tokens in the sidebar origin, popup sign-in when framed | Accepted |
