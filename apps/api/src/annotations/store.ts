@@ -111,27 +111,32 @@ export class AnnotationStore {
     return row;
   }
 
-  /** Readable, undeleted annotations matching the filters, with the total and the latest modification. */
-  async list(caller: Caller, options: ListOptions): Promise<ListResult> {
+  /** The two queries behind `list`: the total with the latest modification, and the page. */
+  listQueries(caller: Caller, options: ListOptions) {
     const base = applyFilters(
       this.visible(this.db, caller).where('annotations.deleted_at', 'is', null),
       options,
     );
-    const summary = await base
-      .select((eb) => [
-        eb.fn.countAll<string>().as('total'),
-        eb.fn.max('annotations.updated_at').as('modified'),
-      ])
-      .executeTakeFirstOrThrow();
+    const summary = base.select((eb) => [
+      eb.fn.countAll<string>().as('total'),
+      eb.fn.max('annotations.updated_at').as('modified'),
+    ]);
     const column =
       options.sort === 'modified' ? 'annotations.updated_at' : 'annotations.created_at';
     const order = options.order ?? 'desc';
-    const rows = await this.withRecord(base, caller)
+    const page = this.withRecord(base, caller)
       .orderBy(column, order)
       .orderBy('annotations.id', order)
       .limit(options.limit)
-      .offset(options.offset)
-      .execute();
+      .offset(options.offset);
+    return { summary, page };
+  }
+
+  /** Readable, undeleted annotations matching the filters, with the total and the latest modification. */
+  async list(caller: Caller, options: ListOptions): Promise<ListResult> {
+    const queries = this.listQueries(caller, options);
+    const summary = await queries.summary.executeTakeFirstOrThrow();
+    const rows = await queries.page.execute();
     return {
       total: Number(summary.total),
       modified: summary.modified,
