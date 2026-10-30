@@ -21,6 +21,7 @@ import {
   bob,
   createTestContext,
   databaseUrl,
+  ISSUER,
   root,
   type TestContext,
   type TestUser,
@@ -782,6 +783,17 @@ describe.skipIf(!databaseUrl)('OpenAPI contract', () => {
       request: () => ({ method: 'GET', url: '/x/groups?q=contract' }),
       then: (res) => expect(res.json<{ total: number }>().total).toBe(0),
     },
+    {
+      name: 'administrators see provider-managed groups with their issuer',
+      as: root,
+      status: 200,
+      request: () => ({ method: 'GET', url: '/x/groups?q=curators' }),
+      then: (res) => {
+        const [group] = res.json<{ items: { id: string; issuer?: string }[] }>().items;
+        expect(group?.issuer).toBe(ISSUER);
+        state['curatorsId'] = group?.id as string;
+      },
+    },
   ]);
   run('getGroup', [
     {
@@ -827,6 +839,15 @@ describe.skipIf(!databaseUrl)('OpenAPI contract', () => {
         payload: { role: 'member' },
       }),
     },
+    {
+      name: '403 for provider-managed groups',
+      as: root,
+      status: 403,
+      request: () => ({
+        method: 'PUT',
+        url: `/x/groups/${state['curatorsId']}/members/${state['bobId']}`,
+      }),
+    },
   ]);
   run('listMembers', [
     {
@@ -864,6 +885,16 @@ describe.skipIf(!databaseUrl)('OpenAPI contract', () => {
         payload: { name: 'Nope' },
       }),
     },
+    {
+      name: '403 for provider-managed groups',
+      as: root,
+      status: 403,
+      request: () => ({
+        method: 'PATCH',
+        url: `/x/groups/${state['curatorsId']}`,
+        payload: { name: 'Nope' },
+      }),
+    },
   ]);
   run('removeMember', [
     {
@@ -893,6 +924,15 @@ describe.skipIf(!databaseUrl)('OpenAPI contract', () => {
         url: `/x/groups/${state['groupId']}/members/${state['bobId']}`,
       }),
     },
+    {
+      name: '403 for provider-managed groups, even when leaving',
+      as: alice,
+      status: 403,
+      request: () => ({
+        method: 'DELETE',
+        url: `/x/groups/${state['curatorsId']}/members/${state['aliceId']}`,
+      }),
+    },
   ]);
   run('deleteGroup', [
     {
@@ -900,6 +940,12 @@ describe.skipIf(!databaseUrl)('OpenAPI contract', () => {
       as: bob,
       status: 404,
       request: () => ({ method: 'DELETE', url: `/x/groups/${state['groupId']}` }),
+    },
+    {
+      name: '403 for provider-managed groups',
+      as: root,
+      status: 403,
+      request: () => ({ method: 'DELETE', url: `/x/groups/${state['curatorsId']}` }),
     },
     {
       name: 'deletes',
