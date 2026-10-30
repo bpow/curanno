@@ -1,0 +1,82 @@
+/**
+ * Authentication for every request: a bearer token, when present, must be
+ * valid and resolves to a user; without one the request is anonymous. The
+ * `bearerAuth` security handler that fastify-openapi-glue runs for
+ * operations whose security requires it then only has to check that the
+ * caller is a user. Operations that also allow `{}` pass anonymous callers
+ * through to their handler, which filters by the public principal.
+ */
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { Kysely } from 'kysely';
+import type { Database } from '../db/index.js';
+import { forbidden, unauthorized } from '../problems.js';
+import {
+  ANONYMOUS,
+  resolveCaller,
+  type Caller,
+  type CallerOptions,
+  type UserCaller,
+} from './caller.js';
+import type { TokenVerifier } from './verifier.js';
+
+declare module 'fastify' {
+  interface FastifyRequest {
+    caller: Caller;
+  }
+}
+
+export interface AuthOptions extends CallerOptions {
+  db: Kysely<Database>;
+  verifyToken: TokenVerifier;
+  /** Longest time a resolved token is reused without touching the database. */
+  cacheMs?: number;
+}
+
+export function installAuth(app: FastifyInstance, options: AuthOptions): void {
+  const cacheMs = options.cacheMs ?? 60_000;
+  const cache = new Map<string, { caller: UserCaller; expiresAt: number }>();
+
+  app.decorateRequest('caller');
+  app.addHook('onRequest', async (request) => {
+    const header = request.headers.authorization;
+    if (header === undefined) {
+      request.caller = ANONYMOUS;
+      return;
+    }
+    const match = /^Bearer\s+(\S+)$/i.exec(header);
+    if (!match) throw unauthorized('Authorization header must be "Bearer <token>"');
+    const token = match[1] as string;
+    const now = Date.now();
+    const cached = cache.get(token);
+    if (cached && cached.expiresAt > now) {
+      request.caller = cached.caller;
+      return;
+    }
+    const claims = await options.verifyToken(token);
+    const caller = await resolveCaller(options.db, claims, options);
+    const tokenExpiry = claims.expiresAt === undefined ? Infinity : claims.expiresAt * 1000;
+    cache.set(token, { caller, expiresAt: Math.min(now + cacheMs, tokenExpiry) });
+    if (cache.size > 10_000) {
+      for (const [key, entry] of cache) if (entry.expiresAt <= now) cache.delete(key);
+    }
+    request.caller = caller;
+  });
+}
+
+/** Security handlers keyed by the OpenAPI document's security scheme names. */
+export const securityHandlers = {
+  bearerAuth(request: FastifyRequest): void {
+    if (request.caller.kind !== 'user') throw unauthorized('a bearer token is required');
+  },
+};
+
+export function requireUser(request: FastifyRequest): UserCaller {
+  if (request.caller.kind !== 'user') throw unauthorized('a bearer token is required');
+  return request.caller;
+}
+
+export function requireAdmin(request: FastifyRequest): UserCaller {
+  const caller = requireUser(request);
+  if (!caller.isAdmin) throw forbidden('administrators only');
+  return caller;
+}
