@@ -111,31 +111,76 @@ export class AnnotationStore {
     return row;
   }
 
-  /** Readable, undeleted annotations matching the filters, with the total and the latest modification. */
-  async list(caller: Caller, options: ListOptions): Promise<ListResult> {
-    const base = applyFilters(
+  /**
+   * The queries behind `list`. `page` computes the filtered set once, in a
+   * materialized CTE, and returns its size, its latest modification and the
+   * ids of the requested page in order; `records` loads those annotations.
+   * Counting and paging in two statements paid the ACL join twice, and the
+   * paging statement built every row before the offset only to discard it
+   * (docs/performance.md).
+   */
+  listQueries(caller: Caller, options: ListOptions) {
+    const matched = applyFilters(
       this.visible(this.db, caller).where('annotations.deleted_at', 'is', null),
       options,
-    );
-    const summary = await base
-      .select((eb) => [
-        eb.fn.countAll<string>().as('total'),
-        eb.fn.max('annotations.updated_at').as('modified'),
-      ])
-      .executeTakeFirstOrThrow();
-    const column =
-      options.sort === 'modified' ? 'annotations.updated_at' : 'annotations.created_at';
+    ).select(['annotations.id', 'annotations.created_at', 'annotations.updated_at']);
+    const column = options.sort === 'modified' ? 'updated_at' : 'created_at';
     const order = options.order ?? 'desc';
-    const rows = await this.withRecord(base, caller)
-      .orderBy(column, order)
-      .orderBy('annotations.id', order)
-      .limit(options.limit)
-      .offset(options.offset)
-      .execute();
+    const page = this.db
+      .with(
+        (cte) => cte('matched').materialized(),
+        () => matched,
+      )
+      .selectNoFrom((eb) => [
+        eb
+          .selectFrom('matched')
+          .select((e) => e.fn.countAll<string>().as('total'))
+          .as('total'),
+        eb
+          .selectFrom('matched')
+          .select((e) => e.fn.max('matched.updated_at').as('modified'))
+          .as('modified'),
+        jsonArrayFrom(
+          eb
+            .selectFrom('matched')
+            .select('matched.id')
+            .orderBy(column, order)
+            .orderBy('matched.id', order)
+            .limit(options.limit)
+            .offset(options.offset),
+        ).as('ids'),
+      ]);
+    const records = (ids: string[]) =>
+      this.byIds(ids, caller).where('annotations.deleted_at', 'is', null);
+    return { page, records };
+  }
+
+  /** The annotations among `ids` the caller may read, deleted ones included, by id. */
+  async getMany(ids: string[], caller: Caller): Promise<Map<string, AnnotationRecord>> {
+    if (ids.length === 0) return new Map();
+    const rows = await this.byIds(ids, caller).execute();
+    return new Map(rows.map((row) => [row.id, row]));
+  }
+
+  private byIds(ids: string[], caller: Caller) {
+    return this.withRecord(this.visible(this.db, caller), caller).where(
+      'annotations.id',
+      'in',
+      ids,
+    );
+  }
+
+  /** Readable, undeleted annotations matching the filters, with the total and the latest modification. */
+  async list(caller: Caller, options: ListOptions): Promise<ListResult> {
+    const queries = this.listQueries(caller, options);
+    const page = await queries.page.executeTakeFirstOrThrow();
+    const ids = page.ids.map((row) => row.id);
+    const records = ids.length === 0 ? [] : await queries.records(ids).execute();
+    const byId = new Map(records.map((record) => [record.id, record]));
     return {
-      total: Number(summary.total),
-      modified: summary.modified,
-      items: rows,
+      total: Number(page.total ?? 0),
+      modified: page.modified ?? null,
+      items: ids.flatMap((id) => byId.get(id) ?? []),
     };
   }
 
@@ -364,23 +409,20 @@ function applyFilters(query: AnnotationQuery, f: SearchFilters): AnnotationQuery
   }
   if (f.text !== undefined && f.text.trim() !== '') {
     const tsquery = sql`websearch_to_tsquery('english', ${f.text})`;
-    q = q.where((eb) =>
-      eb.or([
-        eb.exists(
-          eb
-            .selectFrom('bodies')
-            .select('bodies.id')
-            .whereRef('bodies.annotation_id', '=', 'annotations.id')
-            .where(sql<boolean>`bodies.text_search @@ ${tsquery}`),
-        ),
-        eb.exists(
+    // The matching ids come from the two GIN indexes as one set. Written as
+    // an OR of correlated EXISTS clauses the condition was evaluated per
+    // annotation and used neither index (docs/performance.md).
+    q = q.where('annotations.id', 'in', (eb) =>
+      eb
+        .selectFrom('bodies')
+        .select('bodies.annotation_id')
+        .where(sql<boolean>`bodies.text_search @@ ${tsquery}`)
+        .union(
           eb
             .selectFrom('targets')
-            .select('targets.id')
-            .whereRef('targets.annotation_id', '=', 'annotations.id')
+            .select('targets.annotation_id')
             .where(sql<boolean>`targets.quote_search @@ ${tsquery}`),
         ),
-      ]),
     );
   }
   return q;

@@ -30,6 +30,10 @@ const EXCEPTIONS = new Map([
     'lightningcss',
     'MPL-2.0; CSS minifier run at build time by Vite 8, ADR 0022, checked 2026-10-30',
   ],
+  [
+    'pako',
+    'MIT AND Zlib, both permissive; pulled in by autocannon (load test only, docs/performance.md), checked 2026-10-30',
+  ],
 ]);
 
 /** Platform binaries of an excepted package (`lightningcss-darwin-arm64` and the like). */

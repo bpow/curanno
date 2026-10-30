@@ -29,6 +29,6 @@ The following licenses are allowed for dependencies without further discussion:
 - Python-2.0
 - BlueOak-1.0.0
 
-Copyleft licenses (GPL, LGPL, AGPL, MPL) require an accepted ADR before a dependency using one is added. Dependencies with no declared license or with a custom license need the same. [ADR 0022](adr/0022-axe-core-development-dependency.md) admits copyleft build- and test-time tooling that enters nothing we distribute; today `axe-core` and `@axe-core/playwright` (accessibility tests) and `lightningcss` (Vite 8's CSS minifier), each named in the check's exception list.
+Copyleft licenses (GPL, LGPL, AGPL, MPL) require an accepted ADR before a dependency using one is added. Dependencies with no declared license or with a custom license need the same. [ADR 0022](adr/0022-axe-core-development-dependency.md) admits copyleft build- and test-time tooling that enters nothing we distribute; today `axe-core` and `@axe-core/playwright` (accessibility tests) and `lightningcss` (Vite 8's CSS minifier), each named in the check's exception list. The same list names `pako` (MIT AND Zlib, both permissive), a dependency of the `autocannon` load generator that only the load test in [performance.md](performance.md) runs.
 
 This list is the policy. The authoritative allowlist that CI enforces lives in `scripts/check-licenses.mjs`, and any change here must be mirrored there.
