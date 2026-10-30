@@ -15,9 +15,14 @@ import {
   type TextTreeAdapter,
 } from '@scale/model';
 
-export interface AnchoringScope {
-  root: Element;
-  map: TextMap<Node>;
+/**
+ * A root and its text map. `N` is a DOM node in the browser; the PDF
+ * integration anchors pages that are not rendered in a tree of its own
+ * (`integrations/pdf-text.ts`), where no DOM ranges exist.
+ */
+export interface AnchoringScope<N = Node> {
+  root: N;
+  map: TextMap<N>;
 }
 
 /**
@@ -41,12 +46,17 @@ export function createScope(root: Element, adapter = createBrowserAdapter()): An
   return { root, map: extractText(root, adapter) };
 }
 
+/** The document of a live scope's root (a scope over a DOM tree always has one). */
+function documentOf(root: Node): Document {
+  return root.ownerDocument as Document;
+}
+
 /** A DOM Range over the text a code point range covers, or undefined when it has none. */
 export function domRangeOf(scope: AnchoringScope, range: TextRange): Range | undefined {
   const start = pointFromTextOffset(scope.map, range.start, 'start');
   const end = pointFromTextOffset(scope.map, range.end, 'end');
   if (!start || !end) return undefined;
-  const dom = scope.root.ownerDocument.createRange();
+  const dom = documentOf(scope.root).createRange();
   dom.setStart(start.node, start.offset);
   dom.setEnd(end.node, end.offset);
   return dom;
@@ -67,7 +77,7 @@ export function textPointsOf(
   range: Range,
 ): { start: TextPoint<Node>; end: TextPoint<Node> } | undefined {
   const nodes = contributingNodes(scope);
-  const probe = scope.root.ownerDocument.createRange();
+  const probe = documentOf(scope.root).createRange();
   const start = pointAt(range.startContainer, range.startOffset, 'start');
   const end = pointAt(range.endContainer, range.endOffset, 'end');
   return start && end ? { start, end } : undefined;

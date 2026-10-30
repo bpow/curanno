@@ -15,6 +15,7 @@ export { DEFAULT_SIDEBAR_PATH, readConfig, validateSidebar, type GuestConfig } f
 export { collectDocument, collectPageMetadata } from './document-metadata.js';
 export { Guest, type GuestOptions } from './guest.js';
 export * from './highlights/index.js';
+export * from './integrations/index.js';
 export { observeMutations, WATCHED_ATTRIBUTES } from './observers/mutation.js';
 export { observeSelection } from './observers/selection.js';
 export { GuestConnection, type GuestConnectionOptions, type PortLike } from './rpc/connection.js';

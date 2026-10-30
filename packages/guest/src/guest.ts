@@ -1,32 +1,30 @@
 /**
  * The guest: wires the anchoring, highlights, observers and the RPC
- * connection together for one page (ADR 0007, 0008). It keeps the
+ * connection together for one document (ADR 0007, 0008). It keeps the
  * sidebar's anchor requests (identifiers and selectors only), re-anchors
- * them whenever the page changes, and reports what it found.
+ * them whenever the document changes, and reports what it found. Where the
+ * text lives and when it changes is the document integration's business:
+ * an HTML page by default, a PDF.js viewer through `PdfIntegration`.
  */
 import {
   selectorsOfTarget,
-  textOfRange,
   type AnchorRequest,
   type AnchoringResult,
   type GuestSelection,
+  type Selector,
   type SidebarMessage,
   type SpecificResource,
   type TargetAnchoringResult,
-  type TextRange,
 } from '@scale/model';
-import { anchor, type AnchorOptions } from './anchoring/anchor.js';
-import { describeTextRange } from './anchoring/describe.js';
-import { createScope, domRangeOf, textRangeOf, type AnchoringScope } from './anchoring/scope.js';
-import { collectDocument } from './document-metadata.js';
+import type { AnchorOptions } from './anchoring/anchor.js';
 import {
-  GUEST_ATTRIBUTE,
   HighlightIndex,
   createHighlightRenderer,
   type HighlightEntry,
   type HighlightRenderer,
 } from './highlights/index.js';
-import { observeMutations } from './observers/mutation.js';
+import { HtmlIntegration, isGuestOwned } from './integrations/html.js';
+import type { DocumentIntegration } from './integrations/types.js';
 import { observeSelection } from './observers/selection.js';
 import { GuestConnection, type GuestConnectionOptions } from './rpc/connection.js';
 import { SidebarFrame } from './sidebar-frame.js';
@@ -36,7 +34,9 @@ export interface GuestOptions {
   sidebarOrigin: string;
   /** Path of the sidebar page on that origin. Default `/`. */
   sidebarPath?: string;
-  /** Anchoring root. Default `document.body`. */
+  /** The document; default an HTML integration over `root` or the body. */
+  integration?: DocumentIntegration;
+  /** Anchoring root of the default HTML integration. Default `document.body`. */
   root?: Element;
   document?: Document;
   /** Show the sidebar at start. Default true. */
@@ -48,32 +48,50 @@ export interface GuestOptions {
   createChannel?: GuestConnectionOptions['createChannel'];
 }
 
-const WHITESPACE = /^\s$/u;
+interface Anchored {
+  result: AnchoringResult;
+  ranges: Range[];
+  /** The selectors of each target, for scrolling towards an undrawn one. */
+  selectors: Selector[][];
+}
 
 export class Guest {
   readonly id: string;
   private readonly doc: Document;
-  private readonly root: Element;
+  private readonly integration: DocumentIntegration;
   private readonly options: GuestOptions;
-  private scope: AnchoringScope | undefined;
   private frame: SidebarFrame | undefined;
   private connection: GuestConnection | undefined;
   private renderer: HighlightRenderer | undefined;
   private readonly index = new HighlightIndex();
   private readonly requests = new Map<string, AnchorRequest>();
-  private readonly results = new Map<string, AnchoringResult>();
-  private readonly ranges = new Map<string, Range[]>();
+  private readonly anchored = new Map<string, Anchored>();
   private focused: ReadonlySet<string> = new Set();
   private hovered: string[] = [];
   private lastSelection: string | null | undefined;
   private hoverFrame = 0;
   private readonly cleanups: (() => void)[] = [];
+  /** Anchoring passes run one at a time, in order. */
+  private queue: Promise<void> = Promise.resolve();
 
   constructor(options: GuestOptions) {
     this.options = options;
     this.doc = options.document ?? document;
-    this.root = options.root ?? this.doc.body;
+    this.integration =
+      options.integration ??
+      new HtmlIntegration({
+        document: this.doc,
+        ...(options.root ? { root: options.root } : {}),
+        ...(options.anchoring ? { anchoring: options.anchoring } : {}),
+        ...(options.mutationDebounceMs !== undefined
+          ? { mutationDebounceMs: options.mutationDebounceMs }
+          : {}),
+      });
     this.id = randomId();
+  }
+
+  get root(): Element {
+    return this.integration.root;
   }
 
   /** Inject the sidebar frame, connect and start observing. */
@@ -99,16 +117,10 @@ export class Guest {
     });
 
     this.cleanups.push(
-      observeMutations(this.root, {
-        isOwned: (node) => this.isOwned(node),
-        onChange: () => this.onMutation(),
-        ...(this.options.mutationDebounceMs !== undefined
-          ? { debounceMs: this.options.mutationDebounceMs }
-          : {}),
-      }),
+      this.integration.observe(() => this.onChange()),
       observeSelection(doc, {
         root: this.root,
-        isOwned: (node) => this.isOwned(node),
+        isOwned: isGuestOwned,
         onChange: (range) => this.onSelection(range),
         ...(this.options.selectionDebounceMs !== undefined
           ? { debounceMs: this.options.selectionDebounceMs }
@@ -138,12 +150,12 @@ export class Guest {
     this.connection?.close();
     this.renderer?.dispose();
     this.frame?.remove();
+    this.integration.destroy();
     this.connection = undefined;
     this.renderer = undefined;
     this.frame = undefined;
     this.requests.clear();
-    this.results.clear();
-    this.ranges.clear();
+    this.anchored.clear();
   }
 
   get sidebarOpen(): boolean {
@@ -164,7 +176,12 @@ export class Guest {
 
   /** Current results, for tests and the dev page. */
   anchoringResults(): AnchoringResult[] {
-    return [...this.results.values()];
+    return [...this.anchored.values()].map((a) => a.result);
+  }
+
+  /** Resolves once every queued anchoring pass has run. */
+  settled(): Promise<void> {
+    return this.queue;
   }
 
   // -------------------------------------------------------------------------
@@ -173,36 +190,36 @@ export class Guest {
     this.connection?.send(message);
   }
 
-  private isOwned(node: Node): boolean {
-    const element = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
-    return element?.closest(`[${GUEST_ATTRIBUTE}]`) !== null && element !== null;
-  }
-
-  private currentScope(): AnchoringScope {
-    this.scope ??= createScope(this.root);
-    return this.scope;
+  /** Run `task` after the passes already queued; errors are reported, not thrown. */
+  private enqueue(task: () => Promise<void>): void {
+    this.queue = this.queue.then(task).catch((err: unknown) => {
+      this.connection?.error(err instanceof Error ? err.message : String(err));
+    });
   }
 
   private onConnected(): void {
-    this.send({ type: 'document.report', document: collectDocument(this.doc) });
-    this.send({ type: 'sidebar.visibility', open: this.sidebarOpen });
-    if (this.requests.size > 0) this.send({ type: 'anchoring.results', results: this.anchorAll() });
+    this.enqueue(async () => {
+      this.send({ type: 'document.report', document: await this.integration.document() });
+      this.send({ type: 'sidebar.visibility', open: this.sidebarOpen });
+      if (this.requests.size > 0) {
+        this.send({ type: 'anchoring.results', results: await this.anchorAll() });
+      }
+    });
   }
 
   private handle(message: SidebarMessage): void {
     switch (message.type) {
       case 'annotations.anchor':
         for (const request of message.requests) this.requests.set(request.id, request);
-        this.send({
-          type: 'anchoring.results',
-          results: this.anchorAll(message.requests.map((r) => r.id)),
+        this.enqueue(async () => {
+          const results = await this.anchorAll(message.requests.map((r) => r.id));
+          this.send({ type: 'anchoring.results', results });
         });
         break;
       case 'annotations.unanchor':
         for (const id of message.ids) {
           this.requests.delete(id);
-          this.results.delete(id);
-          this.ranges.delete(id);
+          this.anchored.delete(id);
         }
         this.draw();
         break;
@@ -233,36 +250,30 @@ export class Guest {
   }
 
   /** Anchor the given requests (all when omitted), redraw and return their results. */
-  private anchorAll(ids?: string[]): AnchoringResult[] {
-    this.scope = createScope(this.root);
-    const scope = this.scope;
+  private async anchorAll(ids?: string[]): Promise<AnchoringResult[]> {
+    this.integration.prepare();
     const results: AnchoringResult[] = [];
-    for (const id of ids ?? this.requests.keys()) {
+    for (const id of ids ?? [...this.requests.keys()]) {
       const request = this.requests.get(id);
       if (!request) continue;
       const targets = Array.isArray(request.target) ? request.target : [request.target];
       const ranges: Range[] = [];
-      const perTarget = targets.map((target): TargetAnchoringResult => {
-        const selectors = selectorsOfTarget(target);
-        if (selectors.length === 0) return { state: 'anchored' };
-        const result = anchor(scope, selectors, this.options.anchoring ?? {});
-        if (result.state === 'anchored') {
-          const dom = domRangeOf(scope, result.range);
-          if (dom) ranges.push(dom);
-          return { state: 'anchored', range: result.range, via: result.via, score: result.score };
-        }
-        if (result.state === 'ambiguous')
-          return { state: 'ambiguous', candidates: result.candidates };
-        return { state: 'orphaned', reason: result.reason };
-      });
+      const perTarget: TargetAnchoringResult[] = [];
+      const selectors = targets.map((target) => selectorsOfTarget(target));
+      for (const targetSelectors of selectors) {
+        const anchored = await this.integration.anchor(targetSelectors);
+        perTarget.push(anchored.result);
+        ranges.push(...anchored.ranges);
+      }
+      // The request may have been withdrawn while a page's text was loading.
+      if (this.requests.get(id) !== request) continue;
       const state = perTarget.some((t) => t.state === 'anchored')
         ? 'anchored'
         : perTarget.some((t) => t.state === 'ambiguous')
           ? 'ambiguous'
           : 'orphaned';
       const result: AnchoringResult = { id, state, targets: perTarget };
-      this.results.set(id, result);
-      this.ranges.set(id, ranges);
+      this.anchored.set(id, { result, ranges, selectors });
       results.push(result);
     }
     this.draw();
@@ -271,45 +282,47 @@ export class Guest {
 
   private draw(): void {
     const entries: HighlightEntry[] = [];
-    for (const [id, ranges] of this.ranges) if (ranges.length > 0) entries.push({ id, ranges });
+    for (const [id, { ranges }] of this.anchored) {
+      if (ranges.length > 0) entries.push({ id, ranges });
+    }
     this.renderer?.set(entries);
     this.renderer?.focus(this.focused);
     this.index.set(entries);
   }
 
-  /** After a DOM change: re-anchor everything and report what changed. */
-  private onMutation(): void {
-    const before = new Map([...this.results].map(([id, r]) => [id, JSON.stringify(r)]));
-    const changed = this.anchorAll().filter((r) => before.get(r.id) !== JSON.stringify(r));
-    if (changed.length > 0) this.send({ type: 'anchoring.results', results: changed });
+  /** After the document changed: re-anchor everything and report what changed. */
+  private onChange(): void {
+    this.enqueue(async () => {
+      const before = new Map(
+        [...this.anchored].map(([id, a]) => [id, JSON.stringify(a.result)] as const),
+      );
+      const changed = (await this.anchorAll()).filter(
+        (r) => before.get(r.id) !== JSON.stringify(r),
+      );
+      if (changed.length > 0) this.send({ type: 'anchoring.results', results: changed });
+    });
   }
 
   private scrollTo(id: string): void {
-    const range = this.ranges.get(id)?.[0];
-    const element = range?.startContainer.parentElement;
-    element?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    const anchored = this.anchored.get(id);
+    if (!anchored) return;
+    this.integration.scrollTo(anchored.ranges, anchored.selectors.flat());
     this.index.invalidate();
     this.renderer?.refresh();
   }
 
   private onSelection(range: Range | null): void {
-    if (!range) {
-      this.reportSelection(null);
-      return;
-    }
-    const scope = this.currentScope();
-    const textRange = textRangeOf(scope, range);
-    const trimmed = textRange && trim(scope.map.text, textRange);
-    if (!trimmed) {
+    const described = range ? this.integration.describe(range) : undefined;
+    if (!described) {
       this.reportSelection(null);
       return;
     }
     const target: SpecificResource = {
       type: 'SpecificResource',
-      source: this.doc.location.href,
-      selector: describeTextRange(scope, trimmed),
+      source: this.integration.source(),
+      selector: described.selectors,
     };
-    this.reportSelection({ target, quote: textOfRange(scope.map.text, trimmed) });
+    this.reportSelection({ target, quote: described.quote });
   }
 
   private reportSelection(selection: GuestSelection | null): void {
@@ -320,7 +333,7 @@ export class Guest {
   }
 
   private onPointerMove(event: PointerEvent): void {
-    if (this.hoverFrame !== 0 || this.ranges.size === 0) return;
+    if (this.hoverFrame !== 0 || this.anchored.size === 0) return;
     const { clientX, clientY } = event;
     this.hoverFrame =
       this.doc.defaultView?.requestAnimationFrame(() => {
@@ -334,21 +347,10 @@ export class Guest {
   }
 
   private onClick(event: MouseEvent): void {
-    if (this.isOwned(event.target as Node)) return;
+    if (isGuestOwned(event.target as Node)) return;
     const ids = this.index.idsAt(event.clientX, event.clientY);
     if (ids.length > 0) this.send({ type: 'highlights.activated', ids });
   }
-}
-
-/** Drop collapsible whitespace and line feeds from both ends of a selection. */
-function trim(text: string, range: TextRange): TextRange | undefined {
-  const chars = [...textOfRange(text, range)];
-  let start = 0;
-  let end = chars.length;
-  while (start < end && WHITESPACE.test(chars[start] as string)) start++;
-  while (end > start && WHITESPACE.test(chars[end - 1] as string)) end--;
-  if (start === end) return undefined;
-  return { start: range.start + start, end: range.start + end };
 }
 
 function randomId(): string {

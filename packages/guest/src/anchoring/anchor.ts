@@ -53,10 +53,11 @@ export interface AnchorOptions {
  * Anchor one target's selectors against a scope. Tries the RangeSelector,
  * then the TextPositionSelector, each accepted only when the text it now
  * covers equals the stored quote, then quote matching. Selectors of other
- * types are ignored here (PDF page fragments are Phase 5).
+ * types are ignored here; a PDF target's page fragment is resolved by the
+ * PDF integration before the refined selectors reach this function.
  */
-export function anchor(
-  scope: AnchoringScope,
+export function anchor<N>(
+  scope: AnchoringScope<N>,
   selectors: OneOrMany<Selector>,
   options: AnchorOptions = {},
 ): AnchorResult {
@@ -74,8 +75,8 @@ export function anchor(
   const matchesQuote = (candidate: TextRange): boolean =>
     expected === undefined || textOfRange(scope.map.text, candidate) === expected;
 
-  if (range) {
-    const found = fromRangeSelector(scope, range);
+  if (range && isLiveElement(scope.root)) {
+    const found = fromRangeSelector(scope as unknown as AnchoringScope, range);
     if (found && matchesQuote(found))
       return { state: 'anchored', range: found, via: 'range', score: 1 };
   }
@@ -121,6 +122,16 @@ export function anchor(
   };
 }
 
+/** A DOM element, as opposed to a node of the PDF integration's text tree. */
+function isLiveElement(node: unknown): node is Element {
+  return (
+    typeof node === 'object' &&
+    node !== null &&
+    (node as Node).nodeType === 1 &&
+    'children' in (node as Element)
+  );
+}
+
 function scoresEqual(a: ScoredMatch, b: ScoredMatch): boolean {
   return Math.abs(a.score - b.score) < 1e-9;
 }
@@ -149,7 +160,7 @@ function pointFromSelector(
   bias: 'start' | 'end',
 ): TextPoint<Node> | undefined {
   if (selector.type !== 'XPathSelector') return undefined;
-  const element = nodeFromXPath(selector.value, scope.root);
+  const element = nodeFromXPath(selector.value, scope.root as Element);
   if (!element || element.nodeType !== Node.ELEMENT_NODE) return undefined;
   const refinements = selector.refinedBy
     ? Array.isArray(selector.refinedBy)
