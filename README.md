@@ -14,7 +14,7 @@ An annotation system built on the [W3C Web Annotation Data Model](https://www.w3
 | --------------------- | ------------------- | ---------------------------------------------------------- |
 | `packages/model`      | `@scale/model`      | Annotation types, text model, selectors, RPC message types |
 | `packages/api-client` | `@scale/api-client` | Client generated from the OpenAPI document                 |
-| `packages/guest`      | `@scale/guest`      | Framework-free in-page script                              |
+| `packages/guest`      | `@scale/guest`      | Framework-free in-page guest, its bundle and bookmarklet   |
 | `apps/api`            | `@scale/api`        | Fastify server                                             |
 | `apps/sidebar`        | `@scale/sidebar`    | Vue sidebar app ([README](apps/sidebar/README.md))         |
 | `apps/web`            | `@scale/web`        | Nuxt management site ([README](apps/web/README.md))        |
@@ -48,6 +48,11 @@ Other scripts:
 | `pnpm --filter @scale/web e2e`            | Playwright test of the management site against Keycloak and the API   |
 | `pnpm openapi:lint`                       | Lints `apps/api/openapi.yaml` with Redocly                             |
 | `pnpm api-client:generate`                | Regenerates `packages/api-client/src/schema.ts` from the OpenAPI document |
+| `pnpm --filter @scale/guest bundle`       | Builds the guest bundle `packages/guest/build/guest.js`                 |
+| `pnpm --filter @scale/guest bookmarklet -- --bundle-url URL --sidebar-origin ORIGIN` | Prints the bookmarklet for a deployed bundle and sidebar |
+| `pnpm --filter @scale/guest dev`          | Serves a sample page and the fake sidebar on two origins and prints a bookmarklet |
+| `pnpm --filter @scale/guest test:browser` | Browser tests: text-model fixtures through the guest, RPC, hostile page |
+| `pnpm --filter @scale/guest trial`        | Anchoring regression corpus; fails on a guessed must-not-match anchor  |
 | `podman build -t annotations-api -f Dockerfile .` | Builds the API image                                           |
 | `helm lint deploy/helm/annotations`       | Validates the Helm chart (see `deploy/helm/annotations/values.yaml`)   |
 
@@ -59,6 +64,11 @@ The API is configured entirely through environment variables; `.env.example` doc
 
 Phases 0 to 3 of the [project plan](docs/web-annotation-plan.md) are complete. The server in `apps/api` implements the W3C Web Annotation Protocol (one container with paging, `Prefer`, ETags and conditional requests), the `/x/` extensions (search over document identity and full text, per-annotation ACLs enforced in SQL, body profiles, documents, server-sent events over `LISTEN/NOTIFY`, users and groups), OIDC bearer-token authentication, a container image and a Helm chart.
 
-Phase 4 is in progress. The API-facing half of the sidebar in `apps/sidebar` is done: OIDC login against the compose Keycloak, listing, creating, editing, replying to, sharing and deleting annotations for a document, a TextualBody editor and a structured-body editor built from the profile registry, live updates over the event stream, a `frame-ancestors` policy, component tests and a Playwright test that runs in CI. It runs with a development guest until the in-page guest and the postMessage RPC land; `apps/sidebar/src/guest/TODO.md` says what to connect then. The bookmarklet and the hostile-page test remain.
+Phase 4 is nearly done; both halves exist and only the wiring between them remains.
 
-Phase 6, the management site in `apps/web`, is done ahead of Phases 4 and 5 since the API it needs was stable: sign-in against the compose Keycloak, users and groups administration with membership and roles (provider-managed groups shown read-only), a sharing panel over an annotation's ACL, annotation browsing and search over `/x/search`, component tests and a Playwright test that runs in CI. It is not yet in the Helm chart.
+- The guest in `packages/guest` anchors on the text model (ADR 0012, 0013, 0017), passes the text-model fixtures in Chromium and the anchoring corpus with no guessed must-not-match anchors, draws highlights with the CSS Custom Highlight API (overlay fallback) without touching host text, re-anchors after DOM changes, and speaks the [guest/sidebar RPC protocol](docs/guest-sidebar-rpc.md) whose types live in `packages/model/src/rpc/`. The bundle, the bookmarklet generator and a dev placeholder with a fake sidebar are in place, and a hostile-page test covers the guest's side of success criterion 6.
+- The sidebar in `apps/sidebar` is complete on the API side: OIDC login against the compose Keycloak, listing, creating, editing, replying to, sharing and deleting annotations for a document, a TextualBody editor and a structured-body editor built from the profile registry, live updates over the event stream, a `frame-ancestors` policy, component tests and a Playwright test that runs in CI. It still runs against a development guest; `apps/sidebar/src/guest/TODO.md` says what to connect to the real RPC transport.
+
+Phase 6, the management site in `apps/web`, is done ahead of Phase 5 since the API it needs was stable: sign-in against the compose Keycloak, users and groups administration with membership and roles (provider-managed groups shown read-only), a sharing panel over an annotation's ACL, annotation browsing and search over `/x/search`, component tests and a Playwright test that runs in CI. It is not yet in the Helm chart.
+
+Remaining: connect the sidebar to the guest and run the bookmarklet-driven end-to-end test (Phase 4 exit); then PDFs, multi-frame support, the security and accessibility reviews and operational readiness (Phase 5).

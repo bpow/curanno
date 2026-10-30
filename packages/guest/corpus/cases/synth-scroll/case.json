@@ -29,13 +29,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Section 7When hand is selectors verbatim",
-          "prefix": "ver page it keeps nothing user.\n",
+          "prefix": "ver page it keeps nothing user. ",
           "suffix": " that never it lost selectors se"
         },
         {
           "type": "TextPositionSelector",
-          "start": 3224,
-          "end": 3264
+          "start": 3220,
+          "end": 3260
         },
         {
           "type": "RangeSelector",
@@ -70,13 +70,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Section 12To attributable so attributable repair",
-          "prefix": "rs never the never may both an.\n",
+          "prefix": "rs never the never may both an. ",
           "suffix": " when by the it generations to i"
         },
         {
           "type": "TextPositionSelector",
-          "start": 5835,
-          "end": 5883
+          "start": 5831,
+          "end": 5879
         },
         {
           "type": "RangeSelector",
@@ -116,13 +116,12 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Final remark: the appendix closes the document.",
-          "prefix": "e the when is generations lost.\n",
-          "suffix": "\n\n\n\n\n"
+          "prefix": "e the when is generations lost. "
         },
         {
           "type": "TextPositionSelector",
-          "start": 6864,
-          "end": 6911
+          "start": 6858,
+          "end": 6905
         },
         {
           "type": "RangeSelector",

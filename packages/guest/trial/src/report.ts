@@ -1,6 +1,9 @@
 /** Result shapes and the Markdown summary written next to results.json. */
 import { classify, emptyCounts, type Counts, type Verdict } from './classify.ts';
 
+/** The candidate the regression gate applies to (success criterion 5). */
+export const GUEST_CANDIDATE_ID = 'guest';
+
 export type AnnotationResult = {
   caseId: string;
   variantId: string;
@@ -17,7 +20,7 @@ export type AnnotationResult = {
 
 export type Results = {
   generated: string;
-  candidates: { id: string; description: string; sweep?: boolean }[];
+  candidates: { id: string; description: string; sweep?: boolean; legacy?: boolean }[];
   cases: {
     id: string;
     title: string;

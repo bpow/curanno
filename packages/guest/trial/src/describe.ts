@@ -21,7 +21,11 @@ const server = await startServer();
 const browser = await launch();
 try {
   for (const c of await loadCases(ids)) {
-    const todo = c.annotations.filter((a) => force || !a.selectors);
+    // An annotation that must not match even on the original carries
+    // hand-written selectors (the PLOS decoy) and cannot be described.
+    const handWritten = (a: (typeof c.annotations)[number]): boolean =>
+      a.expected?.['original'] !== undefined && 'mustNotMatch' in a.expected['original'];
+    const todo = c.annotations.filter((a) => !handWritten(a) && (force || !a.selectors));
     if (todo.length === 0) continue;
     const original = c.variants.find((v) => v.id === 'original')!;
     const page = await openVariant(browser, c, original, server.origin);
@@ -30,6 +34,13 @@ try {
         ([root, select]) => window.__trial.describe(root, select),
         [rootSelector(c), a.select] as const,
       );
+      if (a.notAnnotatable) {
+        if (result) throw new Error(`${c.id}/${a.id} is marked notAnnotatable but was described`);
+        delete a.selectors;
+        console.log(`${c.id}/${a.id}: not annotatable`);
+        continue;
+      }
+      if (!result) throw new Error(`${c.id}/${a.id}: the selection covers no text of the root`);
       a.selectors = result.selectors;
       console.log(
         `${c.id}/${a.id}: ${result.span.start}-${result.span.end} ${JSON.stringify(result.exact.slice(0, 40))}`,
@@ -58,6 +69,7 @@ async function writeCase(c: Case): Promise<void> {
       description: a.description,
       ...(a.partOf ? { partOf: a.partOf } : {}),
       select: a.select,
+      ...(a.notAnnotatable ? { notAnnotatable: true } : {}),
       ...(a.expected ? { expected: a.expected } : {}),
       ...(a.selectors ? { selectors: a.selectors } : {}),
     })),

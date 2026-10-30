@@ -3,6 +3,7 @@
  * by the runner, which then calls `window.__trial`.
  */
 import type { Expectation, Selection, Selector } from '../corpus.ts';
+import { guest, guestSweep } from './candidates/guest.ts';
 import { hypothesis } from './candidates/hypothesis.ts';
 import { recogitoDefault, recogitoQuote } from './candidates/recogito.ts';
 import type { AnchorResult, Candidate } from './candidates/types.ts';
@@ -17,12 +18,19 @@ import {
 } from './text.ts';
 import './highlights.ts';
 
-const candidates: Candidate[] = [
+/**
+ * The guest candidates run by default. The Phase 2 candidates stay for
+ * reference (`--all`): since the corpus selectors follow the project text
+ * model they measure those libraries on selectors they do not implement.
+ */
+const defaultCandidates: Candidate[] = [guest, guestSweep];
+const legacyCandidates: Candidate[] = [
   recogitoDefault,
   recogitoQuote(0, 'recogito-quote', ' with no score threshold (Hypothesis policy)'),
   recogitoQuote(0.8, 'recogito-quote-strict', ' rejecting matches scoring below 0.8'),
   hypothesis,
 ];
+const candidates = [...defaultCandidates, ...legacyCandidates];
 
 function resolveRoot(selector?: string): HTMLElement {
   const el = selector ? document.querySelector<HTMLElement>(selector) : document.body;
@@ -32,7 +40,8 @@ function resolveRoot(selector?: string): HTMLElement {
 
 export type DescribeResult = { selectors: Selector[]; span: Span; exact: string };
 
-function describe(rootSelector: string | undefined, select: Selection): DescribeResult {
+/** Selectors for a `select`, or null when the text lies in excluded content. */
+function describe(rootSelector: string | undefined, select: Selection): DescribeResult | null {
   const root = resolveRoot(rootSelector);
   const scope = select.scope ? document.querySelector(select.scope) : root;
   if (!scope) throw new Error(`scope not found: ${select.scope}`);
@@ -41,7 +50,8 @@ function describe(rootSelector: string | undefined, select: Selection): Describe
   if (idx === -1) throw new Error(`text not found: ${JSON.stringify(select)}`);
   const span = { start: scopeStart + idx, end: scopeStart + idx + select.exact.length };
   const range = spanToRange(root, span);
-  return { selectors: describeRange(root, range), span, exact: range.toString() };
+  const selectors = describeRange(root, range);
+  return selectors ? { selectors, span, exact: range.toString() } : null;
 }
 
 function scopeRange(scope: Element): Range {
@@ -73,6 +83,7 @@ const api = {
     id: c.id,
     description: c.description,
     sweep: c.sweep ?? false,
+    legacy: legacyCandidates.includes(c),
   })),
   describe,
   expectedSpan,

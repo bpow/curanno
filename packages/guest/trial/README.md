@@ -1,14 +1,15 @@
 # Guest anchoring trial
 
-Runs candidate anchoring implementations against the [regression corpus](../corpus/README.md) in headless Chromium and reports anchored, orphaned and wrong-anchor counts. Phase 2 of the [project plan](../../../docs/web-annotation-plan.md); its conclusions are in [ADR 0017](../../../docs/adr/0017-guest-base-and-highlight-rendering.md).
+Runs the guest's anchoring against the [regression corpus](../corpus/README.md) in headless Chromium and reports anchored, orphaned and wrong-anchor counts. Built in Phase 2 of the [project plan](../../../docs/web-annotation-plan.md) to choose the guest's base ([ADR 0017](../../../docs/adr/0017-guest-base-and-highlight-rendering.md)); since Phase 4 it is the guest's regression suite and gate (success criterion 5).
 
 ```bash
-pnpm --filter @scale/guest trial                 # all cases, all candidates
+pnpm --filter @scale/guest trial                 # all cases, the guest candidates
 pnpm --filter @scale/guest trial synth-hidden    # one case
+pnpm --filter @scale/guest trial --all           # include the Phase 2 candidates
 pnpm --filter @scale/guest trial --candidate hypothesis
 ```
 
-Results land in [`results/results.json`](results/results.json) and [`results/summary.md`](results/summary.md). The first run needs `pnpm --filter @scale/guest exec playwright install chromium`.
+Results land in [`results/results.json`](results/results.json) and [`results/summary.md`](results/summary.md). The run exits with status 1 when the `guest` candidate anchors any `mustNotMatch` annotation (a `guessed` verdict), or when an expectation cannot be located. The first run needs `pnpm --filter @scale/guest exec playwright install chromium`.
 
 ## What runs
 
@@ -28,7 +29,12 @@ PDF cases are opened through `static/pdf-view.html`, which renders every page of
 
 ## Candidates
 
-Defined in `src/browser/candidates/`:
+Defined in `src/browser/candidates/`. Run by default:
+
+- **guest**: `anchor()` from `packages/guest/src/anchoring`, on the project text model (ADR 0012, 0013): RangeSelector, then TextPosition, each checked against the quote, then quote matching with the minimum score and the quote-length floor from ADR 0017. The gate applies to this candidate.
+- **guest-sweep**: the same code with both thresholds off, so the report's threshold sweep shows what every candidate match scored. Its `guessed` verdicts are expected and not gated.
+
+Kept from Phase 2 and run only with `--all`. The corpus selectors now follow the project text model (code points of normalized text), which these libraries do not implement, so their numbers measure them on foreign selectors and are no longer comparable with the Phase 2 report, which is recorded in ADR 0017:
 
 - **hypothesis**: `anchor()` from the vendored client code (`../vendor/hypothesis`). W3C `RangeSelector`s are converted to the client's XPath shape first.
 - **recogito-default**: `createTextAnnotator` with the bundled `W3CTextFormat` adapter and no `selectorReviveFn`, so annotations are revived by `TextPositionSelector` offsets alone.
@@ -39,7 +45,7 @@ Both Recogito candidates go through the library's real loading path (adapter, re
 
 ## Other commands
 
-- `pnpm --filter @scale/guest corpus:describe [--force] [case ...]` generates selectors from each annotation's `select`.
+- `pnpm --filter @scale/guest corpus:describe [--force] [case ...]` generates selectors from each annotation's `select` through the guest's `describe`, and checks that annotations marked `notAnnotatable` cannot be described.
 - `pnpm --filter @scale/guest corpus:pdf` renders `cases/*/src/*.html` to PDFs.
 - `pnpm --filter @scale/guest trial:highlights` compares highlight rendering techniques on the re-rendering and nested-scroll pages; see [highlight-rendering.md](highlight-rendering.md).
 - `pnpm --filter @scale/guest trial:a11y` runs the keyboard and accessibility-tree checks; see [keyboard-and-screen-reader.md](keyboard-and-screen-reader.md).
@@ -57,7 +63,7 @@ trial/
   src/corpus.ts              case.json types and loader
   src/classify.ts            verdicts (unit tested)
   src/report.ts              results.json shape and summary.md
-  src/browser/               code that runs in the page: candidates, text helpers, PDF view
+  src/browser/               code that runs in the page: candidates, measuring helpers, PDF view
   static/pdf-view.html
   results/                   committed output of the last full run
 ```

@@ -25,7 +25,10 @@ try {
   const [c] = await loadCases(['react-rerender']);
   const original = c.variants.find((v) => v.id === 'original')!;
   const root = rootSelector(c);
-  const items = c.annotations.slice(0, 3).map((a) => ({ id: a.id, selectors: a.selectors! }));
+  const items = c.annotations
+    .filter((a) => !a.notAnnotatable)
+    .slice(0, 3)
+    .map((a) => ({ id: a.id, selectors: a.selectors! }));
 
   // 1. Accessibility tree and tab order before and after each technique,
   //    and whether the highlight survives forced-colors mode.
@@ -33,7 +36,7 @@ try {
   for (const technique of TECHNIQUES) {
     const page = await openVariant(browser, c, original, server.origin);
     const { results } = await page.evaluate(
-      ([r, items]) => window.__trial.anchor('hypothesis', r, items),
+      ([r, items]) => window.__trial.anchor('guest', r, items),
       [root, items] as const,
     );
     const spans = results.map((r) => r.span!).filter(Boolean);

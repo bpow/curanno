@@ -15,6 +15,8 @@ export default tseslint.config(
       'packages/api-client/src/schema.ts',
       // Trial build output and third-party code kept verbatim (see its PROVENANCE.md).
       'packages/guest/trial/.build/**',
+      'packages/guest/test/.build/**',
+      'packages/guest/build/**',
       'packages/guest/vendor/**',
       'apps/sidebar/playwright-report/**',
       'apps/sidebar/test-results/**',

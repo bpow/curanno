@@ -43,10 +43,11 @@ const rows: Row[] = [];
 async function spansFor(page: Page, c: Case): Promise<Span[]> {
   const root = rootSelector(c);
   const items = c.annotations
+    .filter((a) => !a.notAnnotatable)
     .filter((a) => !a.expected?.['data-2'] || !('mustNotMatch' in a.expected['data-2']))
     .map((a) => ({ id: a.id, selectors: a.selectors! }));
   const { results } = await page.evaluate(
-    ([r, items]) => window.__trial.anchor('hypothesis', r, items),
+    ([r, items]) => window.__trial.anchor('guest', r, items),
     [root, items] as const,
   );
   return results.map((r) => r.span).filter((s): s is Span => s !== null);
