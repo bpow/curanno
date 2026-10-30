@@ -127,6 +127,33 @@ jobs:
             apps/sidebar/playwright-report/
             apps/sidebar/test-results/
 
+  # The bookmarklet suite drives the built guest bundle, the built sidebar
+  # and an API answered by Playwright in Chromium: the end-to-end test over
+  # corpus pages (Phase 4 exit) and the hostile-page test for the whole
+  # client (success criterion 6). It needs neither Postgres nor Keycloak.
+  bookmarklet-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm --filter @scale/guest bundle
+      - run: pnpm --filter @scale/sidebar build
+      - run: pnpm --filter @scale/sidebar exec playwright install --with-deps chromium
+      - run: pnpm --filter @scale/sidebar e2e:guest
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: bookmarklet-e2e-report
+          path: |
+            apps/sidebar/playwright-report/
+            apps/sidebar/test-results/
+
   # The management site's end-to-end test needs the same stack as the sidebar's.
   web-e2e:
     runs-on: ubuntu-latest
