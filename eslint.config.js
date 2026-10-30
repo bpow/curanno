@@ -15,6 +15,7 @@ export default tseslint.config(
       // Trial build output and third-party code kept verbatim (see its PROVENANCE.md).
       'packages/guest/trial/.build/**',
       'packages/guest/test/.build/**',
+      'packages/guest/build/**',
       'packages/guest/vendor/**',
     ],
   },
