@@ -8,9 +8,9 @@ import type { Kysely } from 'kysely';
 import type { components } from '@scale/api-client';
 import { PERMISSIONS, type Permission } from '@scale/model';
 import { requireUser } from '../auth/plugin.js';
-import type { Database } from '../db/index.js';
+import { AUTHENTICATED_PRINCIPAL_ID, PUBLIC_PRINCIPAL_ID, type Database } from '../db/index.js';
 import { isoDate } from '../annotations/serialize.js';
-import { badRequest, forbidden, notFound } from '../problems.js';
+import { badRequest, forbidden, notFound, unprocessable } from '../problems.js';
 import type { AppContext, Handlers } from './context.js';
 
 type AclGrant = components['schemas']['AclGrant'];
@@ -60,6 +60,18 @@ export function aclHandlers(ctx: AppContext): Handlers {
     return { caller, record };
   }
 
+  /** `public` and `authenticated` may be given `read` and nothing else: anyone would hold it. */
+  function checkPseudoGrants(grants: { principal: string; permission: Permission }[]): void {
+    for (const g of grants) {
+      if (
+        (g.principal === PUBLIC_PRINCIPAL_ID || g.principal === AUTHENTICATED_PRINCIPAL_ID) &&
+        g.permission !== 'read'
+      ) {
+        throw unprocessable(`${g.permission} cannot be granted to everyone; only read can`);
+      }
+    }
+  }
+
   async function checkPrincipals(ids: string[]): Promise<void> {
     if (ids.length === 0) return;
     const found = await db.selectFrom('principals').select('id').where('id', 'in', ids).execute();
@@ -94,6 +106,7 @@ export function aclHandlers(ctx: AppContext): Handlers {
     async replaceAcl(request) {
       const { caller, record } = await loadShareable(request);
       const grants = request.body as AclGrant[];
+      checkPseudoGrants(grants);
       await checkPrincipals([...new Set(grants.map((g) => g.principal))]);
       await db.transaction().execute(async (trx) => {
         await trx
@@ -141,6 +154,7 @@ export function aclHandlers(ctx: AppContext): Handlers {
     async grantPermission(request, reply) {
       const { caller, record } = await loadShareable(request);
       const grant = request.body as AclGrant;
+      checkPseudoGrants([grant]);
       await checkPrincipals([grant.principal]);
       await db.transaction().execute(async (trx) => {
         await trx

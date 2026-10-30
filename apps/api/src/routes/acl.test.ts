@@ -202,6 +202,30 @@ describe.skipIf(!databaseUrl)('access control', () => {
     expect(entries.length).toBe(5);
   });
 
+  it('lets everyone be granted read and nothing more', async () => {
+    const pub = anns['public'] as Created;
+    for (const permission of ['update', 'delete', 'share']) {
+      const grant = await ctx.as(alice, {
+        method: 'POST',
+        url: `/x/annotations/${pub.id}/acl`,
+        payload: { principal: PUBLIC_PRINCIPAL_ID, permission },
+      });
+      expect(grant.statusCode, permission).toBe(422);
+    }
+    const replaced = await ctx.as(alice, {
+      method: 'PUT',
+      url: `/x/annotations/${pub.id}/acl`,
+      payload: [{ principal: AUTHENTICATED_PRINCIPAL_ID, permission: 'update' }],
+    });
+    expect(replaced.statusCode).toBe(422);
+    const readOnly = await ctx.as(alice, {
+      method: 'POST',
+      url: `/x/annotations/${pub.id}/acl`,
+      payload: { principal: AUTHENTICATED_PRINCIPAL_ID, permission: 'read' },
+    });
+    expect(readOnly.statusCode).toBe(201);
+  });
+
   it('keeps the creator in control through replace and revoke', async () => {
     const pub = anns['public'] as Created;
     const replaced = await ctx.as(alice, {
