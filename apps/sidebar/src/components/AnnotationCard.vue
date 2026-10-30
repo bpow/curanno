@@ -171,6 +171,7 @@ async function repair(): Promise<void> {
     :id="`annotation-${annotationUuid(annotation.id)}`"
     class="card"
     :class="{ reply, hovered }"
+    tabindex="-1"
     @mouseenter="guest.focus([annotation.id])"
     @mouseleave="guest.focus([])"
   >
@@ -269,6 +270,11 @@ async function repair(): Promise<void> {
 
 .card.hovered {
   border-color: var(--accent);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .card.reply {

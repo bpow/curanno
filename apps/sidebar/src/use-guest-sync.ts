@@ -1,7 +1,7 @@
 /**
  * Keeps the guest's highlights in step with the list: every top-level
  * annotation is sent to be anchored, deletions are withdrawn, and a click on
- * a highlight in the page scrolls the sidebar to the card.
+ * a highlight in the page scrolls the sidebar to the card and focuses it.
  */
 import { onUnmounted, watch } from 'vue';
 import { annotationUuid } from './api/annotations';
@@ -28,9 +28,9 @@ export function useGuestSync(guest: Guest, store: ReturnType<typeof useAnnotatio
   const off = guest.onActivate((ids) => {
     const first = ids[0];
     if (!first) return;
-    document
-      .getElementById(`annotation-${annotationUuid(first)}`)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const card = document.getElementById(`annotation-${annotationUuid(first)}`);
+    card?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    card?.focus({ preventScroll: true });
   });
   onUnmounted(off);
 }
