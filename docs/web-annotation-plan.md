@@ -158,6 +158,8 @@ Phases 1 and 2 run in parallel. Everything else is sequential, though Phase 6 ca
 
 **Exit criteria:** success criteria 1 (HTML pages only), 5 and 6 met. This is the pilot milestone: a small group can start using the system on real pages.
 
+**Status (2026-10-30): exit criteria met.** Criterion 1 for HTML pages: the bookmarklet injects the guest, the guest opens the sidebar, the sidebar signs in through the identity provider (popup, ADR 0019), and an annotation made from a selection is stored by the API and highlighted in the page; the bookmarklet suite (`apps/sidebar/e2e/guest/`) covers this on corpus pages with the API stubbed, the sidebar suite covers a second user seeing a shared annotation against the real API, and the flow was run by hand against the compose stack. Criterion 5: the trial results in `packages/guest/trial/results/` (recall 99%, no guessed must-not-match anchor; ADR 0017). Criterion 6: the hostile-page tests in `packages/guest/test/browser/isolation.test.ts` (guest and fake sidebar) and `apps/sidebar/e2e/guest/hostile.spec.ts` (guest, real sidebar, seeded token and bodies) hook every message channel in the page and find no token, body, tag or creator, and the sidebar refuses to be framed by an origin outside `frame-ancestors`. Two limits are recorded rather than solved here: the tests run in Chromium only, so the overlay highlight fallback for engines without the CSS Custom Highlight API has no automated coverage, and the `frame-ancestors` header is a serving requirement that production deployments must meet (`apps/sidebar/README.md`), since Phase 5 owns the deployment of the sidebar. PDFs and several frames per sidebar are Phase 5.
+
 ### Phase 5: PDFs, real-time and hardening (6–8 weeks)
 
 **Deliverables**
@@ -202,7 +204,7 @@ Phases 1 and 2 run in parallel. Everything else is sequential, though Phase 6 ca
 | 2. W3C model and protocol, structured bodies | Phases 1, 3 | Contract tests; body profile tests |
 | 3. Per-annotation ACL, enforced in search | Phases 1, 3 | Multi-principal ACL test suite |
 | 4. Mainstream framework, stateless containers, few dependencies | Phases 0, 3 | Helm deployment with Postgres only |
-| 5. Credentials and UI out of the page's reach | Phase 4 | Hostile-page test; frame-ancestors check |
+| 5. Credentials and UI out of the page's reach | Phase 4 | Hostile-page tests (`packages/guest/test/browser/isolation.test.ts`, `apps/sidebar/e2e/guest/hostile.spec.ts`); frame-ancestors check in the latter |
 
 ## 8. Quality strategy
 

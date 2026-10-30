@@ -1,6 +1,6 @@
 # Guest/sidebar RPC protocol
 
-**Protocol `scale-annotation/guest-sidebar`, version 1.** How the in-page guest and the sidebar iframe talk ([ADR 0007](adr/0007-guest-sidebar-split.md)). The message types are in `packages/model/src/rpc/`, which both sides compile against; the guest side is implemented in `packages/guest/src/rpc/`, with an in-memory fake sidebar for tests and development. Hypothesis's `frame-sync` was the reference design; nothing was copied from it.
+**Protocol `scale-annotation/guest-sidebar`, version 1.** How the in-page guest and the sidebar iframe talk ([ADR 0007](adr/0007-guest-sidebar-split.md)). The message types are in `packages/model/src/rpc/`, which both sides compile against; the guest side is implemented in `packages/guest/src/rpc/`, with an in-memory fake sidebar for tests and development, and the sidebar side in `apps/sidebar/src/guest/rpc.ts`. Hypothesis's `frame-sync` was the reference design; nothing was copied from it.
 
 ## 1. Principles
 
@@ -46,7 +46,7 @@ Every message is a JSON object with:
   anchoring.results {results} ──────────────────►     show anchored / orphaned / ambiguous
 ```
 
-The sidebar may send `sidebar.ready` again (after a reload, say); the guest then discards the old port, connects a new one and repeats `guest.hello` and `document.report`. The guest sends nothing over a port before `sidebar.hello` arrives on it, except `guest.hello`.
+The sidebar may send `sidebar.ready` again (after a reload, say); the guest then discards the old port, connects a new one and repeats `guest.hello` and `document.report`. The guest sends nothing over a port before `sidebar.hello` arrives on it, except `guest.hello`. Conversely a second `guest.connect` (a reloaded guest, or a page script posing as one) replaces the sidebar's port: it forgets the old guest's results and, after the new `guest.hello`, sends `annotations.anchor` again for every annotation it has asked to anchor and not withdrawn, so the new guest draws what the old one did. The sidebar holds one connection at a time; several guests per sidebar are Phase 5.
 
 ## 4. Steady state
 
@@ -127,7 +127,7 @@ The sidebar's `Guest` interface (`apps/sidebar/src/guest/types.ts`) is a thin vi
 
 ## 7. Threats considered
 
-- **The page reads the traffic.** It can, by hooking `postMessage` before the guest loads or by reading the guest's state. The traffic holds nothing beyond selectors and IRIs; the hostile-page test in `packages/guest/test/browser/isolation.test.ts` checks that bodies and tokens held by the sidebar never appear in anything the page can observe.
+- **The page reads the traffic.** It can, by hooking `postMessage` before the guest loads or by reading the guest's state. The traffic holds nothing beyond selectors and IRIs; the hostile-page tests in `packages/guest/test/browser/isolation.test.ts` (fake sidebar) and `apps/sidebar/e2e/guest/hostile.spec.ts` (the real sidebar with a seeded token, a body, a tag and a creator) check that none of those appear in anything the page can observe, and that no message carries a `body`, `creator`, `tags`, `token` or `authorization` field.
 - **The page impersonates the guest.** It can send its own `guest.connect` to the frame, since it is `window.parent`. It then receives what any guest receives: IRIs and selectors of annotations the sidebar's user may read, which the real guest would have shown as highlights on that same page. It cannot read bodies, act as the user or obtain a token, because the sidebar never sends those and takes no instruction from the guest beyond anchoring, scrolling and visibility.
 - **The page impersonates the sidebar.** The guest accepts `sidebar.ready` only from its own iframe's window at the configured origin, and port messages only on the port it created, so a page script cannot make the guest highlight or scroll on its behalf through this channel (it can through the DOM, which is outside the guest's control).
 - **The page hides or covers the frame.** Out of scope for the protocol; `frame-ancestors` and visibility checks are the sidebar's defences.
