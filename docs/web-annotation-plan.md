@@ -74,12 +74,11 @@ Release 1.0 is done when all of the following hold:
 | Route binding | `fastify-openapi-glue` bound to the OpenAPI document; Ajv with `removeAdditional` disabled so JSON-LD extension properties round-trip | [ADR 0011](adr/0011-route-binding.md) |
 | Guest base | Hypothesis client anchoring code, vendored and ported to the text model; quote matching with a minimum score | [ADR 0017](adr/0017-guest-base-and-highlight-rendering.md), Phase 2 trial |
 | Highlight rendering | CSS Custom Highlight API, overlay elements as the fallback; never wrap text | [ADR 0017](adr/0017-guest-base-and-highlight-rendering.md), Phase 2 trial |
+| Hypothesis-compatible layer | Not built; the bookmarklet and the Playwright suites exercise the server end to end | [ADR 0018](adr/0018-no-hypothesis-compatible-layer.md) |
 
 ### Open, with owner phase
 
-| Decision | Options | Decide in |
-|---|---|---|
-| Hypothesis-compatible layer | Build to test end to end early, or skip and rely on the bookmarklet | End of Phase 3: skip, recorded as [ADR 0018](adr/0018-no-hypothesis-compatible-layer.md) (Proposed) |
+None. Every decision the plan left open has been made and recorded.
 
 Each decision, once made, is recorded as an architecture decision record under `docs/adr/`.
 

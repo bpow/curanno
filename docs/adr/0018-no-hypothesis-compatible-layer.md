@@ -1,6 +1,6 @@
 # 0018. Do not build a Hypothesis-compatible API layer
 
-**Status:** Proposed
+**Status:** Accepted (2026-10-30, at release 1.0)
 
 **Date:** 2026-10-30
 
