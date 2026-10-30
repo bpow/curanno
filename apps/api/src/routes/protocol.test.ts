@@ -4,6 +4,7 @@
  * media types and Link headers, and the validation of structured bodies
  * (success criteria 2 and 3).
  */
+import { sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PROFILE_BASE } from '@curanno/model';
 import {
@@ -225,6 +226,90 @@ describe.skipIf(!databaseUrl)('W3C protocol', () => {
         },
       });
       expect(orphan.statusCode).toBe(422);
+    });
+  });
+
+  describe('concurrent conditional writes', () => {
+    async function created(): Promise<{ url: string; etag: string }> {
+      const res = await ctx.as(alice, {
+        method: 'POST',
+        url: '/annotations/',
+        headers: LD_JSON,
+        payload: annotationOn(PAGE, 'Original'),
+      });
+      expect(res.statusCode, res.body).toBe(201);
+      const id = res.json<{ id: string }>().id.split('/').pop() as string;
+      return { url: `/annotations/${id}`, etag: res.headers['etag'] as string };
+    }
+    const put = (url: string, ifMatch: string, text: string) => () =>
+      ctx.as(alice, {
+        method: 'PUT',
+        url,
+        headers: { ...LD_JSON, 'if-match': ifMatch },
+        payload: annotationOn(PAGE, text),
+      });
+    const del = (url: string, ifMatch: string) => () =>
+      ctx.as(alice, { method: 'DELETE', url, headers: { 'if-match': ifMatch } });
+
+    /**
+     * Runs the writes while another transaction holds the annotation's row,
+     * releasing it once every write waits for it: all of them have read the
+     * same version by then. Answers the status codes, in the given order.
+     */
+    async function together(
+      url: string,
+      writes: (() => Promise<{ statusCode: number }>)[],
+    ): Promise<number[]> {
+      const id = url.split('/').pop() as string;
+      let results: Promise<{ statusCode: number }[]> | undefined;
+      await ctx.db.transaction().execute(async (trx) => {
+        await trx.selectFrom('annotations').select('id').where('id', '=', id).forUpdate().execute();
+        results = Promise.all(writes.map((write) => write()));
+        const deadline = Date.now() + 5000;
+        for (;;) {
+          const { rows } = await sql<{ n: number }>`
+            select count(*)::int as n from pg_stat_activity
+            where datname = current_database() and wait_event_type = 'Lock'`.execute(ctx.db);
+          if ((rows[0]?.n ?? 0) >= writes.length) break;
+          if (Date.now() > deadline) throw new Error('the writes never waited for the lock');
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+      });
+      return (await (results as Promise<{ statusCode: number }[]>)).map((r) => r.statusCode);
+    }
+
+    it('lets one of two PUTs with the same ETag through and fails the other', async () => {
+      const { url, etag } = await created();
+      const codes = await together(url, [put(url, etag, 'One'), put(url, etag, 'Two')]);
+      expect([...codes].sort()).toEqual([200, 412]);
+      const now = await ctx.as(alice, { method: 'GET', url });
+      expect(now.headers['etag']).toBe('"2"');
+      expect(now.json<{ body: { value: string } }>().body.value).toBe(
+        codes[0] === 200 ? 'One' : 'Two',
+      );
+    });
+
+    it('does the same for a PUT and a DELETE, and for two DELETEs', async () => {
+      const first = await created();
+      const mixed = await together(first.url, [
+        put(first.url, first.etag, 'One'),
+        del(first.url, first.etag),
+      ]);
+      expect(['200,412', '412,204']).toContain(mixed.join());
+      const second = await created();
+      const deletes = await together(second.url, [
+        del(second.url, second.etag),
+        del(second.url, second.etag),
+      ]);
+      expect([...deletes].sort()).toEqual([204, 412]);
+    });
+
+    it('still lets If-Match: * through after a concurrent write', async () => {
+      const { url, etag } = await created();
+      // The specific ETag passes only if its write goes first; * passes either way.
+      const [specific, any] = await together(url, [put(url, etag, 'One'), put(url, '*', 'Two')]);
+      expect([200, 412]).toContain(specific);
+      expect(any).toBe(200);
     });
   });
 

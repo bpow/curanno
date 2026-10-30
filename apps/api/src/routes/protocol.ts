@@ -39,11 +39,16 @@ export function negotiate(request: FastifyRequest): string {
   return ANNOTATION_CONTENT_TYPE;
 }
 
-function ifMatchSatisfied(header: string, etag: string): boolean {
-  return header
-    .split(',')
-    .map((s) => s.trim().replace(/^W\//, ''))
-    .some((candidate) => candidate === '*' || candidate === etag);
+/**
+ * The version a write must find in the transaction that makes it, or `null`
+ * for `If-Match: *`, which asks only that the annotation exists. Throws 412
+ * when no listed ETag matches what was read.
+ */
+function expectedVersion(header: string, record: { version: number }): number | null {
+  const candidates = header.split(',').map((s) => s.trim().replace(/^W\//, ''));
+  if (candidates.includes('*')) return null;
+  if (!candidates.includes(etagOf(record))) throw preconditionFailed();
+  return record.version;
 }
 
 function representationFor(
@@ -92,9 +97,8 @@ export function protocolHandlers(ctx: AppContext): Handlers {
     if (!record.permissions.includes(permission)) {
       throw forbidden(`the ${permission} permission is required`);
     }
-    const ifMatch = request.headers['if-match'] as string;
-    if (!ifMatchSatisfied(ifMatch, etagOf(record))) throw preconditionFailed();
-    return { caller, record };
+    const expected = expectedVersion(request.headers['if-match'] as string, record);
+    return { caller, record, expected };
   }
 
   return {
@@ -183,18 +187,18 @@ export function protocolHandlers(ctx: AppContext): Handlers {
     },
 
     async updateAnnotation(request, reply) {
-      const { caller, record } = await loadForWrite(request, 'update');
+      const { caller, record, expected } = await loadForWrite(request, 'update');
       const parsed = parseAnnotationInput(request.body as AnnotationInput);
       await profiles.validateBodies(parsed.bodies);
-      await store.replace(record, parsed, caller);
+      await store.replace(record, parsed, caller, expected);
       const updated = await store.get(record.id, caller);
       if (!updated) throw new Error('updated annotation is not readable');
       return sendAnnotation(request, reply, updated);
     },
 
     async deleteAnnotation(request, reply) {
-      const { caller, record } = await loadForWrite(request, 'delete');
-      await store.softDelete(record, caller);
+      const { caller, record, expected } = await loadForWrite(request, 'delete');
+      await store.softDelete(record, caller, expected);
       return reply.code(204).send();
     },
   };
