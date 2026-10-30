@@ -49,6 +49,26 @@ export function withDatabase(url: string, name: string): string {
   return u.href;
 }
 
+/**
+ * Drops a scratch database once nothing is connected to it. `pg.Pool.end()`
+ * resolves before its clients' sockets close, so dropping with FORCE right
+ * away can terminate a backend whose client is still ending; the client
+ * then emits an error nobody listens for and the test run fails. FORCE
+ * stays as the backstop for a connection that never leaves.
+ */
+export async function dropDatabase(admin: pg.Client, name: string): Promise<void> {
+  const deadline = Date.now() + 5000;
+  for (;;) {
+    const result = await admin.query<{ n: string }>(
+      'select count(*)::text as n from pg_stat_activity where datname = $1',
+      [name],
+    );
+    if (result.rows[0]?.n === '0' || Date.now() > deadline) break;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  await admin.query(`drop database if exists ${name} with (force)`);
+}
+
 export interface TestContextOptions {
   keepaliveMs?: number;
   /** Serving the clients, the viewer origin, metrics: overrides of the test configuration. */
@@ -128,9 +148,7 @@ export async function createTestContext(options: TestContextOptions = {}): Promi
     async close() {
       await app.close();
       await db.destroy();
-      if (!options.existingDatabaseUrl) {
-        await admin.query(`drop database if exists ${dbName} with (force)`);
-      }
+      if (!options.existingDatabaseUrl) await dropDatabase(admin, dbName);
       await admin.end();
     },
   };

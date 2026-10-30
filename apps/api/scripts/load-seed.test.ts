@@ -6,6 +6,7 @@
 import { randomBytes } from 'node:crypto';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { dropDatabase } from '../src/test/harness.ts';
 import { seedLoadData } from './load-seed.ts';
 
 const adminUrl = process.env['DATABASE_URL'];
@@ -42,7 +43,7 @@ describe.skipIf(!adminUrl)('load seed', () => {
 
   afterAll(async () => {
     await db.end();
-    await admin.query(`drop database if exists ${dbName} with (force)`);
+    await dropDatabase(admin, dbName);
     await admin.end();
   });
 

@@ -23,6 +23,7 @@ import {
   bob,
   createTestContext,
   databaseUrl,
+  dropDatabase,
   withDatabase,
   type TestContext,
 } from '../test/harness.js';
@@ -39,7 +40,7 @@ async function createDatabase(): Promise<{ url: string; drop: () => Promise<void
   return {
     url: withDatabase(databaseUrl as string, name),
     drop: async () => {
-      await admin.query(`drop database if exists ${name} with (force)`);
+      await dropDatabase(admin, name);
       await admin.end();
     },
   };

@@ -6,6 +6,7 @@
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDb, listMigrations, migrate, PUBLIC_PRINCIPAL_ID } from './index.js';
+import { dropDatabase } from '../test/harness.js';
 
 const adminUrl = process.env['DATABASE_URL'];
 const dbName = `annotations_test_${Date.now().toString(36)}`;
@@ -29,7 +30,7 @@ describe.skipIf(!adminUrl)('migrations', () => {
   });
 
   afterAll(async () => {
-    await admin.query(`drop database if exists ${dbName} with (force)`);
+    await dropDatabase(admin, dbName);
     await admin.end();
   });
 
