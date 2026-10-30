@@ -97,7 +97,11 @@ export const useAuthStore = defineStore('auth', () => {
       if (isFramed()) {
         await m.signoutPopup();
       } else {
-        await m.signoutRedirect();
+        // Back to the same document afterwards; the base URL with any query
+        // is within the registered redirect URIs.
+        await m.signoutRedirect({
+          post_logout_redirect_uri: appBaseUrl() + window.location.search,
+        });
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : String(err);
