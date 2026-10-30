@@ -44,15 +44,27 @@ importers:
 
   apps/api:
     dependencies:
+      '@scale/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
       '@scale/model':
         specifier: workspace:*
         version: link:../../packages/model
+      ajv:
+        specifier: ^8.20.0
+        version: 8.20.0
+      ajv-formats:
+        specifier: ^3.0.1
+        version: 3.0.1(ajv@8.20.0)
       fastify:
         specifier: ^5.12.7
         version: 5.12.7
       fastify-openapi-glue:
         specifier: ^4.12.0
         version: 4.12.0
+      jose:
+        specifier: 6.2.13
+        version: 6.2.13
       kysely:
         specifier: ^0.29.7
         version: 0.29.7
@@ -1115,6 +1127,9 @@ packages:
 
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
+
+  jose@6.2.13:
+    resolution: {integrity: sha512-7TIg10ZE1x82YediN+lcrPNvGMKge9yFHQD+Qho/b8y2adfugU3AsvvHfxV0fzyFllT6l9xCjf4RWY9g/Z9PJQ==}
 
   js-levenshtein@1.1.6:
     resolution: {integrity: sha512-X2BB11YZtrRqY4EnQcLX5Rh373zbK4alC1FW7D7MBhL2gtcC17cTnr6DmfHZeS0s2rTHjUTMMHfG7gO8SSdw+g==}
@@ -2564,6 +2579,8 @@ snapshots:
       is-extglob: 2.1.1
 
   isexe@2.0.0: {}
+
+  jose@6.2.13: {}
 
   js-levenshtein@1.1.6: {}
 
