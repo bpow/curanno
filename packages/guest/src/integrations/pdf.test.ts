@@ -254,6 +254,45 @@ describe('PdfIntegration', () => {
     });
   });
 
+  it('finds text that moved to another page and says which', async () => {
+    const page2: PdfTextItem[] = [
+      { str: 'Appendix', hasEOL: true },
+      { str: 'Replication is the cornerstone of a', hasEOL: true },
+      { str: 'cumulative science.', hasEOL: false },
+    ];
+    const page1 = PAGE_ITEMS.slice(0, 6);
+    const v = fakeViewer([page1, page2, page2]);
+    const pdf = new PdfIntegration({
+      viewer: v.viewerLike,
+      document: v.documentLike,
+      url: 'https://example.org/paper.pdf',
+    });
+    const quoteOnly = [pageFragmentSelector(1, [quote('cumulative science.')])];
+    // Present on two other pages: ambiguous rather than a guess (ADR 0010).
+    expect((await pdf.anchor(quoteOnly)).result).toMatchObject({ state: 'ambiguous' });
+    const v2 = fakeViewer([page1, page2, page1]);
+    const pdf2 = new PdfIntegration({
+      viewer: v2.viewerLike,
+      document: v2.documentLike,
+      url: 'https://example.org/paper.pdf',
+    });
+    const moved = await pdf2.anchor([
+      pageFragmentSelector(3, [
+        quote('cumulative science.', { prefix: 'the cornerstone of a\n' }),
+        { type: 'TextPositionSelector', start: 80, end: 99 },
+      ]),
+    ]);
+    expect(moved.result).toMatchObject({ state: 'anchored', via: 'quote', page: 2 });
+    expect(moved.ranges).toEqual([]);
+    // Nowhere at all: the orphan from the named page.
+    expect(
+      (await pdf2.anchor([pageFragmentSelector(1, [quote('zebra crossing')])])).result,
+    ).toMatchObject({
+      state: 'orphaned',
+      reason: 'quote not found',
+    });
+  });
+
   it('parses page fragments', () => {
     expect(pageOfFragment('page=3')).toBe(3);
     expect(pageOfFragment('page=3&viewrect=0,0,1,1')).toBe(3);

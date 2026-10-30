@@ -114,6 +114,11 @@ export type TargetAnchoringResult =
       via?: AnchorVia;
       /** 1 for a selector that matched exactly; a quote match's score otherwise. */
       score?: number;
+      /**
+       * For a PDF target: the page the text was found on, when it is not
+       * the page the selector names (the text moved in a revised file).
+       */
+      page?: number;
     }
   | { state: 'ambiguous'; candidates: TextRange[] }
   | { state: 'orphaned'; reason: string };

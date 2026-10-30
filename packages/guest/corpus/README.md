@@ -53,11 +53,13 @@ Every case has a variant with id `original`. Selectors are always generated agai
   - `TextQuoteSelector` with `exact` and 32 code points of `prefix` and `suffix`;
   - `TextPositionSelector` with `start` and `end` in code points;
   - `RangeSelector` whose `startSelector` and `endSelector` are `XPathSelector`s of the form `/article[1]/p[2]` relative to the root, each `refinedBy` a `TextPositionSelector` giving the code point offset within that element's own text. (The W3C model's shape, not the Hypothesis client's `startContainer`/`startOffset` shape; the harness converts for that candidate.)
+
+  For a PDF case the three are wrapped in a `FragmentSelector` naming the page (`value: "page=N"`, `conformsTo` RFC 3778) and are scoped to that page's text layer, as the guest's PDF integration stores them (text model, section 11). The harness measures PDF answers in the whole viewer's `textContent` as before, so an annotation whose text moved to another page in a revised file counts as anchored when the guest finds it there.
 - **`notAnnotatable`** marks a selection that lies in content the text model excludes (`<noscript>`, hidden or `aria-hidden` content, ADR 0013). `corpus:describe` checks that the guest refuses to describe it; it has no selectors and the trial does not anchor it.
 - **`expected`** says, per variant, what the right answer is. A missing entry means `select.exact` should be found. `{ "exact": "..." }` names changed text that the annotation should now cover; `prefix` and `suffix` disambiguate when the text occurs more than once in that variant. `{ "mustNotMatch": true, "reason": "..." }` means the text is gone and anything returned is a wrong anchor.
 - **`partOf`** marks the parts of one discontiguous selection (W3C: one annotation, several targets). Each part is anchored and counted on its own.
 
-Annotations may also carry hand-written `selectors` without running `corpus:describe` (the PLOS decoy does this to store selectors from another document).
+Annotations may also carry hand-written `selectors` without running `corpus:describe` (the PLOS decoy does this to store selectors from another document, wrapped in a `page=1` fragment).
 
 ## Text model used by the corpus
 

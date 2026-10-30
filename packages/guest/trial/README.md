@@ -25,7 +25,7 @@ For every case, variant and candidate the harness opens the variant in a fresh p
 | `guessed` | a range for a `mustNotMatch` annotation: the worst answer |
 | `invalid` | the expectation could not be located in the variant: fix the corpus |
 
-PDF cases are opened through `static/pdf-view.html`, which renders every page of the file as a PDF.js text layer (spans and `<br>`s, no canvas), so candidates anchor against the DOM a PDF.js viewer gives them. The Hypothesis client's own PDF module, which handles pages that are not rendered yet inside a live viewer, is not exercised.
+PDF cases are opened through `static/pdf-view.html`, which renders every page of the file as a PDF.js text layer (spans and `<br>`s, no canvas) inside `.page[data-page-number]` elements, the structure a PDF.js viewer has. The guest candidates anchor through the guest's own PDF integration (`src/integrations/pdf.ts`), which resolves each selector's page fragment to that page's text layer and looks on the other pages when the text is gone from its own; its handling of pages that are not rendered yet is covered by its unit tests, since this page renders everything. The legacy candidates receive the text selectors with the page fragment stripped.
 
 ## Candidates
 

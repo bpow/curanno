@@ -18,4 +18,9 @@ export {
 } from './pdf.js';
 export { pageTextScope, pageTextTree, type PdfTextItem, type VirtualNode } from './pdf-text.js';
 export { describeSelection, trimTextRange } from './selection.js';
-export type { AnchoredTarget, DescribedSelection, DocumentIntegration } from './types.js';
+export type {
+  AnchoredTarget,
+  AnchoredTargetSelectors,
+  DescribedSelection,
+  DocumentIntegration,
+} from './types.js';

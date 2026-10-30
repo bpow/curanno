@@ -91,7 +91,10 @@ function isAnchoringResult(value: unknown): value is AnchoringResult {
       if (!isDict(t)) return false;
       switch (t['state']) {
         case 'anchored':
-          return t['range'] === undefined || isTextRange(t['range']);
+          return (
+            (t['range'] === undefined || isTextRange(t['range'])) &&
+            (t['page'] === undefined || typeof t['page'] === 'number')
+          );
         case 'ambiguous':
           return Array.isArray(t['candidates']) && t['candidates'].every(isTextRange);
         case 'orphaned':

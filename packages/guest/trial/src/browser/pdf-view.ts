@@ -12,6 +12,7 @@ async function render() {
   if (!file) throw new Error('missing ?file=');
   const viewer = document.getElementById('viewer')!;
   const pdf = await pdfjs.getDocument({ url: file }).promise;
+  window.__pdf = pdf as unknown as Window['__pdf'];
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const viewport = page.getViewport({ scale: 1.25 });

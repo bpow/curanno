@@ -11,7 +11,6 @@ import {
   type AnchorRequest,
   type AnchoringResult,
   type GuestSelection,
-  type Selector,
   type SidebarMessage,
   type SpecificResource,
   type TargetAnchoringResult,
@@ -24,7 +23,7 @@ import {
   type HighlightRenderer,
 } from './highlights/index.js';
 import { HtmlIntegration, isGuestOwned } from './integrations/html.js';
-import type { DocumentIntegration } from './integrations/types.js';
+import type { AnchoredTargetSelectors, DocumentIntegration } from './integrations/types.js';
 import { observeSelection } from './observers/selection.js';
 import { GuestConnection, type GuestConnectionOptions } from './rpc/connection.js';
 import { SidebarFrame } from './sidebar-frame.js';
@@ -51,8 +50,8 @@ export interface GuestOptions {
 interface Anchored {
   result: AnchoringResult;
   ranges: Range[];
-  /** The selectors of each target, for scrolling towards an undrawn one. */
-  selectors: Selector[][];
+  /** Each target's selectors with its result, for scrolling towards an undrawn one. */
+  targets: AnchoredTargetSelectors[];
 }
 
 export class Guest {
@@ -259,10 +258,12 @@ export class Guest {
       const targets = Array.isArray(request.target) ? request.target : [request.target];
       const ranges: Range[] = [];
       const perTarget: TargetAnchoringResult[] = [];
-      const selectors = targets.map((target) => selectorsOfTarget(target));
-      for (const targetSelectors of selectors) {
-        const anchored = await this.integration.anchor(targetSelectors);
+      const anchoredTargets: AnchoredTargetSelectors[] = [];
+      for (const target of targets) {
+        const selectors = selectorsOfTarget(target);
+        const anchored = await this.integration.anchor(selectors);
         perTarget.push(anchored.result);
+        anchoredTargets.push({ selectors, result: anchored.result });
         ranges.push(...anchored.ranges);
       }
       // The request may have been withdrawn while a page's text was loading.
@@ -273,7 +274,7 @@ export class Guest {
           ? 'ambiguous'
           : 'orphaned';
       const result: AnchoringResult = { id, state, targets: perTarget };
-      this.anchored.set(id, { result, ranges, selectors });
+      this.anchored.set(id, { result, ranges, targets: anchoredTargets });
       results.push(result);
     }
     this.draw();
@@ -306,7 +307,7 @@ export class Guest {
   private scrollTo(id: string): void {
     const anchored = this.anchored.get(id);
     if (!anchored) return;
-    this.integration.scrollTo(anchored.ranges, anchored.selectors.flat());
+    this.integration.scrollTo(anchored.ranges, anchored.targets);
     this.index.invalidate();
     this.renderer?.refresh();
   }

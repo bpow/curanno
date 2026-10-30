@@ -63,6 +63,7 @@ export class HtmlIntegration implements DocumentIntegration {
   }
 
   scrollTo(ranges: Range[]): void {
+    // Everything an HTML page anchors is in the DOM, so there is always a range.
     const element = ranges[0]?.startContainer.parentElement;
     element?.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }

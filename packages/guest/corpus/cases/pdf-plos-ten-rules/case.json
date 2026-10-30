@@ -7,7 +7,10 @@
     "license": "CC BY 4.0",
     "note": "Sandve GK, Nekrutenko A, Taylor J, Hovig E (2013) Ten Simple Rules for Reproducible Computational Research. PLoS Comput Biol 9(10): e1003285. Unmodified."
   },
-  "tags": ["real", "pdf"],
+  "tags": [
+    "real",
+    "pdf"
+  ],
   "variants": [
     {
       "id": "original",
@@ -30,36 +33,43 @@
       },
       "selectors": [
         {
-          "type": "TextQuoteSelector",
-          "exact": "Ten Simple Rules for Reproducible Computational",
-          "prefix": "Editorial\n",
-          "suffix": "\nResearch\nGeir Kjetil Sandve1,2*"
-        },
-        {
-          "type": "TextPositionSelector",
-          "start": 10,
-          "end": 57
-        },
-        {
-          "type": "RangeSelector",
-          "startSelector": {
-            "type": "XPathSelector",
-            "value": "/div[1]/div[1]/span[2]",
-            "refinedBy": {
+          "type": "FragmentSelector",
+          "conformsTo": "http://tools.ietf.org/rfc/rfc3778",
+          "value": "page=1",
+          "refinedBy": [
+            {
+              "type": "TextQuoteSelector",
+              "exact": "Ten Simple Rules for Reproducible Computational",
+              "prefix": "Editorial\n",
+              "suffix": "\nResearch\nGeir Kjetil Sandve1,2*"
+            },
+            {
               "type": "TextPositionSelector",
-              "start": 0,
-              "end": 0
+              "start": 10,
+              "end": 57
+            },
+            {
+              "type": "RangeSelector",
+              "startSelector": {
+                "type": "XPathSelector",
+                "value": "/span[2]",
+                "refinedBy": {
+                  "type": "TextPositionSelector",
+                  "start": 0,
+                  "end": 0
+                }
+              },
+              "endSelector": {
+                "type": "XPathSelector",
+                "value": "/span[2]",
+                "refinedBy": {
+                  "type": "TextPositionSelector",
+                  "start": 47,
+                  "end": 47
+                }
+              }
             }
-          },
-          "endSelector": {
-            "type": "XPathSelector",
-            "value": "/div[1]/div[1]/span[2]",
-            "refinedBy": {
-              "type": "TextPositionSelector",
-              "start": 47,
-              "end": 47
-            }
-          }
+          ]
         }
       ]
     },
@@ -71,36 +81,43 @@
       },
       "selectors": [
         {
-          "type": "TextQuoteSelector",
-          "exact": "Replication is the cornerstone of a\ncumulative science [1].",
-          "prefix": "pital, Montebello, Oslo, Norway\n",
-          "suffix": " However, new\ntools and technolo"
-        },
-        {
-          "type": "TextPositionSelector",
-          "start": 873,
-          "end": 932
-        },
-        {
-          "type": "RangeSelector",
-          "startSelector": {
-            "type": "XPathSelector",
-            "value": "/div[1]/div[1]/span[38]",
-            "refinedBy": {
+          "type": "FragmentSelector",
+          "conformsTo": "http://tools.ietf.org/rfc/rfc3778",
+          "value": "page=1",
+          "refinedBy": [
+            {
+              "type": "TextQuoteSelector",
+              "exact": "Replication is the cornerstone of a\ncumulative science [1].",
+              "prefix": "pital, Montebello, Oslo, Norway\n",
+              "suffix": " However, new\ntools and technolo"
+            },
+            {
               "type": "TextPositionSelector",
-              "start": 0,
-              "end": 0
+              "start": 873,
+              "end": 932
+            },
+            {
+              "type": "RangeSelector",
+              "startSelector": {
+                "type": "XPathSelector",
+                "value": "/span[38]",
+                "refinedBy": {
+                  "type": "TextPositionSelector",
+                  "start": 0,
+                  "end": 0
+                }
+              },
+              "endSelector": {
+                "type": "XPathSelector",
+                "value": "/span[53]",
+                "refinedBy": {
+                  "type": "TextPositionSelector",
+                  "start": 4,
+                  "end": 4
+                }
+              }
             }
-          },
-          "endSelector": {
-            "type": "XPathSelector",
-            "value": "/div[1]/div[1]/span[53]",
-            "refinedBy": {
-              "type": "TextPositionSelector",
-              "start": 4,
-              "end": 4
-            }
-          }
+          ]
         }
       ]
     },
@@ -112,36 +129,43 @@
       },
       "selectors": [
         {
-          "type": "TextQuoteSelector",
-          "exact": "As full replica-\ntion of studies",
-          "prefix": " to\nadvance their research [2]. ",
-          "suffix": " on independently collected\ndata"
-        },
-        {
-          "type": "TextPositionSelector",
-          "start": 1183,
-          "end": 1215
-        },
-        {
-          "type": "RangeSelector",
-          "startSelector": {
-            "type": "XPathSelector",
-            "value": "/div[1]/div[1]/span[73]",
-            "refinedBy": {
+          "type": "FragmentSelector",
+          "conformsTo": "http://tools.ietf.org/rfc/rfc3778",
+          "value": "page=1",
+          "refinedBy": [
+            {
+              "type": "TextQuoteSelector",
+              "exact": "As full replica-\ntion of studies",
+              "prefix": " to\nadvance their research [2]. ",
+              "suffix": " on independently collected\ndata"
+            },
+            {
               "type": "TextPositionSelector",
-              "start": 28,
-              "end": 28
+              "start": 1183,
+              "end": 1215
+            },
+            {
+              "type": "RangeSelector",
+              "startSelector": {
+                "type": "XPathSelector",
+                "value": "/span[73]",
+                "refinedBy": {
+                  "type": "TextPositionSelector",
+                  "start": 28,
+                  "end": 28
+                }
+              },
+              "endSelector": {
+                "type": "XPathSelector",
+                "value": "/span[74]",
+                "refinedBy": {
+                  "type": "TextPositionSelector",
+                  "start": 15,
+                  "end": 15
+                }
+              }
             }
-          },
-          "endSelector": {
-            "type": "XPathSelector",
-            "value": "/div[1]/div[1]/span[74]",
-            "refinedBy": {
-              "type": "TextPositionSelector",
-              "start": 15,
-              "end": 15
-            }
-          }
+          ]
         }
       ]
     },
@@ -153,36 +177,43 @@
       },
       "selectors": [
         {
-          "type": "TextQuoteSelector",
-          "exact": "‘‘culture of reproducibility’’",
-          "prefix": "ic community needs to develop a\n",
-          "suffix": " for computa-\ntional science, an"
-        },
-        {
-          "type": "TextPositionSelector",
-          "start": 2269,
-          "end": 2299
-        },
-        {
-          "type": "RangeSelector",
-          "startSelector": {
-            "type": "XPathSelector",
-            "value": "/div[1]/div[1]/span[178]",
-            "refinedBy": {
+          "type": "FragmentSelector",
+          "conformsTo": "http://tools.ietf.org/rfc/rfc3778",
+          "value": "page=1",
+          "refinedBy": [
+            {
+              "type": "TextQuoteSelector",
+              "exact": "‘‘culture of reproducibility’’",
+              "prefix": "ic community needs to develop a\n",
+              "suffix": " for computa-\ntional science, an"
+            },
+            {
               "type": "TextPositionSelector",
-              "start": 0,
-              "end": 0
+              "start": 2269,
+              "end": 2299
+            },
+            {
+              "type": "RangeSelector",
+              "startSelector": {
+                "type": "XPathSelector",
+                "value": "/span[178]",
+                "refinedBy": {
+                  "type": "TextPositionSelector",
+                  "start": 0,
+                  "end": 0
+                }
+              },
+              "endSelector": {
+                "type": "XPathSelector",
+                "value": "/span[178]",
+                "refinedBy": {
+                  "type": "TextPositionSelector",
+                  "start": 30,
+                  "end": 30
+                }
+              }
             }
-          },
-          "endSelector": {
-            "type": "XPathSelector",
-            "value": "/div[1]/div[1]/span[178]",
-            "refinedBy": {
-              "type": "TextPositionSelector",
-              "start": 30,
-              "end": 30
-            }
-          }
+          ]
         }
       ]
     },
@@ -200,15 +231,22 @@
       },
       "selectors": [
         {
-          "type": "TextQuoteSelector",
-          "exact": "Genome-wide association studies have identified thousands of common variants",
-          "prefix": "Introduction",
-          "suffix": " associated with complex traits"
-        },
-        {
-          "type": "TextPositionSelector",
-          "start": 1500,
-          "end": 1575
+          "type": "FragmentSelector",
+          "conformsTo": "http://tools.ietf.org/rfc/rfc3778",
+          "value": "page=1",
+          "refinedBy": [
+            {
+              "type": "TextQuoteSelector",
+              "exact": "Genome-wide association studies have identified thousands of common variants",
+              "prefix": "Introduction",
+              "suffix": " associated with complex traits"
+            },
+            {
+              "type": "TextPositionSelector",
+              "start": 1500,
+              "end": 1575
+            }
+          ]
         }
       ]
     }

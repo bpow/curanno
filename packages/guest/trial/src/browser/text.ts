@@ -6,6 +6,7 @@
  */
 import { createScope, describe } from '../../../src/anchoring/index.ts';
 import type { Selector } from '../corpus.ts';
+import { pdfIntegration } from './pdf-integration.ts';
 
 export type Span = { start: number; end: number };
 
@@ -100,8 +101,11 @@ export function locate(
 
 /**
  * The selectors the guest stores for a range (quote, position and range, on
- * the text model), or null when the range covers no text of the root.
+ * the text model; wrapped in a page fragment for a PDF), or null when the
+ * range covers no text of the root.
  */
-export function describeRange(root: Element, range: Range): Selector[] | null {
+export function describeRange(root: HTMLElement, range: Range): Selector[] | null {
+  const pdf = pdfIntegration(root);
+  if (pdf) return (pdf.describe(range)?.selectors as Selector[] | undefined) ?? null;
   return (describe(createScope(root), range) as Selector[] | undefined) ?? null;
 }

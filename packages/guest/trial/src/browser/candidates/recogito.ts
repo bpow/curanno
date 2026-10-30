@@ -17,6 +17,7 @@ import {
   type TextAnnotationLike,
 } from '@recogito/text-annotator';
 import type { Selector } from '../../corpus.ts';
+import { flattenSelectors } from '../selectors.ts';
 import { matchQuote, type MatchOptions } from '../match-quote.ts';
 import {
   createW3CQuoteAdapter,
@@ -93,7 +94,7 @@ function runThrough<A extends TextAnnotationLike, E>(
   // Recogito logs "Could not revive annotation target" for each orphan.
   console.error = () => {};
   try {
-    anno.setAnnotations(items.map((i) => toW3C(i.id, i.selectors)) as never);
+    anno.setAnnotations(items.map((i) => toW3C(i.id, flattenSelectors(i.selectors))) as never);
   } finally {
     console.error = silenced;
   }

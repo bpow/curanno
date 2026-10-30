@@ -11,9 +11,35 @@ import {
   domRangeOf,
   type AnchorOptions,
 } from '../../../../src/anchoring/index.ts';
+import type { Selector } from '../../corpus.ts';
+import type { PdfIntegration } from '../../../../src/integrations/pdf.ts';
 import { GUEST_CANDIDATE_ID } from '../../report.ts';
+import { pdfIntegration } from '../pdf-integration.ts';
 import { rangeToSpan } from '../text.ts';
 import type { AnchorResult, Candidate } from './types.ts';
+
+/** PDF pages go through the PDF integration, which resolves the page fragment first. */
+async function anchorPdf(
+  root: HTMLElement,
+  pdf: PdfIntegration,
+  items: { id: string; selectors: Selector[] }[],
+): Promise<AnchorResult[]> {
+  const results: AnchorResult[] = [];
+  for (const item of items) {
+    const { result, ranges } = await pdf.anchor(item.selectors);
+    const range = ranges[0];
+    if (result.state === 'anchored' && range) {
+      results.push({ span: rangeToSpan(root, range), via: result.via, score: result.score });
+    } else if (result.state === 'anchored') {
+      results.push({ span: null, error: 'anchored range has no DOM range' });
+    } else if (result.state === 'ambiguous') {
+      results.push({ span: null, via: 'ambiguous', error: 'ambiguous' });
+    } else {
+      results.push({ span: null, via: 'orphaned', error: result.reason });
+    }
+  }
+  return results;
+}
 
 function guestCandidate(id: string, description: string, options: AnchorOptions): Candidate {
   return {
@@ -21,6 +47,8 @@ function guestCandidate(id: string, description: string, options: AnchorOptions)
     description,
     sweep: id !== GUEST_CANDIDATE_ID,
     anchorAll(root, items) {
+      const pdf = pdfIntegration(root, options);
+      if (pdf) return anchorPdf(root, pdf, items);
       const scope = createScope(root);
       return items.map((item): AnchorResult => {
         const result = anchor(scope, item.selectors, options);

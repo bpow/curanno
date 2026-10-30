@@ -12,7 +12,13 @@
  * The viewer and document are typed structurally so this package does not
  * depend on pdfjs-dist; the viewer page passes PDF.js's own objects.
  */
-import { deriveDocumentUris, type GuestDocument, type Selector } from '@scale/model';
+import {
+  deriveDocumentUris,
+  type GuestDocument,
+  type Selector,
+  type TargetAnchoringResult,
+  type TextRange,
+} from '@scale/model';
 import type { AnchorOptions } from '../anchoring/anchor.js';
 import { createScope, type AnchoringScope } from '../anchoring/scope.js';
 import { anchorInScope } from './html.js';
@@ -134,11 +140,54 @@ export class PdfIntegration implements DocumentIntegration {
         ? fragment.refinedBy
         : [fragment.refinedBy]
       : [];
+    const onPage = await this.anchorOnPage(page, refined);
+    if (onPage.result.state === 'anchored') return onPage;
+    return (await this.anchorElsewhere(page, refined)) ?? onPage;
+  }
+
+  /** Anchor in a page's rendered text layer, or in its text content when it is not rendered. */
+  private async anchorOnPage(page: number, selectors: Selector[]): Promise<AnchoredTarget> {
     const live = this.domScope(page);
-    if (live) return anchorInScope(live, refined, this.options.anchoring);
+    if (live) return anchorInScope(live, selectors, this.options.anchoring);
     const scope = await this.textScope(page);
-    const result = anchorInScope(scope, refined, this.options.anchoring);
+    const result = anchorInScope(scope, selectors, this.options.anchoring);
     return { result: result.result, ranges: [] };
+  }
+
+  /**
+   * Text that is gone from its page may have moved to another one in a
+   * revised file: look for the quote on the other pages, nearest first. One
+   * page with a match anchors there (and says so in `page`); several are
+   * ambiguous; none leaves the orphan.
+   */
+  private async anchorElsewhere(
+    page: number,
+    selectors: Selector[],
+  ): Promise<AnchoredTarget | undefined> {
+    const quote = selectors.find((s) => s.type === 'TextQuoteSelector');
+    if (!quote) return undefined;
+    const found: AnchoredTarget[] = [];
+    const candidates: TextRange[] = [];
+    const { numPages } = this.options.document;
+    for (let distance = 1; distance < numPages; distance++) {
+      for (const other of [page - distance, page + distance]) {
+        if (other < 1 || other > numPages) continue;
+        const result = await this.anchorOnPage(other, [quote]);
+        if (result.result.state === 'anchored') {
+          found.push({ result: { ...result.result, page: other }, ranges: result.ranges });
+        } else if (result.result.state === 'ambiguous') {
+          candidates.push(...result.result.candidates);
+        }
+      }
+    }
+    if (found.length === 1 && candidates.length === 0) return found[0];
+    if (found.length + candidates.length > 1) {
+      for (const f of found) {
+        if (f.result.state === 'anchored' && f.result.range) candidates.push(f.result.range);
+      }
+      return { result: { state: 'ambiguous', candidates }, ranges: [] };
+    }
+    return undefined;
   }
 
   describe(range: Range): DescribedSelection | undefined {
@@ -158,15 +207,22 @@ export class PdfIntegration implements DocumentIntegration {
     };
   }
 
-  scrollTo(ranges: Range[], selectors: Selector[]): void {
+  scrollTo(ranges: Range[], targets: { selectors: Selector[]; result: TargetAnchoringResult }[]) {
     const element = ranges[0]?.startContainer.parentElement;
     if (element) {
       element.scrollIntoView({ block: 'center', behavior: 'smooth' });
       return;
     }
-    const fragment = selectors.find((s) => s.type === 'FragmentSelector');
-    const page = fragment ? pageOfFragment(fragment.value) : undefined;
-    if (page !== undefined) this.options.viewer.currentPageNumber = page;
+    // Nothing drawn: go to the page the text was found on, else the one named.
+    for (const { selectors, result } of targets) {
+      const fragment = selectors.find((s) => s.type === 'FragmentSelector');
+      const named = fragment ? pageOfFragment(fragment.value) : undefined;
+      const page = result.state === 'anchored' ? (result.page ?? named) : named;
+      if (page !== undefined) {
+        this.options.viewer.currentPageNumber = page;
+        return;
+      }
+    }
   }
 
   observe(onChange: () => void): () => void {

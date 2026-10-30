@@ -14,6 +14,12 @@ export interface AnchoredTarget {
   ranges: Range[];
 }
 
+/** A target's selectors with what anchoring them produced. */
+export interface AnchoredTargetSelectors {
+  selectors: Selector[];
+  result: TargetAnchoringResult;
+}
+
 /** A user selection described per the text model, ready for `selection.changed`. */
 export interface DescribedSelection {
   selectors: Selector[];
@@ -33,8 +39,8 @@ export interface DocumentIntegration {
   anchor(selectors: Selector[]): Promise<AnchoredTarget>;
   /** The selectors and quote for a DOM range, or undefined when it covers no text. */
   describe(range: Range): DescribedSelection | undefined;
-  /** Scroll to a highlight, or towards where it would be when it is not drawn. */
-  scrollTo(ranges: Range[], selectors: Selector[]): void;
+  /** Scroll to a highlight, or towards where it would be when none is drawn. */
+  scrollTo(ranges: Range[], targets: AnchoredTargetSelectors[]): void;
   /**
    * Watch the document; `onChange` asks the guest to re-anchor everything
    * and report what changed. Returns the function that stops watching.

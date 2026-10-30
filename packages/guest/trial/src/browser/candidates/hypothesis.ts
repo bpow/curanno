@@ -7,11 +7,13 @@
 import { anchor } from '../../../../vendor/hypothesis/anchoring/html.ts';
 import type { Selector as HypothesisSelector } from '../../../../vendor/hypothesis/types/api.ts';
 import type { Selector } from '../../corpus.ts';
+import { flattenSelectors } from '../selectors.ts';
 import { rangeToSpan } from '../text.ts';
 import type { AnchorResult, Candidate } from './types.ts';
 
 export function toHypothesisSelectors(selectors: Selector[]): HypothesisSelector[] {
-  return selectors.map((s): HypothesisSelector => {
+  return flattenSelectors(selectors).map((s): HypothesisSelector => {
+    if (s.type === 'FragmentSelector') throw new Error('page fragments are flattened first');
     if (s.type !== 'RangeSelector') return s;
     return {
       type: 'RangeSelector',

@@ -30,7 +30,15 @@ export type RangeSelector = {
   endSelector: XPathSelector;
 };
 
-export type Selector = TextQuoteSelector | TextPositionSelector | RangeSelector;
+/** A PDF target: the page, refined by the text selectors scoped to that page (text model, section 11). */
+export type FragmentSelector = {
+  type: 'FragmentSelector';
+  value: string;
+  conformsTo?: string;
+  refinedBy: Selector[];
+};
+
+export type Selector = TextQuoteSelector | TextPositionSelector | RangeSelector | FragmentSelector;
 
 /** Authoring input: which text of the original variant the annotation covers. */
 export type Selection = {
