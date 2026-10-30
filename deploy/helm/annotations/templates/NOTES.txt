@@ -1,0 +1,17 @@
+{{ include "annotations.fullname" . }} is deploying {{ .Values.replicaCount }} replica(s) of {{ include "annotations.image" . }}.
+
+Configuration comes from the ConfigMap {{ include "annotations.fullname" . }} and the Secret {{ include "annotations.secretName" . }} (DATABASE_URL). Migrations run in an init container before each pod starts.
+
+Health: GET /healthz (liveness) and GET /readyz (readiness; checks the database).
+
+Server-sent events (GET /x/events) hold a response open for as long as the sidebar is open. Whatever sits in front of the Service must allow that:
+  - ingress-nginx: the annotations in values.yaml (proxy-read-timeout, proxy-buffering off) are applied when ingress.enabled is true.
+  - Traefik: set a long `respondingTimeouts.readTimeout`/`idleTimeout` on the entrypoint; it does not buffer.
+  - HAProxy ingress: `haproxy.org/timeout-server` or `timeout tunnel` of an hour or more.
+  - Cloud load balancers: raise the backend idle timeout (ALB default 60 s).
+The server writes a keepalive comment every 30 s, so a timeout above that keeps idle streams alive, and clients reconnect with Last-Event-ID if a proxy does cut them.
+{{- if not .Values.ingress.enabled }}
+
+No Ingress was created (ingress.enabled=false). Port-forward to try it:
+  kubectl port-forward svc/{{ include "annotations.fullname" . }} 3000:{{ .Values.service.port }}
+{{- end }}

@@ -1,0 +1,98 @@
+# Default values for the annotations API chart. Postgres is not part of this
+# chart (plan, section 9): point `config.databaseUrl` or `existingSecret` at
+# a database provided by the cluster or a managed service.
+
+replicaCount: 2
+
+image:
+  repository: ghcr.io/example/annotations-api
+  tag: '' # defaults to the chart's appVersion
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ''
+fullnameOverride: ''
+
+# Non-secret environment variables (see .env.example at the repository root).
+config:
+  # Issuer IRI of the OpenID Connect provider; discovery runs at
+  # <issuer>/.well-known/openid-configuration (ADR 0005).
+  oidcIssuer: https://idp.example/realms/annotations
+  # The client the sidebar authenticates as; tokens with this `azp` are accepted.
+  oidcClientId: annotations-sidebar
+  # Accepted `aud` claim. Defaults to the client id when empty.
+  oidcAudience: ''
+  # Members of this group (from the `groups` claim) are platform administrators.
+  oidcAdminGroup: ''
+  # Origin under which annotation IRIs are minted: the ingress host.
+  publicUrl: https://annotations.example
+  logLevel: info
+
+# The database URL is a secret. Either set it here (rendered into a Secret
+# managed by the chart) or name an existing Secret holding DATABASE_URL.
+secrets:
+  databaseUrl: ''
+  existingSecret: ''
+  databaseUrlKey: DATABASE_URL
+
+# Migrations run from an init container with the same image before each pod
+# starts; the runner takes an advisory lock so replicas starting together are safe.
+migrations:
+  enabled: true
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ''
+  # Server-sent events are long-lived responses. Most ingress controllers
+  # close idle upstream connections after 60 s and buffer responses; raise
+  # the read timeout and turn buffering off. The annotations below are for
+  # ingress-nginx; see templates/NOTES.txt for others.
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '3600'
+    nginx.ingress.kubernetes.io/proxy-send-timeout: '3600'
+    nginx.ingress.kubernetes.io/proxy-buffering: 'off'
+    nginx.ingress.kubernetes.io/proxy-http-version: '1.1'
+  hosts:
+    - host: annotations.example
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
+
+# Liveness only says the process answers; readiness also checks the database,
+# so a database outage takes pods out of the Service without restarting them.
+probes:
+  liveness:
+    path: /healthz
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  readiness:
+    path: /readyz
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+podAnnotations: {}
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
