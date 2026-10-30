@@ -79,7 +79,7 @@ Release 1.0 is done when all of the following hold:
 
 | Decision | Options | Decide in |
 |---|---|---|
-| Hypothesis-compatible layer | Build to test end to end early, or skip and rely on the bookmarklet | End of Phase 3, based on sidebar progress |
+| Hypothesis-compatible layer | Build to test end to end early, or skip and rely on the bookmarklet | End of Phase 3: skip, recorded as [ADR 0018](adr/0018-no-hypothesis-compatible-layer.md) (Proposed) |
 
 Each decision, once made, is recorded as an architecture decision record under `docs/adr/`.
 
