@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+**/dist
+**/.build
+.git
+.claude
+.env
+.env.local
+packages/guest/corpus
+packages/guest/trial
+docs
+deploy
