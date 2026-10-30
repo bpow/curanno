@@ -7,7 +7,13 @@
     "license": "CC BY-SA 4.0",
     "note": "Rendered through the MediaWiki parse API; scripts and image sources removed"
   },
-  "tags": ["real", "wikipedia", "non-latin", "long", "mustNotMatch"],
+  "tags": [
+    "real",
+    "wikipedia",
+    "non-latin",
+    "long",
+    "mustNotMatch"
+  ],
   "variants": [
     {
       "id": "original",
@@ -31,13 +37,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "أثناء عمله في سيرن، شعر بيرنرز لي بالإحباط بسبب عدم الكفاءة والصعوبات",
-          "prefix": " الأوروبية للأبحاث النووية).[7]\n",
+          "prefix": " الأوروبية للأبحاث النووية).[7] ",
           "suffix": " التي تعترض عملية العثور على الم"
         },
         {
           "type": "TextPositionSelector",
-          "start": 3573,
-          "end": 3642
+          "start": 3220,
+          "end": 3289
         },
         {
           "type": "RangeSelector",
@@ -77,8 +83,8 @@
         },
         {
           "type": "TextPositionSelector",
-          "start": 3711,
-          "end": 3730
+          "start": 3358,
+          "end": 3377
         },
         {
           "type": "RangeSelector",
@@ -113,13 +119,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "تيم بيرنرز لي، مخترع مفهوم الشبكة العنكبوتية العالمية.",
-          "prefix": "نص الفائق).[24]\nمصطلحات ذات صلة\n",
-          "suffix": "\nالصفة على الخط أو أون لاين، \" O"
+          "prefix": "نص الفائق).[24] مصطلحات ذات صلة ",
+          "suffix": " الصفة على الخط أو أون لاين، \" O"
         },
         {
           "type": "TextPositionSelector",
-          "start": 7872,
-          "end": 7926
+          "start": 7518,
+          "end": 7572
         },
         {
           "type": "RangeSelector",
@@ -165,13 +171,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "إتش تي تي بّي (بروتوكول نقل النص الفائق)",
-          "prefix": " إم إل (لغة توصيف النص الفائق).\n",
-          "suffix": ".[24]\nمصطلحات ذات صلة\nتيم بيرنرز"
+          "prefix": " إم إل (لغة توصيف النص الفائق). ",
+          "suffix": ".[24] مصطلحات ذات صلة تيم بيرنرز"
         },
         {
           "type": "TextPositionSelector",
-          "start": 7810,
-          "end": 7850
+          "start": 7456,
+          "end": 7496
         },
         {
           "type": "RangeSelector",
@@ -217,8 +223,8 @@
         },
         {
           "type": "TextPositionSelector",
-          "start": 472,
-          "end": 496
+          "start": 122,
+          "end": 146
         },
         {
           "type": "RangeSelector",

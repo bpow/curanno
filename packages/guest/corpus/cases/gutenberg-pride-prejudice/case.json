@@ -7,7 +7,11 @@
     "license": "Public domain text; the Project Gutenberg header and footer carry the Project Gutenberg License",
     "note": "HTML edition with images, fetched 2026-10-29; image sources removed. The edited variant is synthetic."
   },
-  "tags": ["real", "long", "mustNotMatch"],
+  "tags": [
+    "real",
+    "long",
+    "mustNotMatch"
+  ],
   "variants": [
     {
       "id": "original",
@@ -37,8 +41,7 @@
         {
           "type": "TextQuoteSelector",
           "exact": "The Project Gutenberg eBook of Pride and Prejudice",
-          "prefix": "",
-          "suffix": "\n    \nThis eBook is for the use "
+          "suffix": " This eBook is for the use of an"
         },
         {
           "type": "TextPositionSelector",
@@ -77,14 +80,14 @@
       "selectors": [
         {
           "type": "TextQuoteSelector",
-          "exact": "a single man in possession\nof a good fortune must be in want of a wife.",
+          "exact": "a single man in possession of a good fortune must be in want of a wife.",
           "prefix": " universally acknowledged, that ",
-          "suffix": "\n\nHowever little known the feeli"
+          "suffix": " However little known the feelin"
         },
         {
           "type": "TextPositionSelector",
-          "start": 29906,
-          "end": 29977
+          "start": 29734,
+          "end": 29805
         },
         {
           "type": "RangeSelector",
@@ -124,13 +127,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "“I am not afraid of you,” said he, smilingly.",
-          "prefix": "shock your relations to hear.”\n\n",
-          "suffix": "\n\n“Pray let me hear what you hav"
+          "prefix": " shock your relations to hear.” ",
+          "suffix": " “Pray let me hear what you have"
         },
         {
           "type": "TextPositionSelector",
-          "start": 337691,
-          "end": 337736
+          "start": 336284,
+          "end": 336329
         },
         {
           "type": "RangeSelector",
@@ -170,13 +173,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "What a contrast between him and his friend! Mr. Darcy danced",
-          "prefix": "ties must speak for\nthemselves. ",
-          "suffix": "\nonly once with Mrs. Hurst and o"
+          "prefix": "ties must speak for themselves. ",
+          "suffix": " only once with Mrs. Hurst and o"
         },
         {
           "type": "TextPositionSelector",
-          "start": 42860,
-          "end": 42920
+          "start": 42584,
+          "end": 42644
         },
         {
           "type": "RangeSelector",
@@ -215,14 +218,14 @@
       "selectors": [
         {
           "type": "TextQuoteSelector",
-          "exact": "Lady Catherine de Bourgh. The latter, like\nMr. Collins himself, has been charged with exaggeration.",
-          "prefix": "he\nfigures of Mr. Bennet and of ",
-          "suffix": " There is,\nperhaps, a very faint"
+          "exact": "Lady Catherine de Bourgh. The latter, like Mr. Collins himself, has been charged with exaggeration.",
+          "prefix": "he figures of Mr. Bennet and of ",
+          "suffix": " There is, perhaps, a very faint"
         },
         {
           "type": "TextPositionSelector",
-          "start": 16404,
-          "end": 16503
+          "start": 16251,
+          "end": 16350
         },
         {
           "type": "RangeSelector",
@@ -257,13 +260,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "had been the means of uniting them",
-          "prefix": "y bringing\nher into Derbyshire, ",
-          "suffix": ".\n\n\n\n\n\n\nCHISWICK PRESS:—CHARLES "
+          "prefix": "y bringing her into Derbyshire, ",
+          "suffix": ". CHISWICK PRESS:—CHARLES WHITTI"
         },
         {
           "type": "TextPositionSelector",
-          "start": 719771,
-          "end": 719805
+          "start": 717031,
+          "end": 717065
         },
         {
           "type": "RangeSelector",

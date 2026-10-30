@@ -7,7 +7,10 @@
     "license": "CC BY-SA 2.5",
     "note": "Fetched 2026-10-29; scripts, stylesheets and image sources removed. Edited variants are synthetic."
   },
-  "tags": ["real", "mustNotMatch"],
+  "tags": [
+    "real",
+    "mustNotMatch"
+  ],
   "variants": [
     {
       "id": "original",
@@ -44,13 +47,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "The textContent property of the Node interface represents the text content of the node and its descendants.",
-          "prefix": "\n        \n      \n     \n    \n    ",
-          "suffix": "\n\nNote:\ntextContent and HTMLElem"
+          "prefix": "e full compatibility Learn more ",
+          "suffix": " Note: textContent and HTMLEleme"
         },
         {
           "type": "TextPositionSelector",
-          "start": 13549,
-          "end": 13656
+          "start": 1997,
+          "end": 2104
         },
         {
           "type": "RangeSelector",
@@ -85,13 +88,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "textContent and HTMLElement.innerText are easily confused",
-          "prefix": "ode and its descendants.\n\nNote:\n",
+          "prefix": "node and its descendants. Note: ",
           "suffix": ", but the two properties are dif"
         },
         {
           "type": "TextPositionSelector",
-          "start": 13664,
-          "end": 13721
+          "start": 2111,
+          "end": 2168
         },
         {
           "type": "RangeSelector",
@@ -131,13 +134,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Setting textContent on a node removes all of the node's children and replaces them with a single text node with the given string value.",
-          "prefix": "e has no children.)\n\n\n\nWarning:\n",
-          "suffix": "\n\n  \n    Differences from innerT"
+          "prefix": "node has no children.) Warning: ",
+          "suffix": " Differences from innerText Don'"
         },
         {
           "type": "TextPositionSelector",
-          "start": 14747,
-          "end": 14882
+          "start": 2919,
+          "end": 3054
         },
         {
           "type": "RangeSelector",
@@ -177,13 +180,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Don't get confused by the differences between Node.textContent and HTMLElement.innerText.",
-          "prefix": " Differences from innerText\n    ",
+          "prefix": "lue. Differences from innerText ",
           "suffix": " Although the names seem similar"
         },
         {
           "type": "TextPositionSelector",
-          "start": 14922,
-          "end": 15011
+          "start": 3082,
+          "end": 3171
         },
         {
           "type": "RangeSelector",
@@ -229,8 +232,8 @@
         },
         {
           "type": "TextPositionSelector",
-          "start": 15697,
-          "end": 15860
+          "start": 3841,
+          "end": 4004
         },
         {
           "type": "RangeSelector",
@@ -265,13 +268,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "let text = document.getElementById(\"divA\").textContent;",
-          "prefix": "t the element's text content:\njs",
+          "prefix": "t the element's text content: js",
           "suffix": "\n// The text variable is now: 'T"
         },
         {
           "type": "TextPositionSelector",
-          "start": 16175,
-          "end": 16230
+          "start": 4307,
+          "end": 4362
         },
         {
           "type": "RangeSelector",
@@ -311,8 +314,8 @@
         },
         {
           "type": "TextPositionSelector",
-          "start": 17438,
-          "end": 17463
+          "start": 5213,
+          "end": 5238
         },
         {
           "type": "RangeSelector",
@@ -347,13 +350,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "This page was last modified on",
-          "prefix": "   Learn how to contribute \n    ",
+          "prefix": "ove MDN Learn how to contribute ",
           "suffix": " Oct 28, 2025 by MDN contributor"
         },
         {
           "type": "TextPositionSelector",
-          "start": 16975,
-          "end": 17005
+          "start": 4851,
+          "end": 4881
         },
         {
           "type": "RangeSelector",
@@ -362,8 +365,8 @@
             "value": "/div[2]/div[1]/main[1]/div[2]/section[8]/div[1]/p[1]",
             "refinedBy": {
               "type": "TextPositionSelector",
-              "start": 5,
-              "end": 5
+              "start": 0,
+              "end": 0
             }
           },
           "endSelector": {
@@ -371,8 +374,8 @@
             "value": "/div[2]/div[1]/main[1]/div[2]/section[8]/div[1]/p[1]",
             "refinedBy": {
               "type": "TextPositionSelector",
-              "start": 35,
-              "end": 35
+              "start": 30,
+              "end": 30
             }
           }
         }

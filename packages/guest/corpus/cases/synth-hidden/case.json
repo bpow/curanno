@@ -5,7 +5,12 @@
   "source": {
     "license": "Written for this corpus"
   },
-  "tags": ["synthetic", "hidden", "excluded", "br"],
+  "tags": [
+    "synthetic",
+    "hidden",
+    "excluded",
+    "br"
+  ],
   "variants": [
     {
       "id": "original",
@@ -29,13 +34,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "a maintenance release",
-          "prefix": " for version 3.2\nVersion 3.2 is ",
-          "suffix": ". It fixes the (internal ticket "
+          "prefix": " for version 3.2 Version 3.2 is ",
+          "suffix": ". It fixes the crash on startup "
         },
         {
           "type": "TextPositionSelector",
-          "start": 150,
-          "end": 171
+          "start": 127,
+          "end": 148
         },
         {
           "type": "RangeSelector",
@@ -75,14 +80,14 @@
       "selectors": [
         {
           "type": "TextQuoteSelector",
-          "exact": "It fixes the (internal ticket 4411) crash on startup",
+          "exact": "It fixes the crash on startup",
           "prefix": "n 3.2 is a maintenance release. ",
           "suffix": " when the configuration file is "
         },
         {
           "type": "TextPositionSelector",
-          "start": 173,
-          "end": 225
+          "start": 150,
+          "end": 179
         },
         {
           "type": "RangeSelector",
@@ -100,8 +105,8 @@
             "value": "/main[1]/p[1]",
             "refinedBy": {
               "type": "TextPositionSelector",
-              "start": 90,
-              "end": 90
+              "start": 67,
+              "end": 67
             }
           }
         }
@@ -116,14 +121,14 @@
       "selectors": [
         {
           "type": "TextQuoteSelector",
-          "exact": "two lines:Flat 4, 12 Harbour StreetKingstown",
+          "exact": "two lines:\nFlat 4, 12 Harbour Street\nKingstown",
           "prefix": "Addresses may now be written on ",
-          "suffix": "\nThe API gains a /health endpoin"
+          "suffix": " The API gains a /health endpoin"
         },
         {
           "type": "TextPositionSelector",
-          "start": 344,
-          "end": 388
+          "start": 298,
+          "end": 344
         },
         {
           "type": "RangeSelector",
@@ -141,8 +146,8 @@
             "value": "/main[1]/p[2]",
             "refinedBy": {
               "type": "TextPositionSelector",
-              "start": 76,
-              "end": 76
+              "start": 78,
+              "end": 78
             }
           }
         }
@@ -157,14 +162,14 @@
       "selectors": [
         {
           "type": "TextQuoteSelector",
-          "exact": "endpoint. ★ Clients should poll it",
-          "prefix": "ngstown\nThe API gains a /health ",
-          "suffix": " no more than once a minute.\n<p>"
+          "exact": "endpoint. Clients should poll it",
+          "prefix": "ngstown The API gains a /health ",
+          "suffix": " no more than once a minute. Kno"
         },
         {
           "type": "TextPositionSelector",
-          "start": 413,
-          "end": 447
+          "start": 369,
+          "end": 401
         },
         {
           "type": "RangeSelector",
@@ -182,8 +187,8 @@
             "value": "/main[1]/p[3]",
             "refinedBy": {
               "type": "TextPositionSelector",
-              "start": 58,
-              "end": 58
+              "start": 56,
+              "end": 56
             }
           }
         }
@@ -199,13 +204,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "loses footnotes on pages with rotated tables",
-          "prefix": "\n\nKnown issues\nExporting to PDF ",
-          "suffix": ". A fix is planned for 3.2.1.\n\nU"
+          "prefix": ". Known issues Exporting to PDF ",
+          "suffix": ". A fix is planned for 3.2.1. Up"
         },
         {
           "type": "TextPositionSelector",
-          "start": 566,
-          "end": 610
+          "start": 460,
+          "end": 504
         },
         {
           "type": "RangeSelector",
@@ -240,13 +245,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Report a problem",
-          "prefix": "orViewerServer\n\nShare · Print · ",
-          "suffix": " · Last built 14:02\n\nRelease not"
+          "prefix": "ontent Products Share · Print · ",
+          "suffix": " · Last built 14:02 Release note"
         },
         {
           "type": "TextPositionSelector",
-          "start": 68,
-          "end": 84
+          "start": 46,
+          "end": 62
         },
         {
           "type": "RangeSelector",
@@ -273,50 +278,11 @@
     },
     {
       "id": "noscript",
-      "description": "Text inside <noscript>, which is raw text to textContent when scripting is on",
+      "description": "Text inside <noscript>, which the text model excludes: cannot be described (ADR 0013)",
       "select": {
         "exact": "interactive changelog"
       },
-      "expected": {
-        "edited": {
-          "exact": "interactive changelog",
-          "suffix": ", the download"
-        }
-      },
-      "selectors": [
-        {
-          "type": "TextQuoteSelector",
-          "exact": "interactive changelog",
-          "prefix": "<p>Enable JavaScript to see the ",
-          "suffix": ".</p>\n\nKnown issues\nExporting to"
-        },
-        {
-          "type": "TextPositionSelector",
-          "start": 508,
-          "end": 529
-        },
-        {
-          "type": "RangeSelector",
-          "startSelector": {
-            "type": "XPathSelector",
-            "value": "/main[1]/noscript[1]",
-            "refinedBy": {
-              "type": "TextPositionSelector",
-              "start": 32,
-              "end": 32
-            }
-          },
-          "endSelector": {
-            "type": "XPathSelector",
-            "value": "/main[1]/noscript[1]",
-            "refinedBy": {
-              "type": "TextPositionSelector",
-              "start": 53,
-              "end": 53
-            }
-          }
-        }
-      ]
+      "notAnnotatable": true
     },
     {
       "id": "end-of-main",
@@ -329,12 +295,12 @@
           "type": "TextQuoteSelector",
           "exact": "cannot be reversed automatically",
           "prefix": " owner column to created_by and ",
-          "suffix": ".\n\n© Example Software. All notes"
+          "suffix": ". © Example Software. All notes "
         },
         {
           "type": "TextPositionSelector",
-          "start": 747,
-          "end": 779
+          "start": 640,
+          "end": 672
         },
         {
           "type": "RangeSelector",

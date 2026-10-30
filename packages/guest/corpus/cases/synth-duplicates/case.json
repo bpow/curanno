@@ -5,7 +5,10 @@
   "source": {
     "license": "Written for this corpus"
   },
-  "tags": ["synthetic", "mustNotMatch"],
+  "tags": [
+    "synthetic",
+    "mustNotMatch"
+  ],
   "variants": [
     {
       "id": "original",
@@ -35,13 +38,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Section 4.2 Saliva",
-          "prefix": "ntrifugation in the intake log.\n",
-          "suffix": "\nStore at room temperature for u"
+          "prefix": "ntrifugation in the intake log. ",
+          "suffix": " Store at room temperature for u"
         },
         {
           "type": "TextPositionSelector",
-          "start": 307,
-          "end": 325
+          "start": 306,
+          "end": 324
         },
         {
           "type": "RangeSelector",
@@ -82,13 +85,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "4.2",
-          "prefix": "tion in the intake log.\nSection ",
-          "suffix": " Saliva\nStore at room temperatur"
+          "prefix": "tion in the intake log. Section ",
+          "suffix": " Saliva Store at room temperatur"
         },
         {
           "type": "TextPositionSelector",
-          "start": 315,
-          "end": 318
+          "start": 314,
+          "end": 317
         },
         {
           "type": "RangeSelector",
@@ -129,13 +132,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Store at room temperature for up to 24 hours. Do not freeze.",
-          "prefix": " intake log.\nSection 4.2 Saliva\n",
+          "prefix": " intake log. Section 4.2 Saliva ",
           "suffix": " Record the collection time in t"
         },
         {
           "type": "TextPositionSelector",
-          "start": 326,
-          "end": 386
+          "start": 325,
+          "end": 385
         },
         {
           "type": "RangeSelector",
@@ -177,12 +180,12 @@
           "type": "TextQuoteSelector",
           "exact": "Record the collection time in the intake log.",
           "prefix": " up to 24 hours. Do not freeze. ",
-          "suffix": "\nSection 4.3 Tissue\nStore at −80"
+          "suffix": " Section 4.3 Tissue Store at −80"
         },
         {
           "type": "TextPositionSelector",
-          "start": 387,
-          "end": 432
+          "start": 386,
+          "end": 431
         },
         {
           "type": "RangeSelector",
@@ -223,13 +226,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "1.0 ml",
-          "prefix": "w\nBlood4.0 ml2.5 ml\nSaliva2.0 ml",
-          "suffix": "\nTissue20 mg10 mg\n\nSign-off\nThe "
+          "prefix": "w Blood4.0 ml2.5 ml Saliva2.0 ml",
+          "suffix": " Tissue20 mg10 mg Sign-off The i"
         },
         {
           "type": "TextPositionSelector",
-          "start": 737,
-          "end": 743
+          "start": 735,
+          "end": 741
         },
         {
           "type": "RangeSelector",
@@ -264,13 +267,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Store at −80 °C within 15 minutes of arrival.",
-          "prefix": " intake log.\nSection 4.3 Tissue\n",
+          "prefix": " intake log. Section 4.3 Tissue ",
           "suffix": " Record the freezer position in "
         },
         {
           "type": "TextPositionSelector",
-          "start": 452,
-          "end": 497
+          "start": 451,
+          "end": 496
         },
         {
           "type": "RangeSelector",
@@ -305,13 +308,12 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Unsigned logs are escalated to the laboratory manager the next morning.",
-          "prefix": "e log at the end of each shift. ",
-          "suffix": "\n\n\n"
+          "prefix": "e log at the end of each shift. "
         },
         {
           "type": "TextPositionSelector",
-          "start": 833,
-          "end": 904
+          "start": 830,
+          "end": 901
         },
         {
           "type": "RangeSelector",

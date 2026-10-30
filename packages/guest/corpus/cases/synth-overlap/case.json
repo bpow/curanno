@@ -5,7 +5,11 @@
   "source": {
     "license": "Written for this corpus"
   },
-  "tags": ["synthetic", "overlap", "mustNotMatch"],
+  "tags": [
+    "synthetic",
+    "overlap",
+    "mustNotMatch"
+  ],
   "variants": [
     {
       "id": "original",
@@ -29,13 +33,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "The board met to review three proposals for the annotation platform and to settle the open questions from February.",
-          "prefix": "s of the review board, 14 March\n",
-          "suffix": "\nProposal A: keep the existing s"
+          "prefix": "s of the review board, 14 March ",
+          "suffix": " Proposal A: keep the existing s"
         },
         {
           "type": "TextPositionSelector",
-          "start": 40,
-          "end": 155
+          "start": 38,
+          "end": 153
         },
         {
           "type": "RangeSelector",
@@ -70,13 +74,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "proposals for the annotation platform",
-          "prefix": "h\nThe board met to review three ",
+          "prefix": "h The board met to review three ",
           "suffix": " and to settle the open question"
         },
         {
           "type": "TextPositionSelector",
-          "start": 70,
-          "end": 107
+          "start": 68,
+          "end": 105
         },
         {
           "type": "RangeSelector",
@@ -116,14 +120,14 @@
       "selectors": [
         {
           "type": "TextQuoteSelector",
-          "exact": "from February.\nProposal A: keep the existing service",
+          "exact": "from February. Proposal A: keep the existing service",
           "prefix": "nd to settle the open questions ",
-          "suffix": "\nProposal A keeps the existing s"
+          "suffix": " Proposal A keeps the existing s"
         },
         {
           "type": "TextPositionSelector",
-          "start": 141,
-          "end": 193
+          "start": 139,
+          "end": 191
         },
         {
           "type": "RangeSelector",
@@ -169,8 +173,8 @@
         },
         {
           "type": "TextPositionSelector",
-          "start": 666,
-          "end": 691
+          "start": 664,
+          "end": 689
         },
         {
           "type": "RangeSelector",
@@ -212,12 +216,12 @@
           "type": "TextQuoteSelector",
           "exact": "Three members supported it.",
           "prefix": "nothing to an upstream project. ",
-          "suffix": "\nAccess control\nEvery proposal m"
+          "suffix": " Access control Every proposal m"
         },
         {
           "type": "TextPositionSelector",
-          "start": 986,
-          "end": 1013
+          "start": 984,
+          "end": 1011
         },
         {
           "type": "RangeSelector",
@@ -258,13 +262,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Proposal A keeps the existing service running unchanged for another year.",
-          "prefix": "al A: keep the existing service\n",
+          "prefix": "al A: keep the existing service ",
           "suffix": " The cost is low, but the mainta"
         },
         {
           "type": "TextPositionSelector",
-          "start": 194,
-          "end": 267
+          "start": 192,
+          "end": 265
         },
         {
           "type": "RangeSelector",
@@ -306,8 +310,8 @@
         },
         {
           "type": "TextPositionSelector",
-          "start": 1085,
-          "end": 1089
+          "start": 1083,
+          "end": 1087
         },
         {
           "type": "RangeSelector",
@@ -349,8 +353,8 @@
         },
         {
           "type": "TextPositionSelector",
-          "start": 1091,
-          "end": 1097
+          "start": 1089,
+          "end": 1095
         },
         {
           "type": "RangeSelector",
@@ -392,8 +396,8 @@
         },
         {
           "type": "TextPositionSelector",
-          "start": 1110,
-          "end": 1115
+          "start": 1108,
+          "end": 1113
         },
         {
           "type": "RangeSelector",
@@ -434,13 +438,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Revisit Proposal A only if both trials fail.",
-          "prefix": "lt as an architecture decision.\n",
-          "suffix": "\n\nThe meeting closed at 16:40.\n\n"
+          "prefix": "lt as an architecture decision. ",
+          "suffix": " The meeting closed at 16:40."
         },
         {
           "type": "TextPositionSelector",
-          "start": 1348,
-          "end": 1392
+          "start": 1345,
+          "end": 1389
         },
         {
           "type": "RangeSelector",
@@ -475,13 +479,12 @@
         {
           "type": "TextQuoteSelector",
           "exact": "The meeting closed at 16:40.",
-          "prefix": "al A only if both trials fail.\n\n",
-          "suffix": "\n\n\n\n"
+          "prefix": "sal A only if both trials fail. "
         },
         {
           "type": "TextPositionSelector",
-          "start": 1394,
-          "end": 1422
+          "start": 1390,
+          "end": 1418
         },
         {
           "type": "RangeSelector",

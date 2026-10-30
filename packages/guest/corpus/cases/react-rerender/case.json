@@ -5,7 +5,10 @@
   "source": {
     "license": "Written for this corpus; React 19 (MIT) bundled at build time"
   },
-  "tags": ["synthetic", "framework"],
+  "tags": [
+    "synthetic",
+    "framework"
+  ],
   "root": "#root",
   "variants": [
     {

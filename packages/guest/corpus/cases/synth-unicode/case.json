@@ -5,7 +5,11 @@
   "source": {
     "license": "Written for this corpus"
   },
-  "tags": ["synthetic", "non-latin", "emoji"],
+  "tags": [
+    "synthetic",
+    "non-latin",
+    "emoji"
+  ],
   "variants": [
     {
       "id": "original",
@@ -34,13 +38,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "went well 🎉🎉 and",
-          "prefix": " update 🗓️ week 12\nRelease day ",
+          "prefix": "m update 🗓️ week 12 Release day ",
           "suffix": " the on-call rota is now shared "
         },
         {
           "type": "TextPositionSelector",
-          "start": 38,
-          "end": 56
+          "start": 35,
+          "end": 51
         },
         {
           "type": "RangeSelector",
@@ -58,8 +62,8 @@
             "value": "/article[1]/p[1]",
             "refinedBy": {
               "type": "TextPositionSelector",
-              "start": 30,
-              "end": 30
+              "start": 28,
+              "end": 28
             }
           }
         }
@@ -81,12 +85,12 @@
           "type": "TextQuoteSelector",
           "exact": "the 🇮🇪 and 🇯🇵 offices",
           "prefix": "on-call rota is now shared with ",
-          "suffix": ".\nThanks to 👩🏽‍💻 Priya and 👨"
+          "suffix": ". Thanks to 👩🏽‍💻 Priya and 👨🏿‍🔧 "
         },
         {
           "type": "TextPositionSelector",
-          "start": 93,
-          "end": 118
+          "start": 88,
+          "end": 109
         },
         {
           "type": "RangeSelector",
@@ -95,8 +99,8 @@
             "value": "/article[1]/p[1]",
             "refinedBy": {
               "type": "TextPositionSelector",
-              "start": 67,
-              "end": 67
+              "start": 65,
+              "end": 65
             }
           },
           "endSelector": {
@@ -104,8 +108,8 @@
             "value": "/article[1]/p[1]",
             "refinedBy": {
               "type": "TextPositionSelector",
-              "start": 92,
-              "end": 92
+              "start": 86,
+              "end": 86
             }
           }
         }
@@ -121,13 +125,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "👩🏽‍💻 Priya and 👨🏿‍🔧 Kwame",
-          "prefix": "\uddee🇪 and 🇯🇵 offices.\nThanks to ",
+          "prefix": "he 🇮🇪 and 🇯🇵 offices. Thanks to ",
           "suffix": " for the midnight fix, and to th"
         },
         {
           "type": "TextPositionSelector",
-          "start": 130,
-          "end": 161
+          "start": 121,
+          "end": 146
         },
         {
           "type": "RangeSelector",
@@ -145,8 +149,8 @@
             "value": "/article[1]/p[2]",
             "refinedBy": {
               "type": "TextPositionSelector",
-              "start": 41,
-              "end": 41
+              "start": 35,
+              "end": 35
             }
           }
         }
@@ -163,12 +167,12 @@
           "type": "TextQuoteSelector",
           "exact": "👨‍👩‍👧‍👦",
           "prefix": "or the midnight fix, and to the ",
-          "suffix": " who covered Saturday.\nहिन्दी सम"
+          "suffix": " who covered Saturday. हिन्दी सम"
         },
         {
           "type": "TextPositionSelector",
-          "start": 195,
-          "end": 206
+          "start": 180,
+          "end": 187
         },
         {
           "type": "RangeSelector",
@@ -177,8 +181,8 @@
             "value": "/article[1]/p[2]",
             "refinedBy": {
               "type": "TextPositionSelector",
-              "start": 75,
-              "end": 75
+              "start": 69,
+              "end": 69
             }
           },
           "endSelector": {
@@ -186,8 +190,8 @@
             "value": "/article[1]/p[2]",
             "refinedBy": {
               "type": "TextPositionSelector",
-              "start": 86,
-              "end": 86
+              "start": 76,
+              "end": 76
             }
           }
         }
@@ -209,12 +213,12 @@
           "type": "TextQuoteSelector",
           "exact": "पहले सप्ताह में कोई त्रुटि नहीं मिली",
           "prefix": "्थन अब उत्पादन में उपलब्ध है और ",
-          "suffix": "।\nการแปลภาษาไทยจะพร้อมใช้งานในรุ"
+          "suffix": "। การแปลภาษาไทยจะพร้อมใช้งานในรุ"
         },
         {
           "type": "TextPositionSelector",
-          "start": 271,
-          "end": 307
+          "start": 252,
+          "end": 288
         },
         {
           "type": "RangeSelector",
@@ -255,13 +259,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "จะพร้อมใช้งานในรุ่นถัดไป",
-          "prefix": " त्रुटि नहीं मिली।\nการแปลภาษาไทย",
-          "suffix": "\nتمت إضافة دعم الكتابة من اليمين"
+          "prefix": " त्रुटि नहीं मिली। การแปลภาษาไทย",
+          "suffix": " تمت إضافة دعم الكتابة من اليمين"
         },
         {
           "type": "TextPositionSelector",
-          "start": 322,
-          "end": 346
+          "start": 303,
+          "end": 327
         },
         {
           "type": "RangeSelector",
@@ -297,12 +301,12 @@
           "type": "TextQuoteSelector",
           "exact": "في محرر الملاحظات",
           "prefix": "عم الكتابة من اليمين إلى اليسار ",
-          "suffix": ".\nThe ligature test string “ﬁle "
+          "suffix": ". The ligature test string “ﬁle "
         },
         {
           "type": "TextPositionSelector",
-          "start": 390,
-          "end": 407
+          "start": 371,
+          "end": 388
         },
         {
           "type": "RangeSelector",
@@ -337,13 +341,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "“ﬁle ﬂow”",
-          "prefix": "احظات.\nThe ligature test string ",
+          "prefix": "احظات. The ligature test string ",
           "suffix": " and the decomposed “é” (e + com"
         },
         {
           "type": "TextPositionSelector",
-          "start": 434,
-          "end": 443
+          "start": 415,
+          "end": 424
         },
         {
           "type": "RangeSelector",
@@ -379,12 +383,12 @@
           "type": "TextQuoteSelector",
           "exact": "combining acute: é)",
           "prefix": "ow” and the decomposed “é” (e + ",
-          "suffix": " are both in the fixtures now.\nN"
+          "suffix": " are both in the fixtures now. N"
         },
         {
           "type": "TextPositionSelector",
-          "start": 472,
-          "end": 491
+          "start": 453,
+          "end": 472
         },
         {
           "type": "RangeSelector",
@@ -424,13 +428,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "☕ at 09:00",
-          "prefix": "ed and twenty-three.\nNext week: ",
-          "suffix": ", then planning until 🕛.\n\n\n\n"
+          "prefix": "ed and twenty-three. Next week: ",
+          "suffix": ", then planning until 🕛."
         },
         {
           "type": "TextPositionSelector",
-          "start": 605,
-          "end": 615
+          "start": 586,
+          "end": 596
         },
         {
           "type": "RangeSelector",

@@ -7,7 +7,11 @@
     "license": "CC BY-SA 4.0",
     "note": "Rendered through the MediaWiki parse API; scripts and image sources removed"
   },
-  "tags": ["real", "wikipedia", "mustNotMatch"],
+  "tags": [
+    "real",
+    "wikipedia",
+    "mustNotMatch"
+  ],
   "variants": [
     {
       "id": "original",
@@ -36,13 +40,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Web annotation can refer to online annotations of web resources such as web pages or parts of them",
-          "prefix": "e information.  (February 2015)\n",
+          "prefix": "le information. (February 2015) ",
           "suffix": ", or a set of W3C standards deve"
         },
         {
           "type": "TextPositionSelector",
-          "start": 1611,
-          "end": 1709
+          "start": 154,
+          "end": 252
         },
         {
           "type": "RangeSelector",
@@ -85,13 +89,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "The basic data structures of Web Annotation are",
-          "prefix": "n the Web Annotation data model\n",
-          "suffix": " \n\ntarget (the element being ann"
+          "prefix": "n the Web Annotation data model ",
+          "suffix": " target (the element being annot"
         },
         {
           "type": "TextPositionSelector",
-          "start": 4526,
-          "end": 4573
+          "start": 2820,
+          "end": 2867
         },
         {
           "type": "RangeSelector",
@@ -131,13 +135,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Web Annotation supersedes other standardization initiatives for annotations on the web within the W3C, e.g., the earlier Annotea project discontinued after 2003.",
-          "prefix": "he Web Annotation standard.[12]\n",
-          "suffix": "[13][14]\n\nRelated specifications"
+          "prefix": "he Web Annotation standard.[12] ",
+          "suffix": "[13][14] Related specifications "
         },
         {
           "type": "TextPositionSelector",
-          "start": 5866,
-          "end": 6027
+          "start": 4156,
+          "end": 4317
         },
         {
           "type": "RangeSelector",
@@ -172,13 +176,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "RFC 7111 (URI fragment identifiers for the text/csv media type)",
-          "prefix": " the text/plain media type)[15]\n",
-          "suffix": "[16]\nRFC 8118 (URI fragment iden"
+          "prefix": " the text/plain media type)[15] ",
+          "suffix": "[16] RFC 8118 (URI fragment iden"
         },
         {
           "type": "TextPositionSelector",
-          "start": 6317,
-          "end": 6380
+          "start": 4605,
+          "end": 4668
         },
         {
           "type": "RangeSelector",
@@ -219,13 +223,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Annotation of named entities, linking with maps and knowledge graphs",
-          "prefix": "\n\n\nYes\n\nYes\n\nYes (Apache)\n\nYes\n\n",
+          "prefix": "es Yes Yes Yes Yes (Apache) Yes ",
           "suffix": ", developed by the Pelagios netw"
         },
         {
           "type": "TextPositionSelector",
-          "start": 14475,
-          "end": 14543
+          "start": 7070,
+          "end": 7138
         },
         {
           "type": "RangeSelector",
@@ -260,13 +264,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "An early version of the Mosaic browser was tested with collaborative annotation feature in 1993",
-          "prefix": " Discontinued\n\n\nMosaic Browser\n\n",
+          "prefix": "ate Discontinued Mosaic Browser ",
           "suffix": "[37] but never passed the test s"
         },
         {
           "type": "TextPositionSelector",
-          "start": 14783,
-          "end": 14878
+          "start": 7370,
+          "end": 7465
         },
         {
           "type": "RangeSelector",
@@ -301,13 +305,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Perhaps the earliest web annotation system. Developed in 1997–98 by Ka-Ping Yee of the University of California.",
-          "prefix": "ssed the test state\n\n\nCritLink\n\n",
-          "suffix": "[38]  CritLink worked as an HTML"
+          "prefix": " passed the test state CritLink ",
+          "suffix": "[38] CritLink worked as an HTML "
         },
         {
           "type": "TextPositionSelector",
-          "start": 14957,
-          "end": 15069
+          "start": 7540,
+          "end": 7652
         },
         {
           "type": "RangeSelector",
@@ -342,13 +346,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "In February 2015, different features were announced",
-          "prefix": "t listed on Web Annotation wiki\n",
+          "prefix": "t listed on Web Annotation wiki ",
           "suffix": ",[30] such as private group anno"
         },
         {
           "type": "TextPositionSelector",
-          "start": 13989,
-          "end": 14040
+          "start": 6609,
+          "end": 6660
         },
         {
           "type": "RangeSelector",
@@ -383,13 +387,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "to quantify transient relationships between information fragments.",
-          "prefix": "r ideas that appear on the Web.\n",
-          "suffix": "\nto save, retain and synthesize "
+          "prefix": "r ideas that appear on the Web. ",
+          "suffix": " to save, retain and synthesize "
         },
         {
           "type": "TextPositionSelector",
-          "start": 2989,
-          "end": 3055
+          "start": 1529,
+          "end": 1595
         },
         {
           "type": "RangeSelector",
@@ -430,13 +434,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Perusall",
-          "prefix": "s\nBacklinks\nOnline deliberation\n",
-          "suffix": "\nFolksonomy\nMetadata\nThreaded di"
+          "prefix": "s Backlinks Online deliberation ",
+          "suffix": " Folksonomy Metadata Threaded di"
         },
         {
           "type": "TextPositionSelector",
-          "start": 17917,
-          "end": 17925
+          "start": 10448,
+          "end": 10456
         },
         {
           "type": "RangeSelector",

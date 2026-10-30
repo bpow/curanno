@@ -5,7 +5,10 @@
   "source": {
     "license": "Written for this corpus; rendered to PDF with Chromium from src/*.html"
   },
-  "tags": ["synthetic", "pdf"],
+  "tags": [
+    "synthetic",
+    "pdf"
+  ],
   "variants": [
     {
       "id": "original",
@@ -29,8 +32,7 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Annotation service pilot: quarterly report",
-          "prefix": "",
-          "suffix": "First edition, 2 AprilThis repor"
+          "suffix": "\nFirst edition, 2 April\nThis rep"
         },
         {
           "type": "TextPositionSelector",
@@ -75,13 +77,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "1,088 re-anchored without intervention, 74 were reported as orphans",
-          "prefix": " annotations on thosedocuments, ",
-          "suffix": " and repaired bytheir authors, a"
+          "prefix": "annotations on those\ndocuments, ",
+          "suffix": " and repaired by\ntheir authors, "
         },
         {
           "type": "TextPositionSelector",
-          "start": 537,
-          "end": 604
+          "start": 544,
+          "end": 611
         },
         {
           "type": "RangeSelector",
@@ -115,14 +117,14 @@
       "selectors": [
         {
           "type": "TextQuoteSelector",
-          "exact": "Early habit formationappears to matter more than the training session",
+          "exact": "Early habit formation\nappears to matter more than the training session",
           "prefix": " still active in 4 of 11 cases. ",
           "suffix": ", which all participants attende"
         },
         {
           "type": "TextPositionSelector",
-          "start": 1135,
-          "end": 1204
+          "start": 1149,
+          "end": 1219
         },
         {
           "type": "RangeSelector",
@@ -157,13 +159,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Paragraph rewritten",
-          "prefix": "nserted or removed 17 366 351 15",
-          "suffix": " 14 298 241 57Section removed 8 "
+          "prefix": "serted or removed 17 366 351 15\n",
+          "suffix": " 14 298 241 57\nSection removed 8"
         },
         {
           "type": "TextPositionSelector",
-          "start": 1596,
-          "end": 1615
+          "start": 1619,
+          "end": 1638
         },
         {
           "type": "RangeSelector",
@@ -197,14 +199,14 @@
       "selectors": [
         {
           "type": "TextQuoteSelector",
-          "exact": "they would rather see those annotations marked as orphaned than placedon unrelated text",
-          "prefix": "red. Ininterviews, authors said ",
+          "exact": "they would rather see those annotations marked as orphaned than placed\non unrelated text",
+          "prefix": "ed. In\ninterviews, authors said ",
           "suffix": ", which the previous tool someti"
         },
         {
           "type": "TextPositionSelector",
-          "start": 1775,
-          "end": 1862
+          "start": 1801,
+          "end": 1889
         },
         {
           "type": "RangeSelector",
@@ -245,13 +247,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "Add a weekly digest of orphaned annotations for document owners.",
-          "prefix": "e right pagebefore anchoring.3. ",
-          "suffix": "4. Extend the pilot to the metho"
+          "prefix": "right page\nbefore anchoring.\n3. ",
+          "suffix": "\n4. Extend the pilot to the meth"
         },
         {
           "type": "TextPositionSelector",
-          "start": 2548,
-          "end": 2612
+          "start": 2586,
+          "end": 2650
         },
         {
           "type": "RangeSelector",
@@ -286,13 +288,12 @@
         {
           "type": "TextQuoteSelector",
           "exact": "or an orphan marker.",
-          "prefix": "reach annotation on each visit, ",
-          "suffix": ""
+          "prefix": "\neach annotation on each visit, "
         },
         {
           "type": "TextPositionSelector",
-          "start": 3029,
-          "end": 3049
+          "start": 3073,
+          "end": 3093
         },
         {
           "type": "RangeSelector",

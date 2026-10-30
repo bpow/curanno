@@ -7,7 +7,10 @@
     "license": "CC BY 4.0",
     "note": "Sandve GK, Nekrutenko A, Taylor J, Hovig E (2013) Ten Simple Rules for Reproducible Computational Research. PLoS Comput Biol 9(10): e1003285. Unmodified."
   },
-  "tags": ["real", "pdf"],
+  "tags": [
+    "real",
+    "pdf"
+  ],
   "variants": [
     {
       "id": "original",
@@ -22,17 +25,23 @@
       "select": {
         "exact": "Ten Simple Rules for Reproducible Computational"
       },
+      "expected": {
+        "original": {
+          "exact": "Ten Simple Rules for Reproducible Computational",
+          "prefix": "Editorial"
+        }
+      },
       "selectors": [
         {
           "type": "TextQuoteSelector",
           "exact": "Ten Simple Rules for Reproducible Computational",
-          "prefix": "Editorial",
-          "suffix": "ResearchGeir Kjetil Sandve1,2*, "
+          "prefix": "Editorial\n",
+          "suffix": "\nResearch\nGeir Kjetil Sandve1,2*"
         },
         {
           "type": "TextPositionSelector",
-          "start": 9,
-          "end": 56
+          "start": 10,
+          "end": 57
         },
         {
           "type": "RangeSelector",
@@ -55,13 +64,7 @@
             }
           }
         }
-      ],
-      "expected": {
-        "original": {
-          "exact": "Ten Simple Rules for Reproducible Computational",
-          "prefix": "Editorial"
-        }
-      }
+      ]
     },
     {
       "id": "first-sentence",
@@ -72,14 +75,14 @@
       "selectors": [
         {
           "type": "TextQuoteSelector",
-          "exact": "Replication is the cornerstone of acumulative science [1].",
-          "prefix": "spital, Montebello, Oslo, Norway",
-          "suffix": " However, newtools and technolog"
+          "exact": "Replication is the cornerstone of a\ncumulative science [1].",
+          "prefix": "pital, Montebello, Oslo, Norway\n",
+          "suffix": " However, new\ntools and technolo"
         },
         {
           "type": "TextPositionSelector",
-          "start": 864,
-          "end": 922
+          "start": 873,
+          "end": 932
         },
         {
           "type": "RangeSelector",
@@ -113,14 +116,14 @@
       "selectors": [
         {
           "type": "TextQuoteSelector",
-          "exact": "As full replica-tion of studies",
-          "prefix": "s toadvance their research [2]. ",
-          "suffix": " on independently collecteddata "
+          "exact": "As full replica-\ntion of studies",
+          "prefix": " to\nadvance their research [2]. ",
+          "suffix": " on independently collected\ndata"
         },
         {
           "type": "TextPositionSelector",
-          "start": 1167,
-          "end": 1198
+          "start": 1183,
+          "end": 1215
         },
         {
           "type": "RangeSelector",
@@ -155,13 +158,13 @@
         {
           "type": "TextQuoteSelector",
           "exact": "‘‘culture of reproducibility’’",
-          "prefix": "fic community needs to develop a",
-          "suffix": " for computa-tional science, and"
+          "prefix": "ic community needs to develop a\n",
+          "suffix": " for computa-\ntional science, an"
         },
         {
           "type": "TextPositionSelector",
-          "start": 2226,
-          "end": 2256
+          "start": 2269,
+          "end": 2299
         },
         {
           "type": "RangeSelector",
