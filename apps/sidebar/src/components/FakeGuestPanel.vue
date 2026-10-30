@@ -48,7 +48,7 @@ function select(): void {
       </label>
       <button type="submit">Select</button>
     </form>
-    <ul v-if="guest.log.value.length" class="log">
+    <ul class="log" aria-label="Guest calls">
       <li v-for="(line, i) in guest.log.value" :key="i">{{ line }}</li>
     </ul>
   </details>
@@ -86,7 +86,7 @@ label {
   font-family: monospace;
   font-size: 0.8em;
   color: var(--muted);
-  max-height: 6rem;
+  height: 4rem;
   overflow: auto;
 }
 </style>

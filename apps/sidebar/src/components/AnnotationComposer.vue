@@ -39,10 +39,7 @@ async function save(next: AnnotationDraft): Promise<void> {
     const structuredPurpose = next.structured
       ? profiles.purposeOf(next.structured.profile)
       : undefined;
-    const created = await store.create(
-      buildInput(next, target, structuredPurpose ? { structuredPurpose } : {}),
-    );
-    guest.anchor([{ id: created.annotation.id, target: created.annotation.target }]);
+    await store.create(buildInput(next, target, structuredPurpose ? { structuredPurpose } : {}));
     if (open.value === 'selection') guest.clearSelection();
     open.value = undefined;
     problem.value = undefined;
