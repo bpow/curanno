@@ -19,6 +19,7 @@ In development the dev server proxies `/annotations` and `/x` to the API (`API_P
 | `NUXT_PUBLIC_API_BASE`       | empty, meaning the same origin                 | Base URL of the API                        |
 | `NUXT_PUBLIC_OIDC_ISSUER`    | `http://localhost:8080/realms/annotations-dev` | OpenID Connect issuer                      |
 | `NUXT_PUBLIC_OIDC_CLIENT_ID` | `annotations-sidebar`                         | Public client the site signs in as         |
+| `NUXT_PUBLIC_PDF_VIEWER_URL` | `http://localhost:5174/pdf/`                  | The PDF viewer page, linked from the landing page and built into the bookmarklet |
 | `API_PROXY_TARGET`           | `http://localhost:3000`                       | Where the dev server proxies the API to    |
 
 The identity provider must list `<site origin>/auth/callback` among the client's redirect URIs and `<site origin>/` among its post-logout redirect URIs; the development realm does for ports 3001 (this site) and 5173/4173 (the sidebar).
@@ -27,7 +28,7 @@ The identity provider must list `<site origin>/auth/callback` among the client's
 
 | Path           | Who          | What                                                                                          |
 | -------------- | ------------ | --------------------------------------------------------------------------------------------- |
-| `/`            | anyone       | Landing page, server-rendered                                                                 |
+| `/`            | anyone       | Landing page, server-rendered, with the bookmarklet to install and the PDF viewer link        |
 | `/me`          | signed in    | The caller's account, groups and a link to their annotations                                  |
 | `/users`       | admins       | Every user, searchable, with paging                                                            |
 | `/users/:id`   | signed in    | One user; administrators can rename them and grant or remove the administrator flag           |

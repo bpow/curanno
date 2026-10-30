@@ -56,12 +56,14 @@ export default defineNuxtConfig({
     },
   },
   runtimeConfig: {
-    // Overridable at run time through NUXT_PUBLIC_API_BASE, NUXT_PUBLIC_OIDC_ISSUER
-    // and NUXT_PUBLIC_OIDC_CLIENT_ID. Defaults match the compose stack.
+    // Overridable at run time through NUXT_PUBLIC_API_BASE, NUXT_PUBLIC_OIDC_ISSUER,
+    // NUXT_PUBLIC_OIDC_CLIENT_ID and NUXT_PUBLIC_PDF_VIEWER_URL. Defaults match the compose stack.
     public: {
       apiBase: '',
       oidcIssuer: 'http://localhost:8080/realms/annotations-dev',
       oidcClientId: 'annotations-sidebar',
+      // The PDF viewer page, for the bookmarklet and the landing page (ADR 0021).
+      pdfViewerUrl: 'http://localhost:5174/pdf/',
     },
   },
   // The landing page is public and server-rendered. Every other page needs

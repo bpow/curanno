@@ -13,4 +13,9 @@ data:
   NUXT_PUBLIC_API_BASE: ''
   NUXT_PUBLIC_OIDC_ISSUER: {{ .Values.config.oidcIssuer | quote }}
   NUXT_PUBLIC_OIDC_CLIENT_ID: {{ .Values.config.oidcClientId | quote }}
+  {{- with .Values.pdfViewer.host }}
+  NUXT_PUBLIC_PDF_VIEWER_URL: {{ printf "https://%s/pdf/" . | quote }}
+  {{- else }}
+  NUXT_PUBLIC_PDF_VIEWER_URL: ''
+  {{- end }}
 {{- end }}
