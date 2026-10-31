@@ -52,7 +52,7 @@ describe.skipIf(!adminUrl)('load seed', () => {
     expect(summary.annotations).toBe(SIZES.annotations);
     expect(await count('select count(*) as n from annotations')).toBe(SIZES.annotations);
     expect(await count('select count(*) as n from users')).toBe(SIZES.users);
-    expect(await count('select count(*) as n from groups where issuer is null')).toBe(SIZES.groups);
+    expect(await count('select count(*) as n from groups')).toBe(SIZES.groups);
     expect(await count('select count(*) as n from documents')).toBe(SIZES.documents);
     expect(summary.memberships).toBeGreaterThan(SIZES.users);
     // Every annotation has one target with a quote and its creator's four permissions.

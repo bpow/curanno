@@ -1,8 +1,8 @@
 /**
  * Test fixture: a scratch database with the migrations applied, a server
  * whose token verifier trusts a key pair generated here, and a way to mint
- * tokens for made-up users with any groups. Needs DATABASE_URL; tests that
- * use it skip without one.
+ * tokens for made-up users. Needs DATABASE_URL; tests that use it skip
+ * without one.
  */
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, InjectOptions, LightMyRequestResponse } from 'fastify';
@@ -17,19 +17,17 @@ import { buildServer } from '../server.js';
 export const ISSUER = 'https://idp.test/realms/annotations';
 export const CLIENT_ID = 'annotations-sidebar';
 export const PUBLIC_URL = 'https://annotations.test';
-export const ADMIN_GROUP = 'annotations-admins';
 
 export interface TestUser {
   sub: string;
   name?: string;
   email?: string;
-  groups?: string[];
 }
 
-export const alice: TestUser = { sub: 'alice', name: 'Alice Annotator', groups: ['curators'] };
-export const bob: TestUser = { sub: 'bob', name: 'Bob Reviewer', groups: ['reviewers'] };
-export const carol: TestUser = { sub: 'carol', name: 'Carol Curator', groups: ['curators'] };
-export const root: TestUser = { sub: 'root', name: 'Root', groups: [ADMIN_GROUP] };
+export const alice: TestUser = { sub: 'alice', name: 'Alice Annotator' };
+export const bob: TestUser = { sub: 'bob', name: 'Bob Reviewer' };
+export const carol: TestUser = { sub: 'carol', name: 'Carol Curator' };
+export const root: TestUser = { sub: 'root', name: 'Root' };
 
 export interface TestContext {
   app: FastifyInstance;
@@ -101,7 +99,7 @@ export async function createTestContext(options: TestContextOptions = {}): Promi
   const jwk = { ...(await exportJWK(publicKey)), kid: 'test', alg: 'ES256' };
   const config: Config = {
     databaseUrl: testUrl,
-    oidc: { issuer: ISSUER, clientId: CLIENT_ID, audience: CLIENT_ID, adminGroup: ADMIN_GROUP },
+    oidc: { issuer: ISSUER, clientId: CLIENT_ID, audience: CLIENT_ID },
     port: 0,
     publicUrl: PUBLIC_URL,
     logLevel: 'silent',
@@ -126,7 +124,6 @@ export async function createTestContext(options: TestContextOptions = {}): Promi
     new SignJWT({
       ...(user.name ? { name: user.name } : {}),
       ...(user.email ? { email: user.email } : {}),
-      groups: user.groups ?? [],
       azp: CLIENT_ID,
     })
       .setProtectedHeader({ alg: 'ES256', kid: 'test' })
@@ -154,6 +151,38 @@ export async function createTestContext(options: TestContextOptions = {}): Promi
       await admin.end();
     },
   };
+}
+
+/**
+ * Creates a group directly in the database with the given members, standing
+ * in for whatever provisioning a deployment uses (groups are managed
+ * entirely through the API; ADR 0026). Each member must already have signed
+ * in at least once.
+ */
+export async function createGroup(
+  ctx: TestContext,
+  name: string,
+  members: TestUser[] = [],
+): Promise<string> {
+  const principal = await ctx.db
+    .insertInto('principals')
+    .values({ kind: 'group' })
+    .returning('id')
+    .executeTakeFirstOrThrow();
+  await ctx.db.insertInto('groups').values({ principal_id: principal.id, name }).execute();
+  for (const member of members) {
+    const user = await ctx.db
+      .selectFrom('users')
+      .select('principal_id')
+      .where('issuer', '=', ISSUER)
+      .where('subject', '=', member.sub)
+      .executeTakeFirstOrThrow();
+    await ctx.db
+      .insertInto('group_memberships')
+      .values({ group_id: principal.id, user_id: user.principal_id })
+      .execute();
+  }
+  return principal.id;
 }
 
 /** A minimal annotation input on `source` with a quote, as the sidebar would send it. */

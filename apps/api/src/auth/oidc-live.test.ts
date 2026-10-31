@@ -43,7 +43,6 @@ describe.skipIf(!databaseUrl || !issuer)('live OpenID Connect', () => {
     const claims = await verify(token);
     expect(claims.issuer).toBe(issuer);
     expect(claims.subject).toBeTruthy();
-    expect(claims.groups).toEqual(['curators']);
     await expect(verify(token.slice(0, -2) + 'xx')).rejects.toMatchObject({ status: 401 });
 
     // The server built with real discovery takes the token and creates the user from it.
@@ -61,9 +60,6 @@ describe.skipIf(!databaseUrl || !issuer)('live OpenID Connect', () => {
       });
       expect(me.statusCode).toBe(200);
       expect(me.json()).toMatchObject({ displayName: 'Alice Annotator' });
-      expect(me.json<{ groups: { name: string }[] }>().groups.map((g) => g.name)).toEqual([
-        'curators',
-      ]);
       const anonymous = await app.inject({
         method: 'GET',
         url: '/x/me',

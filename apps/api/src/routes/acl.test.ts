@@ -10,6 +10,7 @@ import {
   annotationOn,
   bob,
   carol,
+  createGroup,
   createTestContext,
   databaseUrl,
   type TestContext,
@@ -66,15 +67,13 @@ describe.skipIf(!databaseUrl)('access control', () => {
 
   beforeAll(async () => {
     ctx = await createTestContext();
-    // Log everybody in once so that users and groups exist.
+    // Log everybody in once so that users exist.
     for (const user of [alice, bob, carol]) {
       expect((await ctx.as(user, { method: 'GET', url: '/x/me' })).statusCode).toBe(200);
     }
-    const me = await ctx.as(alice, { method: 'GET', url: '/x/me' });
-    const aliceUser = me.json<{ id: string; groups: { id: string; name: string }[] }>();
-    aliceId = aliceUser.id;
-    curators = aliceUser.groups.find((g) => g.name === 'curators')?.id as string;
+    aliceId = (await ctx.as(alice, { method: 'GET', url: '/x/me' })).json<{ id: string }>().id;
     bobId = (await ctx.as(bob, { method: 'GET', url: '/x/me' })).json<{ id: string }>().id;
+    curators = await createGroup(ctx, 'curators', [alice, carol]);
 
     anns['private'] = await create(alice, 'private to alice');
     anns['public'] = await create(alice, 'public');

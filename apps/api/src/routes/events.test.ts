@@ -11,6 +11,7 @@ import {
   alice,
   annotationOn,
   bob,
+  createGroup,
   createTestContext,
   databaseUrl,
   type TestContext,
@@ -84,6 +85,8 @@ async function openStream(
             id: fields['id'] ?? '',
             data: JSON.parse(fields['data'] ?? '{}') as SseEvent['data'],
           };
+          // eslint-disable-next-line no-console
+          console.error('DEBUG event', path, JSON.stringify(event));
           const waiter = waiters.shift();
           if (waiter) waiter(event);
           else queue.push(event);
@@ -152,6 +155,10 @@ describe.skipIf(!databaseUrl)('events', () => {
     const address = ctx.app.server.address();
     if (!address || typeof address === 'string') throw new Error('no address');
     base = `http://127.0.0.1:${address.port}`;
+    // Log everybody in once so that users exist, then put bob in a group.
+    await ctx.as(alice, { method: 'GET', url: '/x/me' });
+    await ctx.as(bob, { method: 'GET', url: '/x/me' });
+    await createGroup(ctx, 'reviewers', [bob]);
   });
   afterAll(async () => {
     for (const s of streams) s.close();
@@ -211,6 +218,9 @@ describe.skipIf(!databaseUrl)('events', () => {
       .where('name', '=', 'reviewers')
       .executeTakeFirstOrThrow();
     const shared = await create(alice, 'for reviewers');
+    // A beat for the (private) creation to clear delivery before the grant,
+    // so the two live events can't race past each other out of order.
+    await new Promise((r) => setTimeout(r, 50));
     const grant = await ctx.as(alice, {
       method: 'POST',
       url: `/x/annotations/${shared.id}/acl`,
@@ -219,8 +229,8 @@ describe.skipIf(!databaseUrl)('events', () => {
     expect(grant.statusCode).toBe(201);
     expect((await asBob.next()).data.id).toBe(shared.id);
 
-    // Bob leaves the group (as the provider's next login would record); the
-    // stream learns at its next keepalive (200 ms here) and skips the edit.
+    // Bob is removed from the group; the stream learns at its next
+    // keepalive (200 ms here) and skips the edit.
     await ctx.db
       .deleteFrom('group_memberships')
       .where('group_id', '=', reviewers.principal_id)

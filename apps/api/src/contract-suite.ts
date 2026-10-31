@@ -21,7 +21,7 @@ import {
   alice,
   annotationOn,
   bob,
-  ISSUER,
+  createGroup,
   root,
   type TestContext,
   type TestUser,
@@ -115,6 +115,14 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
       const bobMe = await ctx.as(bob, { method: 'GET', url: '/x/me' });
       state['bobId'] = bobMe.json<{ id: string }>().id;
       await ctx.as(root, { method: 'GET', url: '/x/me' });
+      // Bootstrapped directly, as an operator would for the first administrator (ADR 0026).
+      await ctx.db
+        .updateTable('users')
+        .set({ is_admin: true })
+        .where('subject', '=', root.sub)
+        .execute();
+      // So that searchPrincipals has a group to find alongside users.
+      await createGroup(ctx, 'Search group', [alice]);
     });
     afterAll(() => ctx.close());
 
@@ -766,14 +774,26 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
         }),
       },
       {
-        name: '409 when the identity provider decides who administers',
+        name: 'grants administration',
         as: root,
-        status: 409,
+        status: 200,
         request: () => ({
           method: 'PATCH',
           url: `/x/users/${state['bobId']}`,
           payload: { isAdmin: true },
         }),
+        then: (res) => expect(res.json<{ isAdmin: boolean }>().isAdmin).toBe(true),
+      },
+      {
+        name: 'withdraws administration',
+        as: root,
+        status: 200,
+        request: () => ({
+          method: 'PATCH',
+          url: `/x/users/${state['bobId']}`,
+          payload: { isAdmin: false },
+        }),
+        then: (res) => expect(res.json<{ isAdmin: boolean }>().isAdmin).toBe(false),
       },
     ]);
     run('searchPrincipals', [
@@ -832,17 +852,6 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
         request: () => ({ method: 'GET', url: '/x/groups?q=contract' }),
         then: (res) => expect(res.json<{ total: number }>().total).toBe(0),
       },
-      {
-        name: 'administrators see provider-managed groups with their issuer',
-        as: root,
-        status: 200,
-        request: () => ({ method: 'GET', url: '/x/groups?q=curators' }),
-        then: (res) => {
-          const [group] = res.json<{ items: { id: string; issuer?: string }[] }>().items;
-          expect(group?.issuer).toBe(ISSUER);
-          state['curatorsId'] = group?.id as string;
-        },
-      },
     ]);
     run('getGroup', [
       {
@@ -888,15 +897,6 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
           payload: { role: 'member' },
         }),
       },
-      {
-        name: '403 for provider-managed groups',
-        as: root,
-        status: 403,
-        request: () => ({
-          method: 'PUT',
-          url: `/x/groups/${state['curatorsId']}/members/${state['bobId']}`,
-        }),
-      },
     ]);
     run('listMembers', [
       {
@@ -934,16 +934,6 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
           payload: { name: 'Nope' },
         }),
       },
-      {
-        name: '403 for provider-managed groups',
-        as: root,
-        status: 403,
-        request: () => ({
-          method: 'PATCH',
-          url: `/x/groups/${state['curatorsId']}`,
-          payload: { name: 'Nope' },
-        }),
-      },
     ]);
     run('removeMember', [
       {
@@ -973,15 +963,6 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
           url: `/x/groups/${state['groupId']}/members/${state['bobId']}`,
         }),
       },
-      {
-        name: '403 for provider-managed groups, even when leaving',
-        as: alice,
-        status: 403,
-        request: () => ({
-          method: 'DELETE',
-          url: `/x/groups/${state['curatorsId']}/members/${state['aliceId']}`,
-        }),
-      },
     ]);
     run('deleteGroup', [
       {
@@ -989,12 +970,6 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
         as: bob,
         status: 404,
         request: () => ({ method: 'DELETE', url: `/x/groups/${state['groupId']}` }),
-      },
-      {
-        name: '403 for provider-managed groups',
-        as: root,
-        status: 403,
-        request: () => ({ method: 'DELETE', url: `/x/groups/${state['curatorsId']}` }),
       },
       {
         name: 'deletes',
