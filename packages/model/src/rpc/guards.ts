@@ -35,16 +35,8 @@ export function parseWindowMessage(data: unknown): WindowMessage | undefined {
   if (!hasEnvelope(data)) return undefined;
   switch (data['type']) {
     case 'sidebar.ready':
-    case 'host.ready':
-      return data as unknown as WindowMessage;
+      return typeof data['instance'] === 'string' ? (data as unknown as WindowMessage) : undefined;
     case 'guest.connect':
-      return typeof data['guestId'] === 'string' &&
-        (data['frameOrigin'] === undefined || typeof data['frameOrigin'] === 'string')
-        ? (data as unknown as WindowMessage)
-        : undefined;
-    case 'guest.disconnect':
-    case 'guest.discover':
-    case 'host.port':
       return typeof data['guestId'] === 'string' ? (data as unknown as WindowMessage) : undefined;
     default:
       return undefined;

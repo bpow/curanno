@@ -28,7 +28,6 @@ import { HtmlIntegration, isGuestOwned } from './integrations/html.js';
 import type { AnchoredTargetSelectors, DocumentIntegration } from './integrations/types.js';
 import { observeSelection } from './observers/selection.js';
 import { GuestConnection, type Connection, type GuestConnectionOptions } from './rpc/connection.js';
-import { Host } from './rpc/host.js';
 import { SubGuestConnection } from './rpc/sub-connection.js';
 import { SidebarFrame } from './sidebar-frame.js';
 
@@ -38,9 +37,9 @@ export interface GuestOptions {
   /** Path of the sidebar page on that origin. Default `/`. */
   sidebarPath?: string;
   /**
-   * `host` (the default) creates the sidebar frame and serves the page's
-   * other frames; `sub` is a guest in another frame of the page, which
-   * connects through the host in the top frame and shows no sidebar.
+   * `host` (the default) creates the sidebar frame; `sub` is a guest in
+   * another frame of the page, which connects to the top frame's sidebar
+   * when it announces itself and shows no sidebar.
    */
   role?: GuestRole;
   /**
@@ -83,8 +82,6 @@ export class Guest {
   private readonly options: GuestOptions;
   private frame: SidebarFrame | undefined;
   private connection: Connection | undefined;
-  private host: Host | undefined;
-  private sidebarReady = false;
   private renderer: HighlightRenderer | undefined;
   private readonly index = new HighlightIndex();
   private readonly requests = new Map<string, AnchorRequest>();
@@ -124,14 +121,16 @@ export class Guest {
     const doc = this.doc;
     const view = doc.defaultView as Window;
     this.renderer = createHighlightRenderer(doc, this.root);
-    const capabilities = { highlights: this.renderer.technique, role: this.role };
+    const capabilities = { highlights: this.renderer.technique };
     if (this.role === 'sub') {
       this.connection = new SubGuestConnection({
         window: view,
+        sidebarOrigin: this.options.sidebarOrigin,
         guestId: this.id,
         capabilities,
         onMessage: (message) => this.handle(message),
         onConnected: () => this.onConnected(),
+        ...(this.options.createChannel ? { createChannel: this.options.createChannel } : {}),
       });
     } else {
       this.frame = new SidebarFrame(doc, {
@@ -140,26 +139,14 @@ export class Guest {
         open: this.options.open ?? true,
       });
       this.frame.onVisibility((open) => this.send({ type: 'sidebar.visibility', open }));
-      const sidebarWindow = (): Window | null => this.frame?.contentWindow ?? null;
       this.connection = new GuestConnection({
         window: view,
-        sidebarWindow,
+        sidebarWindow: () => this.frame?.contentWindow ?? null,
         sidebarOrigin: this.options.sidebarOrigin,
         guestId: this.id,
         capabilities,
         onMessage: (message) => this.handle(message),
         onConnected: () => this.onConnected(),
-        onSidebarReady: () => {
-          this.sidebarReady = true;
-          this.host?.announce();
-        },
-        ...(this.options.createChannel ? { createChannel: this.options.createChannel } : {}),
-      });
-      this.host = new Host({
-        window: view,
-        sidebarWindow,
-        sidebarOrigin: this.options.sidebarOrigin,
-        sidebarReady: () => this.sidebarReady,
         ...(this.options.createChannel ? { createChannel: this.options.createChannel } : {}),
       });
       if (this.options.bundleUrl) {
@@ -206,13 +193,10 @@ export class Guest {
     for (const cleanup of this.cleanups.splice(0)) cleanup();
     if (this.hoverFrame !== 0) this.doc.defaultView?.cancelAnimationFrame(this.hoverFrame);
     this.connection?.close();
-    this.host?.close();
     this.renderer?.dispose();
     this.frame?.remove();
     this.integration.destroy();
     this.connection = undefined;
-    this.host = undefined;
-    this.sidebarReady = false;
     this.renderer = undefined;
     this.frame = undefined;
     this.requests.clear();

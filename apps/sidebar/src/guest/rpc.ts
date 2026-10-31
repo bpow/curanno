@@ -2,12 +2,13 @@
  * The sidebar's end of the guest/sidebar RPC protocol
  * (docs/guest-sidebar-rpc.md, ADR 0007): discovery over window messages,
  * then one `MessagePort` per guest, transferred with `guest.connect`. The
- * sidebar cannot know the page's origin in advance, so it accepts
- * `guest.connect` and `guest.disconnect` only from `window.parent` (the
- * host) and takes a guest's origin from that message: the event's origin
- * for the host's own guest, `frameOrigin` for a guest in another frame,
- * which the host relays. Nothing here carries a token, a body, a tag or a
- * creator in either direction: the protocol has no field for them.
+ * sidebar announces itself with `sidebar.ready` to its parent and to every
+ * frame of the top page, and each guest sends its own `guest.connect`.
+ * Whose guest it is comes from the browser, never from the message (ADR
+ * 0024): the origin is the event's, and the role is the sender's, the host
+ * for `window.parent` and a sub-frame guest for another frame of the same
+ * top page. Nothing here carries a token, a body, a tag or a creator in
+ * either direction: the protocol has no field for them.
  *
  * Several guests at a time, one per frame, each with its document. A
  * connect for a known guest id (a reloaded frame) replaces that guest's
@@ -23,9 +24,12 @@
 import {
   RPC_PROTOCOL_VERSION,
   envelope,
+  framesBelow,
+  isFrameOf,
   parseGuestMessage,
   parseWindowMessage,
   type AnchoringState,
+  type FrameWindow,
   type GuestMessage,
   type GuestRole,
   type Payload,
@@ -56,6 +60,8 @@ export interface PortLike {
 /** The subset of the sidebar's own window the transport uses. */
 export interface WindowLike {
   parent: { postMessage(message: unknown, targetOrigin: string): void };
+  /** The page's top window, through which the sidebar reaches the page's frames. */
+  top: FrameWindow | null;
   addEventListener(type: 'message', listener: (event: MessageEventLike) => void): void;
   removeEventListener(type: 'message', listener: (event: MessageEventLike) => void): void;
 }
@@ -65,6 +71,11 @@ export interface RpcGuestOptions {
   window?: WindowLike;
   /** Origins whose guests may report a document on another origin: the PDF viewer's. */
   trustedOrigins?: readonly string[];
+  /**
+   * How often `sidebar.ready` is repeated to the page's frames, for guests
+   * that start later, and frames that went away are forgotten. Default 1 s.
+   */
+  announceIntervalMs?: number;
 }
 
 export interface ConnectedGuest {
@@ -89,6 +100,8 @@ export interface RpcGuest extends Guest {
 
 interface GuestEntry {
   id: string;
+  /** The window the guest connected from. */
+  source: unknown;
   origin: string;
   role: GuestRole;
   port: PortLike;
@@ -223,19 +236,22 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
     }
   }
 
-  function onWindowMessage(event: MessageEventLike): void {
-    if (closed || event.source !== win.parent) return;
-    const message = parseWindowMessage(event.data);
-    if (!message) return;
-    if (message.type === 'guest.disconnect') {
-      const entry = entries.get(message.guestId);
-      if (entry && message.version === RPC_PROTOCOL_VERSION) {
-        drop(entry);
-        publish();
-      }
-      return;
+  /** Who sent a window message, as the browser reports it; nothing in the message counts. */
+  function roleOf(source: unknown): GuestRole | undefined {
+    if (source === win.parent) return 'host';
+    // Only the top page's sidebar serves other frames, and only frames of that page.
+    if (win.top && win.parent === win.top && source !== win && isFrameOf(source, win.top)) {
+      return 'sub';
     }
-    if (message.type !== 'guest.connect') return;
+    return undefined;
+  }
+
+  function onWindowMessage(event: MessageEventLike): void {
+    if (closed) return;
+    const role = roleOf(event.source);
+    if (!role) return;
+    const message = parseWindowMessage(event.data);
+    if (message?.type !== 'guest.connect') return;
     const next = event.ports[0];
     if (!next) return;
     if (message.version !== RPC_PROTOCOL_VERSION) {
@@ -243,13 +259,16 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
       next.close();
       return;
     }
-    const existing = entries.get(message.guestId);
-    if (existing) drop(existing);
-    const origin = message.frameOrigin ?? event.origin;
+    // One guest per frame: a connect from a window that has one (reloaded or navigated) replaces it.
+    for (const entry of [...entries.values()]) {
+      if (entry.id === message.guestId || entry.source === event.source) drop(entry);
+    }
+    const origin = event.origin;
     const entry: GuestEntry = {
       id: message.guestId,
+      source: event.source,
       origin,
-      role: message.frameOrigin === undefined ? 'host' : 'sub',
+      role,
       port: next,
       listener: (e) => onPortMessage(entry, e.data),
       connected: false,
@@ -276,7 +295,6 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
     if (message.type === 'guest.hello') {
       post(entry.port, { type: 'sidebar.hello' });
       entry.connected = true;
-      if (message.capabilities.role) entry.role = message.capabilities.role;
       publish();
       return;
     }
@@ -333,8 +351,35 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
     }
   }
 
+  const ready = envelope<SidebarReadyMessage>({ type: 'sidebar.ready', instance: randomId() });
+
+  /** Tell the page's other frames, so that their guests connect; the top page's sidebar only. */
+  function announce(): void {
+    if (!win.top || win.parent !== win.top) return;
+    for (const frame of framesBelow(win.top)) {
+      if (frame === (win as unknown)) continue;
+      try {
+        frame.postMessage(ready, '*');
+      } catch {
+        // A frame mid-navigation; the next round reaches it.
+      }
+    }
+  }
+
+  /** Forget guests whose frame went away. */
+  function sweep(): void {
+    const gone = [...entries.values()].filter((entry) => isClosed(entry.source));
+    for (const entry of gone) drop(entry);
+    if (gone.length) publish();
+  }
+
   win.addEventListener('message', onWindowMessage);
-  win.parent.postMessage(envelope<SidebarReadyMessage>({ type: 'sidebar.ready' }), '*');
+  win.parent.postMessage(ready, '*');
+  announce();
+  const timer = setInterval(() => {
+    sweep();
+    announce();
+  }, options.announceIntervalMs ?? 1000);
 
   return {
     document: shallowReadonly(document),
@@ -398,9 +443,23 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
     },
     close() {
       closed = true;
+      clearInterval(timer);
       win.removeEventListener('message', onWindowMessage);
       for (const entry of [...entries.values()]) drop(entry);
       publish();
     },
   };
+}
+
+function isClosed(source: unknown): boolean {
+  try {
+    return (source as { closed?: boolean }).closed === true;
+  } catch {
+    return true;
+  }
+}
+
+function randomId(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }

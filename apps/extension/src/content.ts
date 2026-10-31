@@ -3,8 +3,9 @@
  * world (ADR 0023). The service worker injects it into every frame of a tab
  * where the guest is on; a frame that already has one ignores the second
  * injection. The top frame's guest is the host and shows the sidebar;
- * other frames connect through it. The sidebar's and the viewer's frames,
- * and every frame inside them, are left alone.
+ * other frames connect to that sidebar themselves (ADR 0024). The
+ * sidebar's and the viewer's frames, and every frame inside them, are
+ * left alone.
  */
 import { Guest } from '@curanno/guest';
 import type { AnchorCountMessage } from './messages.js';

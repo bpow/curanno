@@ -30,7 +30,6 @@ export {
   type GuestConnectionOptions,
   type PortLike,
 } from './rpc/connection.js';
-export { Host, type FrameWindowLike, type HostOptions } from './rpc/host.js';
 export { SubGuestConnection, type SubGuestConnectionOptions } from './rpc/sub-connection.js';
 export { FakeSidebar, FAKE_SECRETS, type FakeSidebarOptions } from './rpc/fake-sidebar.js';
 export { SidebarFrame } from './sidebar-frame.js';

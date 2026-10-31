@@ -5,7 +5,7 @@
  * sidebar takes. It also keeps pretend secrets in its own DOM and storage,
  * which the isolation test checks never reach the host page.
  */
-import type { AnchorRequest, GuestMessage } from '@curanno/model';
+import { framesBelow, isFrameOf, type AnchorRequest, type GuestMessage } from '@curanno/model';
 import { FAKE_SECRETS, FakeSidebar } from './fake-sidebar.js';
 
 declare global {
@@ -86,12 +86,28 @@ document.body.append(
   secret,
 );
 
+// As the real sidebar: the parent's guest and those of the top page's other frames (ADR 0024).
+const top = window.top;
+const servesFrames = top !== null && window.parent === top;
 window.addEventListener('message', (event) => {
-  if (event.source !== window.parent) return;
+  const fromPage = servesFrames && event.source !== window && isFrameOf(event.source, top);
+  if (event.source !== window.parent && !fromPage) return;
   const port = event.ports[0];
   if (!FakeSidebar.isConnect(event.data) || !port) return;
   guestOrigin = event.origin;
   sidebar.attach(port);
   status.textContent = `Connected to a guest at ${guestOrigin}`;
 });
-window.parent.postMessage(FakeSidebar.readyMessage(), '*');
+window.parent.postMessage(sidebar.readyMessage(), '*');
+const announce = (): void => {
+  if (!servesFrames) return;
+  for (const frame of framesBelow(top)) {
+    try {
+      frame.postMessage(sidebar.readyMessage(), '*');
+    } catch {
+      // Mid-navigation; the next round reaches it.
+    }
+  }
+};
+announce();
+setInterval(announce, 1000);

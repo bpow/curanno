@@ -35,3 +35,4 @@ An architecture decision record (ADR) captures one decision that shapes the syst
 | [0021](0021-pdf-viewer-and-client-serving.md) | The PDF viewer is a static app on its own origin, and the API image serves every client | Accepted |
 | [0022](0022-axe-core-development-dependency.md) | Copyleft licenses are allowed for build- and test-time tooling that ships nothing | Accepted |
 | [0023](0023-browser-extension.md) | A Manifest V3 extension runs the guest as a content script in every frame | Accepted |
+| [0024](0024-guest-origin-from-the-browser.md) | A guest's origin comes from the browser, and every guest connects to the sidebar itself | Accepted |

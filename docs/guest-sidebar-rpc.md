@@ -1,13 +1,13 @@
 # Guest/sidebar RPC protocol
 
-**Protocol `curanno/guest-sidebar`, version 1.** How the in-page guest and the sidebar iframe talk ([ADR 0007](adr/0007-guest-sidebar-split.md)). The message types are in `packages/model/src/rpc/`, which both sides compile against; the guest side is implemented in `packages/guest/src/rpc/`, with an in-memory fake sidebar for tests and development, and the sidebar side in `apps/sidebar/src/guest/rpc.ts`. Hypothesis's `frame-sync` was the reference design; nothing was copied from it.
+**Protocol `curanno/guest-sidebar`, version 2.** How the in-page guest and the sidebar iframe talk ([ADR 0007](adr/0007-guest-sidebar-split.md)). The message types are in `packages/model/src/rpc/`, which both sides compile against; the guest side is implemented in `packages/guest/src/rpc/`, with an in-memory fake sidebar for tests and development, and the sidebar side in `apps/sidebar/src/guest/rpc.ts`. Hypothesis's `frame-sync` was the reference design; nothing was copied from it.
 
 ## 1. Principles
 
 - **The page is untrusted.** Any script on the annotated page can read and alter what the guest does. The protocol therefore never carries anything that would hurt if the page read it: no bodies, tags, creators or tokens, in either direction. The guest sees annotation IRIs and selectors; selectors include the quoted text, which the page can see anyway.
 - **One port per guest.** After discovery over `window.postMessage`, each guest talks to the sidebar over its own `MessageChannel` port. A page script that was present before the guest loaded can still hook `MessagePort.prototype.postMessage`; the first principle is what protects against that, not the port.
-- **One host, any number of guests.** The guest in the frame that holds the sidebar is the **host**; guests in the page's other frames (same-origin frames the host injected the bundle into, cross-origin frames whose pages load it themselves, our PDF viewer when embedded) get their ports from the host, which never reads their traffic. The sidebar keeps one connection per guest, each with its own document.
-- **Strict origin checks on the guest.** The guest knows the sidebar's origin (from the bookmarklet configuration) and accepts window messages only from that origin and only from its own iframe's window. The sidebar cannot know the page's origin in advance; it accepts `guest.connect` only from `window.parent` (the host) and learns each guest's origin from that message: the event's origin for the host itself, `frameOrigin` for a guest the host relays, which the host took from the frame's own `guest.discover` event.
+- **One host, any number of guests.** The guest in the frame that holds the sidebar is the **host**; guests in the page's other frames (same-origin frames the host injected the bundle into, cross-origin frames whose pages load it themselves or the extension injected it into) connect to the sidebar themselves when it announces itself to them. The sidebar keeps one connection per guest, each with its own document.
+- **Strict origin checks on both sides.** The guest knows the sidebar's origin (from its configuration) and accepts `sidebar.ready` only from that origin: the host only from its own iframe's window, a guest in another frame only from a window of its own page. It sends `guest.connect` addressed to the sidebar origin, so the browser delivers its port to the sidebar and to nothing else. The sidebar cannot know the page's origin in advance, and does not take it from any message: a guest's origin is the `guest.connect` event's origin, and its role is the sender's, the host for `window.parent` and a sub-frame guest for another frame of the same top page ([ADR 0024](adr/0024-guest-origin-from-the-browser.md)). Nothing the page relays can vouch for another frame.
 - **A guest speaks for its own frame only.** The sidebar refuses a `document.report` whose URI is not on the guest's origin, except from the configured PDF viewer origin, whose page reports the PDF it shows (ADR 0021). Without this a page could name any document and be sent the selectors, quoted text included, of the user's annotations on it.
 - **Events, not requests.** Every message is a notification; nothing waits for a reply. Ordering within one port is guaranteed by `MessageChannel`, and each side's state is replaceable (`annotations.anchor` replaces results for the same IRIs; `document.report` and `selection.changed` carry whole values), so a lost or duplicated message is harmless.
 - **Versioned.** Every message carries `protocol` and `version`. A peer that receives an unknown version answers `guest.error` or `sidebar.error` and ignores the rest. Additive optional fields do not bump the version.
@@ -31,7 +31,7 @@ Every message is a JSON object with:
   ─────────────────                                  ───────────────────────────
   create <iframe src="https://sidebar/…">
                                                       install message handler
-                            ◄── window message ───    sidebar.ready
+                            ◄── window message ───    sidebar.ready {instance}
                                                       (to window.parent, targetOrigin "*")
   check event.origin === sidebarOrigin
     and event.source === iframe.contentWindow
@@ -48,25 +48,28 @@ Every message is a JSON object with:
   anchoring.results {results} ──────────────────►     show anchored / orphaned / ambiguous
 ```
 
-The sidebar may send `sidebar.ready` again (after a reload, say); the host then discards the old port, connects a new one and repeats `guest.hello` and `document.report`, and tells the page's other frames with `host.ready` so their guests reconnect too. A guest sends nothing over a port before `sidebar.hello` arrives on it, except `guest.hello`. A `guest.connect` with a known `guestId` (a reloaded frame, or a page script posing as it) replaces that guest's port: the sidebar forgets its results and, once the new guest reports its document, sends `annotations.anchor` again for every annotation of that document it has asked to anchor and not withdrawn, so the new guest draws what the old one did.
+The sidebar sends `sidebar.ready` again when it reloads, with a new `instance`; the host then discards the old port, connects a new one and repeats `guest.hello` and `document.report`, and the page's other frames reconnect the same way (below). A guest sends nothing over a port before `sidebar.hello` arrives on it, except `guest.hello`. A `guest.connect` with a known `guestId` (a reloaded frame, or a page script posing as it) replaces that guest's port: the sidebar forgets its results and, once the new guest reports its document, sends `annotations.anchor` again for every annotation of that document it has asked to anchor and not withdrawn, so the new guest draws what the old one did.
 
 ### Guests in other frames
 
 ```
-  Child frame / guest                 Top frame / host                     Sidebar iframe
-  ───────────────────                 ────────────────                     ──────────────
-  guest.discover {guestId} ──────►    check event.source.top === window
-  (to window.top, targetOrigin "*";   create MessageChannel
-   again on host.ready, and at        guest.connect {guestId, frameOrigin: event.origin}
-   intervals until a port comes)        ─── window message, transfer port2 ───────────►
-                      ◄── host.port {guestId} ── (to the frame, targetOrigin event.origin,
-                                                   transfer port1)
-  check event.source === window.top
+  Child frame / guest                                 Sidebar iframe (in the host's closed shadow root)
+  ───────────────────                                 ─────────────────────────────────────────────────
+                     ◄── window message ───           sidebar.ready {instance}
+                                                      (to every frame below window.top, target "*",
+                                                       again every second)
+  check event.origin === sidebarOrigin
+    and event.source.top === window.top
+  ignore if connected to this instance
+  create MessageChannel
+  guest.connect {guestId} ─── window message ──►      check event.source.top === window.top,
+  (to event.source, targetOrigin sidebarOrigin,         window.parent === window.top;
+   transfer port2)                                    the guest's origin is event.origin
   ═══════ the same port protocol as the host's, from guest.hello on ═══════
-                                      frame closed (polled): guest.disconnect {guestId} ─►
+                                                      frame closed (polled): forget the guest
 ```
 
-The host answers `guest.discover` only from windows whose `top` is itself (frames of its page, not popups) and only while its sidebar is ready; otherwise the frame asks again when `host.ready` arrives. The host injects the bundle into same-origin frames itself (and again when one navigates); a cross-origin frame's page has to load the guest. A guest in a frame shows no sidebar of its own and reports `role: "sub"` in `guest.hello`, so the sidebar sends `sidebar.open`, `sidebar.close` and `sidebar.toggle` to the host only.
+The guest cannot start the conversation: the sidebar's frame sits in the host's closed shadow root, and browsers leave such frames out of `window.frames`, so nothing in the page can find it. The sidebar can reach every other frame through `window.top`, whose `length` and indexed children are readable across origins, so it announces itself to them, now and every second for frames that load later; `instance` lets a connected guest ignore the repeats and reconnect when the sidebar reloads. Only the top page's sidebar announces itself to frames and accepts their connects, and only from frames whose `top` is its own (frames of the page, not popups or openers). A frame has one guest: a connect from a window that already has one replaces it, as after the frame navigates, and the sidebar forgets the guests of frames whose windows closed. The host injects the bundle into same-origin frames itself (and again when one navigates); a cross-origin frame's page has to load the guest, or the extension injects it (ADR 0023). A guest in a frame shows no sidebar of its own, so the sidebar sends `sidebar.open`, `sidebar.close` and `sidebar.toggle` to the host only.
 
 ## 4. Steady state
 
@@ -97,18 +100,14 @@ The host answers `guest.discover` only from windows whose `top` is itself (frame
 
 | Type               | Direction        | Fields                   | Notes                                                                                            |
 | ------------------ | ---------------- | ------------------------ | ------------------------------------------------------------------------------------------------ |
-| `sidebar.ready`    | sidebar → parent | —                        | Sent with target origin `*`; carries nothing a page could use.                                   |
-| `guest.connect`    | host → sidebar   | `guestId`, `frameOrigin?` | Sent with the sidebar origin as target; transfers one `MessagePort`. `frameOrigin` names the frame of a relayed guest. |
-| `guest.disconnect` | host → sidebar   | `guestId`                | The frame of a relayed guest closed; the sidebar forgets it.                                     |
-| `guest.discover`   | guest → top      | `guestId`                | A guest in a frame asks the host for a port; target origin `*`.                                  |
-| `host.port`        | host → frame     | `guestId`                | The answer, with the frame's origin as target; transfers the guest's end of the channel.         |
-| `host.ready`       | host → frames    | —                        | The host's sidebar takes connections; sent to every frame with target origin `*`.                |
+| `sidebar.ready`    | sidebar → parent, frames | `instance` | Sent with target origin `*` to the parent once and to every frame of the top page every second; `instance` is random per sidebar load. Carries nothing a page could use. |
+| `guest.connect`    | guest → sidebar  | `guestId`                | Sent by each guest to the window that sent `sidebar.ready`, with the sidebar origin as target; transfers one `MessagePort`. |
 
 ### Guest → sidebar (over the port)
 
 | Type                   | Fields                   | Notes                                                                                                        |
 | ---------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `guest.hello`          | `guestId`, `capabilities` | First message on a port. `capabilities.highlights` is `css-highlight` or `overlay`; `capabilities.role` is `host` (default) or `sub`. |
+| `guest.hello`          | `guestId`, `capabilities` | First message on a port. `capabilities.highlights` is `css-highlight` or `overlay`. (Version 1 also had `capabilities.role`; the sidebar now takes the role from the sender.) |
 | `document.report`      | `document`               | `{uri, title?, links}`; `links` are `{uri, relation}` exactly as found, from `deriveDocumentUris`.           |
 | `anchoring.results`    | `results`                | One `AnchoringResult` per annotation: `id`, overall `state`, and one `TargetAnchoringResult` per target.     |
 | `selection.changed`    | `selection` or `null`    | `{target, quote}`; `target` is a `SpecificResource` with the page URL as `source` and the three selectors.   |
@@ -153,8 +152,10 @@ The sidebar's `Guest` interface (`apps/sidebar/src/guest/types.ts`) is a view of
 ## 7. Threats considered
 
 - **The page reads the traffic.** It can, by hooking `postMessage` before the guest loads or by reading the guest's state. The traffic holds nothing beyond selectors and IRIs; the hostile-page tests in `packages/guest/test/browser/isolation.test.ts` (fake sidebar) and `apps/sidebar/e2e/guest/hostile.spec.ts` (the real sidebar with a seeded token, a body, a tag and a creator) check that none of those appear in anything the page can observe, and that no message carries a `body`, `creator`, `tags`, `token` or `authorization` field.
-- **The page impersonates the guest.** It can send its own `guest.connect` to the frame, since it is `window.parent`. It then receives what any guest receives: IRIs and selectors of annotations the sidebar's user may read on documents of the page's own origin, which the real guest would have shown as highlights there; a report of a document on another origin is refused (section 1). It cannot read bodies, act as the user or obtain a token, because the sidebar never sends those and takes no instruction from the guest beyond anchoring, scrolling and visibility.
-- **A frame impersonates another frame.** A hostile frame can send `guest.discover` and gets a port, but the host records the frame's real origin on the connect, so the sidebar holds it to documents on that origin. A hostile top page can relay anything it likes to the sidebar, which is the previous case. A hostile top page can also hand a guest in a frame of ours (the embedded PDF viewer) a port to a fake sidebar: that guest then reveals the PDF's identity and what the user selects in it, which the page could not otherwise read across the origin boundary, and nothing else.
+- **The page impersonates the guest.** It can send its own `guest.connect` to the sidebar, whose window it learns as the source of `sidebar.ready`. It is then a guest on the page's own origin and receives what any guest there receives: IRIs and selectors of annotations the sidebar's user may read on documents of that origin, which the real guest would have shown as highlights there; a report of a document on another origin is refused (section 1). It cannot read bodies, act as the user or obtain a token, because the sidebar never sends those and takes no instruction from the guest beyond anchoring, scrolling and visibility.
+- **The page speaks for another frame.** Version 1 let the host relay other frames' connects with their origin in `frameOrigin`, and the sidebar believed it; a page could claim any origin, the PDF viewer's included, and be sent the selectors of the user's annotations on any document (security review, finding 21). Since version 2 the sidebar takes origins only from the browser, so whatever the page posts, it posts as itself (ADR 0024).
+- **A frame impersonates another frame.** A frame's guest connects from its own window, so the sidebar sees that frame's real origin and holds it to documents on that origin. A hostile frame cannot pose as the sidebar to another frame's guest either: guests answer `sidebar.ready` only from the sidebar origin, and send their port addressed to that origin.
+- **Third-party frames hear the announcement.** `sidebar.ready` goes to every frame of the page, so a frame from another site learns that a sidebar is open and its instance id, and nothing more. It can connect as a guest on its own origin, as above.
 - **The page impersonates the sidebar.** The guest accepts `sidebar.ready` only from its own iframe's window at the configured origin, and port messages only on the port it created, so a page script cannot make the guest highlight or scroll on its behalf through this channel (it can through the DOM, which is outside the guest's control).
 - **The page hides or covers the frame.** Out of scope for the protocol; `frame-ancestors` and visibility checks are the sidebar's defences.
 - **Page-supplied configuration.** The guest reads only the sidebar origin and path from its injection; nothing in the protocol lets the page grant a login ([ADR 0007](adr/0007-guest-sidebar-split.md)).

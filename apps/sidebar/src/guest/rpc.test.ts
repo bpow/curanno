@@ -20,22 +20,54 @@ const FRAMED = {
   links: [{ uri: 'https://frames.test/embedded', relation: 'self' as const }],
 };
 
+/** A frame of the page: records what is posted to it; `closed` as a removed frame's window. */
+interface FakeFrame {
+  top: unknown;
+  closed: boolean;
+  length: number;
+  inbox: { data: unknown; targetOrigin: string }[];
+  postMessage(data: unknown, targetOrigin: string): void;
+}
+
+function fakeFrame(top: unknown): FakeFrame {
+  const inbox: FakeFrame['inbox'] = [];
+  return {
+    top,
+    closed: false,
+    length: 0,
+    inbox,
+    postMessage: (data, targetOrigin) => void inbox.push({ data, targetOrigin }),
+  };
+}
+
 /**
- * A stand-in for the sidebar's window: `parent` records what the sidebar
- * posts up, `deliver` hands a window message to the sidebar as if from
- * `source` at `origin`. Port traffic uses a real `MessageChannel`.
+ * A stand-in for the sidebar's window: `parent` (the top page) records what
+ * the sidebar posts up, `addFrame` gives the page a child frame, `deliver`
+ * hands a window message to the sidebar as if from `source` at `origin`.
+ * Port traffic uses a real `MessageChannel`.
  */
-function sidebarWindow() {
+function sidebarWindow(options: { nested?: boolean } = {}) {
   type Listener = (event: MessageEventLike) => void;
   const listeners = new Set<Listener>();
   const up: { data: unknown; targetOrigin: string }[] = [];
-  const parent = {
+  const parent: Record<number, FakeFrame> & {
+    length: number;
+    top: unknown;
+    postMessage(data: unknown, targetOrigin: string): void;
+  } = {
+    length: 0,
+    top: undefined,
     postMessage(data: unknown, targetOrigin: string) {
       up.push({ data, targetOrigin });
     },
   };
+  parent.top = parent;
+  // `nested`: the sidebar's parent is itself a frame of some other top page.
+  const top = options.nested ? { length: 0, top: undefined, postMessage() {} } : parent;
+  if (options.nested) parent.top = top;
   const win: WindowLike = {
     parent,
+    top: top as unknown as WindowLike['top'],
     addEventListener: (_, l) => void listeners.add(l),
     removeEventListener: (_, l) => void listeners.delete(l),
   };
@@ -43,6 +75,12 @@ function sidebarWindow() {
     win,
     parent,
     up,
+    addFrame(): FakeFrame {
+      const frame = fakeFrame(top);
+      parent[parent.length] = frame;
+      parent.length += 1;
+      return frame;
+    },
     deliver(data: unknown, options: { origin?: string; source?: unknown; ports?: PortLike[] }) {
       const event: MessageEventLike = {
         data,
@@ -88,9 +126,9 @@ afterEach(() => {
   for (const c of cleanups.splice(0)) c();
 });
 
-async function connected() {
+async function connected(options: { announceIntervalMs?: number } = {}) {
   const w = sidebarWindow();
-  const guest = createRpcGuest({ window: w.win });
+  const guest = createRpcGuest({ window: w.win, ...options });
   const port = guestPort();
   cleanups.push(
     () => guest.close(),
@@ -105,7 +143,11 @@ async function connected() {
 describe('the RPC guest', () => {
   it('announces itself to the parent and answers guest.hello', async () => {
     const t = await connected();
-    expect(t.up).toEqual([{ data: envelope({ type: 'sidebar.ready' }), targetOrigin: '*' }]);
+    expect(t.up).toHaveLength(1);
+    expect(t.up[0]?.targetOrigin).toBe('*');
+    const ready = t.up[0]?.data as { instance: unknown };
+    expect(ready).toEqual(envelope({ type: 'sidebar.ready', instance: ready.instance as string }));
+    expect(typeof ready.instance).toBe('string');
     expect(t.port.received.map((m) => m.type)).toEqual(['sidebar.hello']);
     expect(t.guest.connected.value).toBe(true);
     expect(t.guest.guestOrigin.value).toBe(GUEST_ORIGIN);
@@ -245,10 +287,10 @@ describe('the RPC guest', () => {
     const port = guestPort();
     cleanups.push(() => port.close());
     w.deliver(envelope({ type: 'guest.connect', guestId: 'g1' }), { ports: [port.transfer] });
-    port.send({ type: 'guest.hello', guestId: 'g1', capabilities: { highlights: 'overlay' } }, 2);
+    port.send({ type: 'guest.hello', guestId: 'g1', capabilities: { highlights: 'overlay' } }, 3);
     port.send(
       { type: 'document.report', document: { uri: 'https://host-page.test/x', links: [] } },
-      2,
+      3,
     );
     await flush();
     expect(port.received.map((m) => m.type)).toEqual(['sidebar.error', 'sidebar.error']);
@@ -352,19 +394,21 @@ describe('the RPC guest', () => {
   });
 
   it('serves a guest in another frame alongside the host, each with its document', async () => {
-    const t = await connected();
+    const t = await connected({ announceIntervalMs: 10 });
     t.port.send({ type: 'document.report', document: ARTICLE });
+    const frame = t.addFrame();
     const framed = guestPort();
     cleanups.push(() => framed.close());
-    // The host relays the frame's connect with the frame's origin.
-    t.deliver(
-      envelope({ type: 'guest.connect', guestId: 'g2', frameOrigin: 'https://frames.test' }),
-      { ports: [framed.transfer] },
-    );
+    // The frame's guest connects itself; its origin is the browser's.
+    t.deliver(envelope({ type: 'guest.connect', guestId: 'g2' }), {
+      origin: 'https://frames.test',
+      source: frame,
+      ports: [framed.transfer],
+    });
     framed.send({
       type: 'guest.hello',
       guestId: 'g2',
-      capabilities: { highlights: 'css-highlight', role: 'sub' },
+      capabilities: { highlights: 'css-highlight' },
     });
     framed.send({ type: 'document.report', document: FRAMED });
     await flush();
@@ -422,12 +466,135 @@ describe('the RPC guest', () => {
     expect(framed.received.slice(-2).map((m) => m.type)).toEqual(['scroll.to', 'selection.clear']);
     expect(t.port.received.some((m) => m.type === 'scroll.to')).toBe(false);
 
-    // The frame goes away: the host says so, and its document and results go with it.
-    t.deliver(envelope({ type: 'guest.disconnect', guestId: 'g2' }), {});
-    await flush();
+    // The frame goes away: its document and results go with it.
+    frame.closed = true;
+    await new Promise((r) => setTimeout(r, 30));
     expect(t.guest.documents.value).toEqual([ARTICLE]);
     expect([...t.guest.anchoring.value]).toEqual([['urn:page', 'anchored']]);
     expect(t.guest.guests.value.map((g) => g.id)).toEqual(['g1']);
+  });
+
+  it('announces itself to every frame of the page, at intervals, as one instance', async () => {
+    const w = sidebarWindow();
+    const frame = w.addFrame();
+    const nested = fakeFrame(frame.top);
+    (frame as unknown as Record<number, FakeFrame>)[0] = nested;
+    frame.length = 1;
+    const guest = createRpcGuest({ window: w.win, announceIntervalMs: 10 });
+    cleanups.push(() => guest.close());
+    await new Promise((r) => setTimeout(r, 35));
+    const ready = w.up[0]?.data as { type: string; instance: unknown };
+    expect(ready.type).toBe('sidebar.ready');
+    expect(typeof ready.instance).toBe('string');
+    for (const f of [frame, nested]) {
+      expect(f.inbox.length).toBeGreaterThan(1);
+      expect(f.inbox.every((m) => m.targetOrigin === '*')).toBe(true);
+      expect(f.inbox.map((m) => m.data)).toEqual(f.inbox.map(() => ready));
+    }
+    // The parent hears it once; the page's own guest reconnects on every one it hears.
+    expect(w.up).toHaveLength(1);
+  });
+
+  it("takes a guest's origin and role from the browser, not from what the page relays", async () => {
+    const w = sidebarWindow();
+    const guest = createRpcGuest({ window: w.win, trustedOrigins: ['https://pdf.test'] });
+    cleanups.push(() => guest.close());
+    // The page claims to relay frames of another origin, and of the viewer's.
+    for (const [id, claimed] of [
+      ['forged-victim', 'https://victim.test'],
+      ['forged-viewer', 'https://pdf.test'],
+    ] as const) {
+      const port = guestPort();
+      cleanups.push(() => port.close());
+      w.deliver(envelope({ type: 'guest.connect', guestId: id, frameOrigin: claimed }), {
+        ports: [port.transfer],
+      });
+      port.send({
+        type: 'guest.hello',
+        guestId: id,
+        capabilities: { highlights: 'css-highlight', role: 'sub' } as never,
+      });
+      port.send({
+        type: 'document.report',
+        document: { uri: `${claimed}/private`, links: [] },
+      });
+      guest.anchor([{ id: 'urn:secret', target: `${claimed}/private` }], `${claimed}/private`);
+      await flush();
+      expect(guest.guests.value.map((g) => [g.id, g.role, g.origin])).toEqual([
+        [id, 'host', GUEST_ORIGIN],
+      ]);
+      expect(guest.documents.value).toEqual([]);
+      expect(port.received.map((m) => m.type)).toEqual(['sidebar.hello', 'sidebar.error']);
+    }
+
+    // A frame's guest cannot make itself the host.
+    const frame = w.addFrame();
+    const framed = guestPort();
+    cleanups.push(() => framed.close());
+    w.deliver(envelope({ type: 'guest.connect', guestId: 'g2' }), {
+      origin: 'https://frames.test',
+      source: frame,
+      ports: [framed.transfer],
+    });
+    framed.send({
+      type: 'guest.hello',
+      guestId: 'g2',
+      capabilities: { highlights: 'css-highlight', role: 'host' } as never,
+    });
+    await flush();
+    expect(guest.guests.value.find((g) => g.id === 'g2')?.role).toBe('sub');
+    expect(guest.guestOrigin.value).toBe(GUEST_ORIGIN);
+  });
+
+  it("refuses frames of another page, and serves no frames unless it is the top page's sidebar", async () => {
+    const w = sidebarWindow();
+    const guest = createRpcGuest({ window: w.win });
+    const port = guestPort();
+    cleanups.push(
+      () => guest.close(),
+      () => port.close(),
+    );
+    const elsewhere = fakeFrame({ length: 0 });
+    w.deliver(envelope({ type: 'guest.connect', guestId: 'popup' }), {
+      origin: 'https://popup.test',
+      source: elsewhere,
+      ports: [port.transfer],
+    });
+    await flush();
+    expect(guest.guests.value).toEqual([]);
+
+    const nested = sidebarWindow({ nested: true });
+    const frame = nested.addFrame();
+    const inner = createRpcGuest({ window: nested.win, announceIntervalMs: 10 });
+    const framed = guestPort();
+    cleanups.push(
+      () => inner.close(),
+      () => framed.close(),
+    );
+    nested.deliver(envelope({ type: 'guest.connect', guestId: 'g2' }), {
+      origin: 'https://frames.test',
+      source: frame,
+      ports: [framed.transfer],
+    });
+    await new Promise((r) => setTimeout(r, 25));
+    expect(inner.guests.value).toEqual([]);
+    expect(frame.inbox).toEqual([]);
+  });
+
+  it('replaces the guest of a frame that connects again, as after a navigation', async () => {
+    const t = await connected();
+    const frame = t.addFrame();
+    const ports = [guestPort(), guestPort()];
+    cleanups.push(...ports.map((p) => () => p.close()));
+    for (const [i, id] of ['before', 'after'].entries()) {
+      t.deliver(envelope({ type: 'guest.connect', guestId: id }), {
+        origin: 'https://frames.test',
+        source: frame,
+        ports: [ports[i]!.transfer],
+      });
+    }
+    await flush();
+    expect(t.guest.guests.value.map((g) => g.id)).toEqual(['g1', 'after']);
   });
 
   it('sends a guest the requests for its document when it reports it', async () => {

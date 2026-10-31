@@ -3,7 +3,7 @@
  * discovery over window messages with strict origin and source checks, then
  * a `MessageChannel` port per connection. Nothing here knows about anchoring
  * or highlights; `guest.ts` wires handlers to it. A guest in another frame
- * of the page connects through `SubGuestConnection` instead.
+ * of the page connects with `SubGuestConnection` instead.
  */
 import {
   RPC_PROTOCOL_VERSION,
@@ -49,8 +49,6 @@ export interface GuestConnectionOptions {
   onMessage: (message: SidebarMessage) => void;
   /** Called once per connection after `sidebar.hello`. */
   onConnected?: () => void;
-  /** Called with each `sidebar.ready` that passed the checks, before the connect. */
-  onSidebarReady?: () => void;
   /** Makes the channel; tests inject one. */
   createChannel?: () => { port1: PortLike; port2: unknown };
 }
@@ -104,13 +102,7 @@ export class GuestConnection implements Connection {
     const message = parseWindowMessage(event.data);
     if (!message || message.type !== 'sidebar.ready') return;
     if (message.version !== RPC_PROTOCOL_VERSION) return;
-    this.options.onSidebarReady?.();
     this.connect(sidebar);
-  }
-
-  /** The sidebar's window, for the host to hand other guests' ports to. */
-  get sidebarWindow(): Window | null {
-    return this.options.sidebarWindow();
   }
 
   private connect(sidebar: Window): void {
