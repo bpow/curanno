@@ -101,3 +101,4 @@ A PDF's identity is its PDF.js fingerprint, which is derived from the file's tra
 - Report the page URL and every identifier in section 4 that the page exposes, exactly as found; normalization happens in the model package on both sides and in the server.
 - Use the `id` returned by `POST /x/documents` only for display and search; targets name the page URL as `source`.
 - Never invent identifiers from page content.
+- Send a page only the annotations made on its own origin, public ones, and those whose origin the user allowed there. Any page can link itself to any document, so the annotations search finds for a page's URL may have been made on another site, and their selectors carry the quoted text ([ADR 0025](adr/0025-disclosure-by-origin.md)).

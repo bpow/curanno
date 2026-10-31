@@ -37,6 +37,10 @@ Pages change after they are annotated. The platform finds the text again when it
 
 A page made of several frames (an article with an embedded document, say) is handled as one: the sidebar lists each framed document's annotations under a heading, and a selection in a frame is annotated on that frame's document.
 
+### Annotations made on another site
+
+The same article is often published on several sites, and the sidebar finds annotations made on any of them. Annotations made on another site are listed with a **from publisher.example** mark. Public ones are highlighted in the page. The others are not, because highlighting them tells the page their quoted text and the page may not be what it claims. If you trust the page, press **Highlight on ⟨this site⟩** above the list: annotations from that other site are then highlighted on this site until you close the tab.
+
 ### Live updates
 
 Annotations other people create, change or delete on the page appear, change or disappear in your sidebar as they happen, with their highlights. The dot next to the page title shows whether the live connection is up.
