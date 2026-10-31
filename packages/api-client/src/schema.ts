@@ -262,7 +262,8 @@ export interface paths {
          *     `annotation.updated` and `annotation.deleted`; the `data` field is a JSON object
          *     `{ "id": "<uuid>", "annotation": <Annotation> }`, with `annotation` omitted for deletions.
          *     Each event carries an `id` field; send it back as `Last-Event-ID` to resume after a
-         *     disconnection. The server writes a `: keepalive` comment every 30 seconds.
+         *     disconnection: every event since then that the subscriber may read is replayed, in
+         *     order, before any new one. The server writes a `: keepalive` comment every 30 seconds.
          */
         get: operations["streamEvents"];
         put?: never;

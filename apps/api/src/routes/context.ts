@@ -16,6 +16,8 @@ export interface AppContext {
   metrics: Metrics;
   /** Interval between `: keepalive` comments on event streams. */
   keepaliveMs: number;
+  /** Events fetched per query when an event stream replays from `Last-Event-ID`. */
+  replayPageSize: number;
 }
 
 /** One handler per operationId; fastify-openapi-glue binds them by name (ADR 0011). */

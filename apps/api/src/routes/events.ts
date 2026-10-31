@@ -5,7 +5,10 @@
  * for hours, so the subscriber's memberships are reloaded at each keepalive
  * and the stream ends when their token expires (security review, finding
  * 3); an event the subscriber may not see still advances the stream's id,
- * so a reconnecting client never replays the same window twice.
+ * so a reconnecting client never replays the same window twice. A replay
+ * runs to the end in pages before any live event is written, so a live
+ * event cannot carry the stream past events not yet replayed (code review
+ * of 2026-10-30, finding 6).
  */
 import { hasPermission } from '../annotations/store.js';
 import { toAnnotation } from '../annotations/serialize.js';
@@ -19,11 +22,8 @@ interface EventsQuery {
   document?: string;
 }
 
-/** Events replayed for a `Last-Event-ID` in one go; clients reconnect for more. */
-const REPLAY_LIMIT = 1000;
-
 export function eventHandlers(ctx: AppContext): Handlers {
-  const { db, store, bridge, config, metrics } = ctx;
+  const { db, store, bridge, config, metrics, replayPageSize } = ctx;
   return {
     async streamEvents(request, reply) {
       const query = request.query as EventsQuery;
@@ -116,7 +116,62 @@ export function eventHandlers(ctx: AppContext): Handlers {
           .catch((err: unknown) => request.log.error({ err }, 'event delivery failed'));
       };
 
+      /**
+       * Replays the window after `after` that existed when the replay began:
+       * its newest id is read first, then only the events the subscriber may
+       * read are fetched, a page at a time, up to it. That id is then sent as
+       * an id-only block so the client moves past the rest instead of asking
+       * for the same window again. Later events arrive live.
+       */
+      const replay = async (after: number): Promise<void> => {
+        let newest = db
+          .selectFrom('annotation_events')
+          .select((eb) => eb.fn.max('id').as('id'))
+          .where('id', '>', after);
+        if (filtered) newest = newest.where('document_id', '=', documentId ?? NIL_UUID);
+        const last = await newest.executeTakeFirst();
+        if (last?.id === null || last?.id === undefined) return;
+        const bound = Number(last.id);
+        let cursor = after;
+        while (!closed) {
+          let page = db
+            .selectFrom('annotation_events')
+            .innerJoin('annotations', 'annotations.id', 'annotation_events.annotation_id')
+            .select([
+              'annotation_events.id',
+              'annotation_events.annotation_id',
+              'annotation_events.document_id',
+              'annotation_events.kind',
+            ])
+            .where('annotation_events.id', '>', cursor)
+            .where('annotation_events.id', '<=', bound)
+            .where(hasPermission(caller.principalIds, 'read'))
+            .orderBy('annotation_events.id')
+            .limit(replayPageSize);
+          if (filtered) {
+            page = page.where('annotation_events.document_id', '=', documentId ?? NIL_UUID);
+          }
+          const events = (await page.execute()).map((row) => ({ ...row, id: Number(row.id) }));
+          await sendReplayed(events);
+          const lastRow = events.at(-1);
+          if (events.length < replayPageSize || lastRow === undefined) break;
+          cursor = lastRow.id;
+        }
+        if (!closed && bound > lastSent) {
+          lastSent = bound;
+          raw.write(`id: ${bound}\n\n`);
+        }
+      };
+
       const unsubscribe = bridge.subscribe(deliver);
+      // Queued in the same turn as the subscription, so every live event
+      // waits behind the whole replay; one that falls in the window is then
+      // dropped as already sent.
+      if (lastEventId !== undefined) {
+        queue = queue
+          .then(() => replay(lastEventId))
+          .catch((err: unknown) => request.log.error({ err }, 'event replay failed'));
+      }
       const end = (): void => {
         if (closed) return;
         closed = true;
@@ -142,49 +197,6 @@ export function eventHandlers(ctx: AppContext): Handlers {
         raw.write(': keepalive\n\n');
       }, ctx.keepaliveMs);
       request.raw.on('close', end);
-
-      if (lastEventId !== undefined) {
-        // Only events the subscriber may read are fetched; the newest id in
-        // the window is sent as an id-only block so the client moves past
-        // the rest, instead of asking for the same window again.
-        let replay = db
-          .selectFrom('annotation_events')
-          .innerJoin('annotations', 'annotations.id', 'annotation_events.annotation_id')
-          .select([
-            'annotation_events.id',
-            'annotation_events.annotation_id',
-            'annotation_events.document_id',
-            'annotation_events.kind',
-          ])
-          .where('annotation_events.id', '>', lastEventId)
-          .where(hasPermission(caller.principalIds, 'read'))
-          .orderBy('annotation_events.id')
-          .limit(REPLAY_LIMIT);
-        let newest = db
-          .selectFrom('annotation_events')
-          .select((eb) => eb.fn.max('id').as('id'))
-          .where('id', '>', lastEventId);
-        if (filtered) {
-          replay = replay.where('annotation_events.document_id', '=', documentId ?? NIL_UUID);
-          newest = newest.where('document_id', '=', documentId ?? NIL_UUID);
-        }
-        const rows = await replay.execute();
-        queue = queue
-          .then(() => sendReplayed(rows.map((row) => ({ ...row, id: Number(row.id) }))))
-          .catch((err: unknown) => request.log.error({ err }, 'event replay failed'));
-        if (rows.length < REPLAY_LIMIT) {
-          const last = await newest.executeTakeFirst();
-          const id = last?.id === null || last?.id === undefined ? undefined : Number(last.id);
-          if (id !== undefined) {
-            queue = queue.then(() => {
-              if (!closed && id > lastSent) {
-                lastSent = id;
-                raw.write(`id: ${id}\n\n`);
-              }
-            });
-          }
-        }
-      }
     },
   };
 }

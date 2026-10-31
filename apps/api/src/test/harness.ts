@@ -71,6 +71,7 @@ export async function dropDatabase(admin: pg.Client, name: string): Promise<void
 
 export interface TestContextOptions {
   keepaliveMs?: number;
+  replayPageSize?: number;
   /** Serving the clients, the viewer origin, metrics: overrides of the test configuration. */
   config?: Partial<
     Pick<Config, 'staticRoot' | 'frameAncestors' | 'pdfViewerOrigin' | 'metricsEnabled'>
@@ -116,6 +117,7 @@ export async function createTestContext(options: TestContextOptions = {}): Promi
     db,
     verifyToken: createTokenVerifier({ ...config.oidc, jwks: createLocalJWKSet({ keys: [jwk] }) }),
     keepaliveMs: options.keepaliveMs ?? 30_000,
+    ...(options.replayPageSize !== undefined ? { replayPageSize: options.replayPageSize } : {}),
     authCacheMs: 0,
   });
   await app.ready();

@@ -37,6 +37,8 @@ export interface ServerOptions {
   logger?: FastifyServerOptions['logger'];
   /** Interval between keepalive comments on event streams; 30 s per the API document. */
   keepaliveMs?: number;
+  /** Events fetched per query when an event stream replays; 1000 (docs/performance.md). */
+  replayPageSize?: number;
   /** How long a validated token is reused before the user row is refreshed. */
   authCacheMs?: number;
 }
@@ -99,6 +101,7 @@ export async function buildServer(options: ServerOptions): Promise<FastifyInstan
     bridge,
     metrics,
     keepaliveMs: options.keepaliveMs ?? 30_000,
+    replayPageSize: options.replayPageSize ?? 1000,
   };
 
   await app.register(openapiGlue, {

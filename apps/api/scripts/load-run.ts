@@ -32,7 +32,7 @@ import {
 
 const PUBLIC_ID = '00000000-0000-0000-0000-000000000001';
 const AUTHENTICATED_ID = '00000000-0000-0000-0000-000000000002';
-/** Events one replay delivers before the client reconnects (REPLAY_LIMIT in routes/events.ts). */
+/** Events in the first page of a replay (replayPageSize in the server); a scenario times that page. */
 const REPLAY_LIMIT = 1000;
 const CONTAINER_PAGE_SIZE = 20;
 
