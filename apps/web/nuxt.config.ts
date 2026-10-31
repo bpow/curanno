@@ -18,20 +18,26 @@ const apiProxyTarget = process.env['API_PROXY_TARGET'] ?? 'http://localhost:3000
  * connections go to the API on this origin and to the identity provider,
  * which is also the one frame source (silent renewal) and form target
  * (sign-in). The dev server's client needs eval and a websocket as well.
+ *
+ * The issuer is runtime configuration, so a built site names it as a
+ * placeholder that Nitro fills in from NUXT_PUBLIC_OIDC_ISSUER when the
+ * server starts (`envExpansion`); the policy and the configuration the
+ * browser receives then name the same provider. The trailing slash allows
+ * every path under the issuer, where the provider's endpoints are.
  */
 const dev = process.env['NODE_ENV'] !== 'production';
-const issuerOrigin = new URL(
-  process.env['NUXT_PUBLIC_OIDC_ISSUER'] ?? 'http://localhost:8080/realms/annotations-dev',
-).origin;
+const issuerSource = dev
+  ? `${process.env['NUXT_PUBLIC_OIDC_ISSUER'] ?? 'http://localhost:8080/realms/annotations-dev'}/`
+  : '{{NUXT_PUBLIC_OIDC_ISSUER}}/';
 const securityHeaders = {
   'Content-Security-Policy': [
     "default-src 'self'",
     dev ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'" : "script-src 'self' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data:",
-    `connect-src 'self' ${issuerOrigin}${dev ? ' ws: wss:' : ''}`,
-    `frame-src ${issuerOrigin}`,
-    `form-action 'self' ${issuerOrigin}`,
+    `connect-src 'self' ${issuerSource}${dev ? ' ws: wss:' : ''}`,
+    `frame-src ${issuerSource}`,
+    `form-action 'self' ${issuerSource}`,
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
@@ -73,6 +79,8 @@ export default defineNuxtConfig({
     '/**': { ssr: false, headers: securityHeaders },
   },
   nitro: {
+    // Fills in the issuer in the security headers at startup (see above).
+    experimental: { envExpansion: true },
     devProxy: {
       '/annotations': `${apiProxyTarget}/annotations`,
       '/x': `${apiProxyTarget}/x`,

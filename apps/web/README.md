@@ -17,10 +17,12 @@ In development the dev server proxies `/annotations` and `/x` to the API (`API_P
 | Setting                      | Default                                       | Meaning                                    |
 | ---------------------------- | --------------------------------------------- | ------------------------------------------ |
 | `NUXT_PUBLIC_API_BASE`       | empty, meaning the same origin                 | Base URL of the API                        |
-| `NUXT_PUBLIC_OIDC_ISSUER`    | `http://localhost:8080/realms/annotations-dev` | OpenID Connect issuer                      |
+| `NUXT_PUBLIC_OIDC_ISSUER`    | `http://localhost:8080/realms/annotations-dev` | OpenID Connect issuer, without a trailing slash; required for a built site |
 | `NUXT_PUBLIC_OIDC_CLIENT_ID` | `annotations-sidebar`                         | Public client the site signs in as         |
 | `NUXT_PUBLIC_PDF_VIEWER_URL` | `http://localhost:5174/pdf/`                  | The PDF viewer page, linked from the landing page and built into the bookmarklet |
 | `API_PROXY_TARGET`           | `http://localhost:3000`                       | Where the dev server proxies the API to    |
+
+The site's Content-Security-Policy allows connections, frames and form submissions to paths under `NUXT_PUBLIC_OIDC_ISSUER`. A built site fills the issuer in when its server starts, so one image serves any provider; if the variable is unset there, the policy allows no provider and sign-in is blocked. `apps/web/scripts/check-runtime-csp.mjs` checks a running site, and CI runs it against the image.
 
 The identity provider must list `<site origin>/auth/callback` among the client's redirect URIs and `<site origin>/` among its post-logout redirect URIs; the development realm does for ports 3001 (this site) and 5173/4173 (the sidebar).
 
