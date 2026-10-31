@@ -18,17 +18,25 @@ const auth = useAuthStore();
 const store = useAnnotationsStore();
 const profiles = useProfilesStore();
 
-// Everything the list shows depends on who is asking (ADR 0006), so the
-// documents are reloaded whenever the session changes, and the set of
-// documents follows the frames that have guests.
+// Everything the list shows depends on who is asking (ADR 0006), so a new
+// identity (signing in or out, or another account) starts the store afresh,
+// and the set of documents follows the frames that have guests.
+let identity: string | undefined;
 watch(
-  () => [auth.status, guest.documents.value.map((d) => d.uri).join('\n')] as const,
-  ([status, joined], previous) => {
-    if (status === 'loading' || !joined) return;
+  () => [auth.status, auth.subject, guest.documents.value.map((d) => d.uri).join('\n')] as const,
+  ([status, subject, joined]) => {
+    if (status === 'loading') return;
+    const who = status === 'authenticated' ? `user ${subject ?? ''}` : 'anonymous';
+    if (who !== identity) {
+      identity = who;
+      store.resetSession();
+    }
+    if (!joined) return;
     const uris = joined.split('\n');
     void profiles.load();
-    const reload = previous?.[0] !== status;
-    void store.load(uris, { reload }).then(() => store.startLive(uris));
+    void store.load(uris).then((current) => {
+      if (current) store.startLive(uris);
+    });
   },
   { immediate: true },
 );
