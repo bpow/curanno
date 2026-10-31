@@ -19,7 +19,9 @@
  * URI is not on the guest's origin is refused, except from the PDF viewer
  * origin, whose page reports the PDF it shows (ADR 0021). Otherwise a page
  * could name any document and receive the selectors, quoted text included,
- * of the user's annotations on it.
+ * of the user's annotations on it. Its document's annotations reach it only
+ * as `disclosure.ts` allows: those made on another origin are withheld
+ * unless anyone may read them or the user allowed that origin (ADR 0025).
  */
 import {
   RPC_PROTOCOL_VERSION,
@@ -38,7 +40,8 @@ import {
   type SidebarReadyMessage,
 } from '@curanno/model';
 import { shallowReadonly, shallowRef, type Ref } from 'vue';
-import type { AnchorRequest, DocumentSelection, Guest, GuestDocument } from './types';
+import { createSessionConsent, foreignSources, originKey, type ConsentStore } from './disclosure';
+import type { AnchorRequest, DocumentSelection, Guest, GuestDocument, Withheld } from './types';
 
 /** What a window message looks like to the transport; tests build these by hand. */
 export interface MessageEventLike {
@@ -76,6 +79,8 @@ export interface RpcGuestOptions {
    * that start later, and frames that went away are forgotten. Default 1 s.
    */
   announceIntervalMs?: number;
+  /** Which origins' annotations the user allowed on which pages. Default: the session's. */
+  consent?: ConsentStore;
 }
 
 export interface ConnectedGuest {
@@ -112,6 +117,8 @@ interface GuestEntry {
   anchoring: Map<string, AnchoringState>;
   /** IRIs this guest was asked to anchor. */
   asked: Set<string>;
+  /** IRIs kept from this guest, with the origin they were made on. */
+  withheld: Map<string, string>;
   hovered: string[];
 }
 
@@ -136,6 +143,7 @@ export function mayReport(uri: string, origin: string, trusted: readonly string[
 export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
   const win: WindowLike = options.window ?? window;
   const trusted = options.trustedOrigins ?? [];
+  const consent = options.consent ?? createSessionConsent();
   const entries = new Map<string, GuestEntry>();
   /** Everything asked to be anchored and not withdrawn, by document URI then IRI. */
   const requestsByDocument = new Map<string, Map<string, AnchorRequest>>();
@@ -147,6 +155,7 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
   const selection = shallowRef<DocumentSelection>();
   const anchoring = shallowRef<ReadonlyMap<string, AnchoringState>>(new Map());
   const hovered = shallowRef<readonly string[]>([]);
+  const withheld = shallowRef<ReadonlyMap<string, Withheld>>(new Map());
   const guestOrigin = shallowRef<string>();
   const connected = shallowRef(false);
   const guests = shallowRef<readonly ConnectedGuest[]>([]);
@@ -213,17 +222,58 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
     }
     anchoring.value = merged;
     hovered.value = [...new Set(list.flatMap((e) => e.hovered))];
+    // Kept from some page and shown on none.
+    const kept = new Map<string, Withheld>();
+    for (const e of list) {
+      for (const [id, source] of e.withheld) {
+        if (!kept.has(id) && !list.some((other) => other.asked.has(id))) {
+          kept.set(id, { pageOrigin: e.origin, source });
+        }
+      }
+    }
+    withheld.value = kept;
   }
 
   function requestsFor(uri: string): AnchorRequest[] {
     return [...requestsForAll.values(), ...(requestsByDocument.get(uri)?.values() ?? [])];
   }
 
-  /** Send a guest the requests for its document; nothing before it reports one. */
+  /**
+   * The origin that keeps `request` from `entry`, or undefined when the
+   * guest may be sent it: every target is on the guest's origin, anyone may
+   * read the annotation, the guest is trusted, or the user allowed it.
+   */
+  function blockedBy(entry: GuestEntry, request: AnchorRequest): string | undefined {
+    if (request.public === true || trusted.includes(entry.origin)) return undefined;
+    const pageKey = originKey(entry.origin);
+    return foreignSources(request.target, pageKey).find(
+      (source) => pageKey === null || !consent.has(pageKey, source),
+    );
+  }
+
+  /** Send a guest the requests for its document that it may have; nothing before it reports one. */
   function sendRequests(entry: GuestEntry, requests: AnchorRequest[]): void {
     if (requests.length === 0) return;
-    for (const r of requests) entry.asked.add(r.id);
-    send(entry, { type: 'annotations.anchor', requests });
+    const allowed: AnchorRequest[] = [];
+    const revoked: string[] = [];
+    for (const request of requests) {
+      const source = blockedBy(entry, request);
+      if (source === undefined) {
+        entry.withheld.delete(request.id);
+        entry.asked.add(request.id);
+        // The protocol's request only: whether it is public is the sidebar's business.
+        allowed.push({ id: request.id, target: request.target });
+      } else {
+        entry.withheld.set(request.id, source);
+        // One that may no longer go, say because it stopped being public, takes its highlight along.
+        if (entry.asked.delete(request.id)) {
+          entry.anchoring.delete(request.id);
+          revoked.push(request.id);
+        }
+      }
+    }
+    if (revoked.length) send(entry, { type: 'annotations.unanchor', ids: revoked });
+    if (allowed.length) send(entry, { type: 'annotations.anchor', requests: allowed });
   }
 
   function drop(entry: GuestEntry): void {
@@ -275,6 +325,7 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
       document: undefined,
       anchoring: new Map(),
       asked: new Set(),
+      withheld: new Map(),
       hovered: [],
     };
     entries.set(entry.id, entry);
@@ -317,8 +368,9 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
         // Results for the old document, if any, no longer apply.
         entry.anchoring.clear();
         entry.asked.clear();
-        publish();
+        entry.withheld.clear();
         sendRequests(entry, requestsFor(uri));
+        publish();
         break;
       }
       case 'anchoring.results':
@@ -387,6 +439,7 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
     selection: shallowReadonly(selection),
     anchoring: shallowReadonly(anchoring),
     hovered: shallowReadonly(hovered),
+    withheld: shallowReadonly(withheld),
     guestOrigin: shallowReadonly(guestOrigin),
     connected: shallowReadonly(connected),
     guests: shallowReadonly(guests),
@@ -404,6 +457,7 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
           sendRequests(entry, next);
         }
       }
+      publish();
     },
     unanchor(ids) {
       for (const id of ids) {
@@ -411,6 +465,7 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
         for (const bucket of requestsByDocument.values()) bucket.delete(id);
       }
       for (const entry of entries.values()) {
+        for (const id of ids) entry.withheld.delete(id);
         const mine = ids.filter((id) => entry.asked.has(id));
         for (const id of mine) {
           entry.asked.delete(id);
@@ -421,7 +476,10 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
       publish();
     },
     focus(ids) {
-      for (const entry of entries.values()) send(entry, { type: 'highlights.focus', ids });
+      // Each guest hears only of annotations it was sent.
+      for (const entry of entries.values()) {
+        send(entry, { type: 'highlights.focus', ids: ids.filter((id) => entry.asked.has(id)) });
+      }
     },
     scrollTo(id) {
       for (const entry of entries.values()) {
@@ -436,6 +494,17 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
       for (const entry of owner ? [owner] : entries.values()) {
         send(entry, { type: 'selection.clear' });
       }
+    },
+    allow(pageOrigin, source) {
+      const pageKey = originKey(pageOrigin);
+      if (pageKey === null) return;
+      consent.add(pageKey, source);
+      for (const entry of entries.values()) {
+        if (!entry.document || originKey(entry.origin) !== pageKey) continue;
+        const kept = requestsFor(entry.document.uri).filter((r) => entry.withheld.has(r.id));
+        sendRequests(entry, kept);
+      }
+      publish();
     },
     onActivate(handler) {
       activateHandlers.add(handler);

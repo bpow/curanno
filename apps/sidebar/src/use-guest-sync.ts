@@ -11,7 +11,7 @@ import type { Guest } from './guest';
 import type { useAnnotationsStore } from './stores/annotations';
 
 export function useGuestSync(guest: Guest, store: ReturnType<typeof useAnnotationsStore>): void {
-  /** What each known annotation was last asked to anchor with, by IRI. */
+  /** What each known annotation was last asked to anchor with, and whether it was public, by IRI. */
   const known = new Map<string, string>();
   watch(
     () => store.roots,
@@ -20,13 +20,18 @@ export function useGuestSync(guest: Guest, store: ReturnType<typeof useAnnotatio
       const gone = [...known.keys()].filter((id) => !current.has(id));
       for (const id of gone) known.delete(id);
       if (gone.length) guest.unanchor(gone);
-      const byDocument = new Map<string | undefined, { id: string; target: unknown }[]>();
+      const byDocument = new Map<
+        string | undefined,
+        { id: string; target: unknown; public: boolean }[]
+      >();
       for (const a of roots) {
-        if (known.get(a.id) === JSON.stringify(a.target)) continue;
-        known.set(a.id, JSON.stringify(a.target));
+        // Which pages may be sent it depends on whether it is public (ADR 0025).
+        const key = JSON.stringify([a.target, a.public === true]);
+        if (known.get(a.id) === key) continue;
+        known.set(a.id, key);
         const uri = store.documentOf.get(a.id);
         const list = byDocument.get(uri) ?? [];
-        list.push({ id: a.id, target: a.target });
+        list.push({ id: a.id, target: a.target, public: a.public === true });
         byDocument.set(uri, list);
       }
       for (const [uri, requests] of byDocument) {

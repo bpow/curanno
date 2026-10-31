@@ -53,9 +53,12 @@ const anchoring = computed(
   () => guest.anchoring.value.get(props.annotation.id) ?? storedAnchoring(props.annotation),
 );
 const hovered = computed(() => guest.hovered.value.includes(props.annotation.id));
+/** Made on another site and not sent to this page (ADR 0025). */
+const withheld = computed(() => guest.withheld.value.get(props.annotation.id));
 const repairable = computed(
   () =>
     !props.reply &&
+    !withheld.value &&
     (anchoring.value === 'orphaned' || anchoring.value === 'ambiguous') &&
     can(props.annotation, 'update') &&
     guest.selection.value !== undefined,
@@ -165,7 +168,13 @@ async function repair(): Promise<void> {
     );
     guest.clearSelection();
     guest.anchor(
-      [{ id: updated.annotation.id, target: updated.annotation.target }],
+      [
+        {
+          id: updated.annotation.id,
+          target: updated.annotation.target,
+          public: updated.annotation.public === true,
+        },
+      ],
       store.documentOf.get(props.annotation.id),
     );
     problem.value = undefined;
@@ -195,7 +204,14 @@ async function repair(): Promise<void> {
       <span v-if="isEdited(annotation)" class="muted" :title="formatTime(annotation.modified)">
         (edited)
       </span>
-      <AnchoringBadge v-if="!reply" :state="anchoring" />
+      <span
+        v-if="!reply && withheld"
+        class="badge elsewhere"
+        :title="`Made on ${withheld.source}; not highlighted on this page`"
+      >
+        from {{ withheld.source }}
+      </span>
+      <AnchoringBadge v-else-if="!reply" :state="anchoring" />
     </header>
 
     <blockquote v-if="quote && !reply" class="quote">
@@ -303,6 +319,14 @@ async function repair(): Promise<void> {
   border-left: 2px solid var(--border);
   border-radius: 0;
   padding: 0.4rem 0.75rem;
+}
+
+.badge.elsewhere {
+  font-size: 0.75em;
+  padding: 0 0.4em;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  color: var(--muted);
 }
 
 header {

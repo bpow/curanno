@@ -7,7 +7,8 @@
  */
 import type { AnchoringState } from '@curanno/model';
 import { computed, ref, shallowReadonly, shallowRef, type Ref } from 'vue';
-import type { AnchorRequest, DocumentSelection, Guest, GuestDocument } from './types';
+import { createSessionConsent, foreignSources, originKey } from './disclosure';
+import type { AnchorRequest, DocumentSelection, Guest, GuestDocument, Withheld } from './types';
 
 export interface FakeGuestOptions {
   document?: GuestDocument;
@@ -40,6 +41,17 @@ export function createFakeGuest(options: FakeGuestOptions = {}): FakeGuest {
   const hovered = shallowRef<readonly string[]>([]);
   const log = ref<string[]>([]);
   const overrides = new Map<string, AnchoringState>();
+  // The same rule as for a real page (ADR 0025), with the document's origin as the page's.
+  const withheld = shallowRef<ReadonlyMap<string, Withheld>>(new Map());
+  const consent = createSessionConsent(null);
+  const kept = new Map<string, AnchorRequest>();
+  const pageOrigin = (): string => {
+    try {
+      return new URL(document.value?.uri ?? '').origin;
+    } catch {
+      return 'null';
+    }
+  };
   const activateHandlers = new Set<(ids: string[]) => void>();
 
   const note = (line: string): void => {
@@ -52,6 +64,7 @@ export function createFakeGuest(options: FakeGuestOptions = {}): FakeGuest {
     selection: shallowReadonly(selection),
     anchoring: shallowReadonly(anchoring),
     hovered: shallowReadonly(hovered),
+    withheld: shallowReadonly(withheld),
     log: shallowReadonly(log),
 
     setDocument(uri, title) {
@@ -89,14 +102,41 @@ export function createFakeGuest(options: FakeGuestOptions = {}): FakeGuest {
 
     anchor(requests: AnchorRequest[]) {
       const next = new Map(anchoring.value);
-      for (const request of requests) next.set(request.id, overrides.get(request.id) ?? 'anchored');
+      const nextWithheld = new Map(withheld.value);
+      const origin = pageOrigin();
+      const pageKey = originKey(origin);
+      for (const request of requests) {
+        // Without a document there is no page to keep anything from.
+        const source =
+          request.public || !document.value
+            ? undefined
+            : foreignSources(request.target, pageKey).find(
+                (s) => pageKey === null || !consent.has(pageKey, s),
+              );
+        if (source !== undefined) {
+          kept.set(request.id, request);
+          nextWithheld.set(request.id, { pageOrigin: origin, source });
+          next.delete(request.id);
+          continue;
+        }
+        kept.delete(request.id);
+        nextWithheld.delete(request.id);
+        next.set(request.id, overrides.get(request.id) ?? 'anchored');
+      }
       anchoring.value = next;
+      withheld.value = nextWithheld;
       note(`anchor ${requests.length}`);
     },
     unanchor(ids) {
       const next = new Map(anchoring.value);
-      for (const id of ids) next.delete(id);
+      const nextWithheld = new Map(withheld.value);
+      for (const id of ids) {
+        next.delete(id);
+        nextWithheld.delete(id);
+        kept.delete(id);
+      }
       anchoring.value = next;
+      withheld.value = nextWithheld;
       note(`unanchor ${ids.length}`);
     },
     focus(ids) {
@@ -107,6 +147,13 @@ export function createFakeGuest(options: FakeGuestOptions = {}): FakeGuest {
     },
     clearSelection() {
       selection.value = undefined;
+    },
+    allow(origin, source) {
+      const pageKey = originKey(origin);
+      if (pageKey === null) return;
+      consent.add(pageKey, source);
+      note(`allow ${source} on ${origin}`);
+      this.anchor([...kept.values()]);
     },
     onActivate(handler) {
       activateHandlers.add(handler);

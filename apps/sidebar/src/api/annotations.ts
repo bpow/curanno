@@ -219,7 +219,15 @@ export function buildInput(
   } as AnnotationInput;
 }
 
-const SERVER_ASSIGNED = ['@context', 'id', 'creator', 'created', 'modified', 'permissions'];
+const SERVER_ASSIGNED = [
+  '@context',
+  'id',
+  'creator',
+  'created',
+  'modified',
+  'permissions',
+  'public',
+];
 
 /**
  * The replacement for an existing annotation with its bodies rebuilt from

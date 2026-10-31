@@ -11,6 +11,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import {
+  API_ORIGIN,
   HOST_ORIGIN,
   PAGE_PATH,
   PUBLIC_QUOTE,
@@ -68,6 +69,39 @@ test('the sidebar has no axe violations in any of its states', async ({ context 
   await expectNoViolations(page, 'the sharing panel');
   await card.getByRole('button', { name: 'Reply' }).click();
   await expectNoViolations(page, 'the reply editor');
+});
+
+test('the sidebar has no axe violations with annotations from another site', async ({
+  context,
+}) => {
+  await seedSession(context);
+  const api = await stubApi(context, PAGE_URL);
+  // The page is linked to a document annotated on another site (ADR 0025).
+  const id = `${API_ORIGIN}/annotations/66666666-6666-4666-8666-666666666666`;
+  api.aliases.set(PAGE_URL, 'https://publisher.test/article');
+  api.annotations.set(id, {
+    '@context': 'http://www.w3.org/ns/anno.jsonld',
+    id,
+    type: 'Annotation',
+    created: '2026-10-30T08:00:00Z',
+    modified: '2026-10-30T08:00:00Z',
+    permissions: ['read'],
+    body: { type: 'TextualBody', value: "Made on the publisher's page" },
+    target: {
+      type: 'SpecificResource',
+      source: 'https://publisher.test/article',
+      selector: [{ type: 'TextQuoteSelector', exact: 'per-annotation permissions' }],
+    },
+  });
+  const page = await context.newPage();
+  await page.goto(`${SIDEBAR_URL}?uri=${encodeURIComponent(PAGE_URL)}`);
+  await expect(page.locator('article.card')).toHaveCount(2);
+  const prompt = page.getByRole('region', { name: 'Annotations made on publisher.test' });
+  await expect(prompt).toBeVisible();
+  await expect(page.locator('.badge.elsewhere')).toHaveText('from publisher.test');
+  await expectNoViolations(page, "the list with another site's annotations");
+  await prompt.getByRole('button', { name: 'Highlight on 127.0.0.1:4180' }).click();
+  await expect(prompt).toHaveCount(0);
 });
 
 test('the sidebar has no axe violations when signed out', async ({ context }) => {
