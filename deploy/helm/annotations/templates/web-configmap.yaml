@@ -11,7 +11,8 @@ data:
   HOST: 0.0.0.0
   # The site is an ordinary client of the API on the same origin (ADR 0020).
   NUXT_PUBLIC_API_BASE: ''
-  NUXT_PUBLIC_OIDC_ISSUER: {{ .Values.config.oidcIssuer | quote }}
+  # Also fills in the site's Content-Security-Policy when it starts, so it must be set.
+  NUXT_PUBLIC_OIDC_ISSUER: {{ required "config.oidcIssuer is required" .Values.config.oidcIssuer | trimSuffix "/" | quote }}
   NUXT_PUBLIC_OIDC_CLIENT_ID: {{ .Values.config.oidcClientId | quote }}
   {{- with .Values.pdfViewer.host }}
   NUXT_PUBLIC_PDF_VIEWER_URL: {{ printf "https://%s/pdf/" . | quote }}

@@ -3,7 +3,10 @@
  * frames with documents of their own), loaded from `/x/search` per document
  * and kept current by one event stream each. Writes go through the W3C
  * protocol with the ETag the caller last saw (`If-Match`), so a 412 reaches
- * the UI as a conflict rather than a silent overwrite.
+ * the UI as a conflict rather than a silent overwrite. What is readable
+ * depends on who is asking (ADR 0006), so a change of identity resets the
+ * store, and whatever an earlier session's requests and streams bring back
+ * afterwards is dropped.
  */
 import type { Annotation, AnnotationInput } from '@curanno/api-client';
 import { defineStore } from 'pinia';
@@ -36,6 +39,8 @@ export const useAnnotationsStore = defineStore('annotations', () => {
   const liveByDocument = ref(new Map<string, LiveStatus>());
   const liveControllers = new Map<string, AbortController>();
   let loadGeneration = 0;
+  /** Bumped by `resetSession`; work begun under an earlier value is dropped. */
+  let session = 0;
 
   /** The event streams' state: `open` when every document's is, else the least settled. */
   const live = computed<LiveStatus>(() => {
@@ -101,17 +106,32 @@ export const useAnnotationsStore = defineStore('annotations', () => {
   }
 
   /**
-   * Makes the store hold these documents' annotations: documents no longer
-   * shown are dropped, new ones loaded, the rest kept unless `reload` asks
-   * for everything again (the session changed, so what is readable changed).
+   * Forgets everything loaded or subscribed to for the previous identity:
+   * its event streams are aborted, its annotations cleared, and its
+   * searches and writes still in flight are dropped when they return.
    */
-  async function load(uris: string[], options: { reload?: boolean } = {}): Promise<void> {
+  function resetSession(): void {
+    session++;
+    stopLive();
+    documentUris.value = [];
+    items.value = new Map();
+    documentOf.value = new Map();
+    problem.value = undefined;
+  }
+
+  /**
+   * Makes the store hold these documents' annotations: documents no longer
+   * shown are dropped, new ones loaded, the rest kept. Resolves to false
+   * when the session was reset meanwhile and the results were dropped.
+   */
+  async function load(uris: string[]): Promise<boolean> {
     const wanted = new Set(uris);
     const previous = new Set(documentUris.value);
     documentUris.value = [...uris];
     for (const [iri, uri] of [...documentOf.value]) if (!wanted.has(uri)) remove(iri);
-    const toLoad = options.reload ? uris : uris.filter((uri) => !previous.has(uri));
-    if (toLoad.length === 0) return;
+    const toLoad = uris.filter((uri) => !previous.has(uri));
+    if (toLoad.length === 0) return true;
+    const started = session;
     const generation = ++loadGeneration;
     loading.value = true;
     problem.value = undefined;
@@ -119,6 +139,7 @@ export const useAnnotationsStore = defineStore('annotations', () => {
       const results = await Promise.all(
         toLoad.map(async (uri) => [uri, await search(uri)] as const),
       );
+      if (started !== session) return false;
       // Loads overlap when frames connect one after another; each merges
       // what is still shown by the time it finishes.
       const shown = new Set(documentUris.value);
@@ -140,10 +161,12 @@ export const useAnnotationsStore = defineStore('annotations', () => {
       items.value = next;
       documentOf.value = nextDocumentOf;
     } catch (err) {
+      if (started !== session) return false;
       problem.value = toProblem(err);
     } finally {
       if (generation === loadGeneration) loading.value = false;
     }
+    return true;
   }
 
   /** Tells the server the page's identifiers once per document (docs/document-identity.md). */
@@ -162,29 +185,32 @@ export const useAnnotationsStore = defineStore('annotations', () => {
   }
 
   async function create(input: AnnotationInput, uri?: string): Promise<Versioned> {
+    const started = session;
     const result = await useApi().POST('/annotations/', { body: input });
     const annotation = unwrap(result);
-    upsert(annotation, uri ?? documentUri.value);
+    if (started === session) upsert(annotation, uri ?? documentUri.value);
     return { annotation, etag: result.response.headers.get('etag') ?? undefined };
   }
 
   /** The current representation and its ETag, for an edit or delete about to start. */
   async function fetch(iri: string): Promise<Versioned> {
+    const started = session;
     const result = await useApi().GET('/annotations/{id}', {
       params: { path: { id: annotationUuid(iri) } },
     });
     const annotation = unwrap(result);
-    upsert(annotation);
+    if (started === session) upsert(annotation);
     return { annotation, etag: result.response.headers.get('etag') ?? undefined };
   }
 
   async function update(iri: string, input: AnnotationInput, etag: string): Promise<Versioned> {
+    const started = session;
     const result = await useApi().PUT('/annotations/{id}', {
       params: { path: { id: annotationUuid(iri) }, header: { 'If-Match': etag } },
       body: input,
     });
     const annotation = unwrap(result);
-    upsert(annotation);
+    if (started === session) upsert(annotation);
     return { annotation, etag: result.response.headers.get('etag') ?? undefined };
   }
 
@@ -254,6 +280,7 @@ export const useAnnotationsStore = defineStore('annotations', () => {
     live,
     startLive,
     stopLive,
+    resetSession,
     documentUri,
     documentUris,
     documentOf,

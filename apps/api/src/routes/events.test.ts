@@ -1,9 +1,10 @@
 /**
  * Server-sent events over LISTEN/NOTIFY: two subscribers with different
  * permissions see different events, and Last-Event-ID replays what a
- * subscriber missed. Runs against a listening server because the stream
+ * subscriber missed, in pages and before live events. Runs against a listening server because the stream
  * never ends.
  */
+import { sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PUBLIC_PRINCIPAL_ID } from '../db/index.js';
 import {
@@ -145,7 +146,8 @@ describe.skipIf(!databaseUrl)('events', () => {
   }
 
   beforeAll(async () => {
-    ctx = await createTestContext({ keepaliveMs: 200 });
+    // Small replay pages, so a replay of a few events takes several.
+    ctx = await createTestContext({ keepaliveMs: 200, replayPageSize: 2 });
     await ctx.app.listen({ port: 0, host: '127.0.0.1' });
     const address = ctx.app.server.address();
     if (!address || typeof address === 'string') throw new Error('no address');
@@ -279,5 +281,88 @@ describe.skipIf(!databaseUrl)('events', () => {
     expect(Number(replayed.id)).toBeGreaterThan(Number(createdEvent.id));
     const replayedToo = await late.next();
     expect(replayedToo.data.annotation?.body?.value).toBe('second');
+  });
+
+  /** The newest event id so far, and the events after it once `make` has run. */
+  async function eventsAfter(make: () => Promise<unknown>) {
+    const before = await ctx.db
+      .selectFrom('annotation_events')
+      .select((eb) => eb.fn.max('id').as('id'))
+      .executeTakeFirstOrThrow();
+    const from = Number(before.id ?? 0);
+    await make();
+    const rows = await ctx.db
+      .selectFrom('annotation_events')
+      .selectAll()
+      .where('id', '>', String(from) as never)
+      .orderBy('id')
+      .execute();
+    return { from, events: rows.map((r) => ({ ...r, id: Number(r.id) })) };
+  }
+
+  async function collect(stream: Stream, n: number): Promise<number[]> {
+    const ids: number[] = [];
+    for (let i = 0; i < n; i++) ids.push(Number((await stream.next()).id));
+    return ids;
+  }
+
+  it('replays every missed event, page after page, then delivers live ones', async () => {
+    const { from, events } = await eventsAfter(async () => {
+      for (const text of ['r1', 'r2', 'r3', 'r4', 'r5']) await create(alice, text);
+    });
+    expect(events).toHaveLength(5);
+    const stream = await openStream(
+      base,
+      `/x/events?uri=${encodeURIComponent(PAGE)}`,
+      await ctx.token(alice),
+      String(from),
+    );
+    streams.push(stream);
+    expect(await collect(stream, 5)).toEqual(events.map((e) => e.id));
+    // The replay ends with its window's newest id, and live events follow it.
+    const live = await create(alice, 'r6');
+    const next = await stream.next();
+    expect(next.data.id).toBe(live.id);
+    await stream.expectSilence(200);
+  });
+
+  it('holds a live event that arrives during the replay until the replay is done', async () => {
+    const { from, events } = await eventsAfter(async () => {
+      for (const text of ['h1', 'h2', 'h3', 'h4']) await create(alice, text);
+    });
+    const latest = events.at(-1) as (typeof events)[number];
+    let stream: Stream | undefined;
+    // The replay waits on this lock; meanwhile the newest event's notification
+    // arrives, as it would for an event created during the catch-up.
+    await ctx.db.transaction().execute(async (trx) => {
+      await sql`lock table annotation_events in access exclusive mode`.execute(trx);
+      stream = await openStream(
+        base,
+        `/x/events?uri=${encodeURIComponent(PAGE)}`,
+        await ctx.token(alice),
+        String(from),
+      );
+      const deadline = Date.now() + 5000;
+      for (;;) {
+        const { rows } = await sql<{ n: number }>`
+          select count(*)::int as n from pg_stat_activity
+          where datname = current_database() and wait_event_type = 'Lock'`.execute(ctx.db);
+        if ((rows[0]?.n ?? 0) >= 1) break;
+        if (Date.now() > deadline) throw new Error('the replay never waited for the lock');
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      const payload = JSON.stringify({
+        id: latest.id,
+        annotation_id: latest.annotation_id,
+        document_id: latest.document_id,
+        kind: latest.kind,
+      });
+      await sql`select pg_notify('annotation_events', ${payload})`.execute(ctx.db);
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    });
+    const held = stream as Stream;
+    streams.push(held);
+    expect(await collect(held, 4)).toEqual(events.map((e) => e.id));
+    await held.expectSilence(200);
   });
 });

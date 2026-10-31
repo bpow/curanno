@@ -6,6 +6,7 @@ export interface Call {
   url: URL;
   headers: Headers;
   body: unknown;
+  signal: AbortSignal;
 }
 
 export type Route = (call: Call) => Response | undefined;
@@ -46,6 +47,7 @@ export function installFakeApi(route: Route = () => undefined): FakeApi {
         url: new URL(request.url),
         headers: request.headers,
         body: text ? (JSON.parse(text) as unknown) : undefined,
+        signal: request.signal,
       };
       calls.push(call);
       return route(call) ?? problem(404, 'Not Found', `${call.method} ${call.url.pathname}`);
