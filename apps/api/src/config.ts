@@ -11,8 +11,6 @@ export interface Config {
     clientId: string;
     /** Accepted `aud` value. Defaults to the client id. */
     audience: string;
-    /** Members of this group (from the `groups` claim) are platform administrators. */
-    adminGroup: string | undefined;
   };
   port: number;
   /** Origin and base path under which annotation IRIs are minted, without a trailing slash. */
@@ -38,7 +36,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       issuer: required(env, 'OIDC_ISSUER').replace(/\/$/, ''),
       clientId,
       audience: env['OIDC_AUDIENCE'] || clientId,
-      adminGroup: env['OIDC_ADMIN_GROUP'] || undefined,
     },
     port,
     publicUrl: (env['PUBLIC_URL'] || `http://localhost:${port}`).replace(/\/$/, ''),

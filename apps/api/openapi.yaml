@@ -884,8 +884,7 @@ paths:
       tags: [groups]
       summary: Update a group
       description: >-
-        Group administrators and platform administrators only. Provider-managed groups (those
-        with an `issuer`) cannot be changed (403).
+        Group administrators and platform administrators only.
       requestBody:
         required: true
         content:
@@ -962,8 +961,7 @@ paths:
       summary: Add a member or change their role
       description: >-
         Group administrators and platform administrators only. The last administrator of a
-        group cannot be made a member (409). Membership of provider-managed groups follows the
-        provider and cannot be changed here (403).
+        group cannot be made a member (409).
       requestBody:
         content:
           application/json:
@@ -991,8 +989,7 @@ paths:
       summary: Remove a member
       description: >-
         Group administrators and platform administrators, or the member removing themselves.
-        The last administrator of a group cannot be removed (409). Membership of
-        provider-managed groups cannot be changed here (403).
+        The last administrator of a group cannot be removed (409).
       responses:
         '204':
           description: Removed
@@ -1502,13 +1499,6 @@ components:
         role:
           description: The caller's role in the group, when a member.
           $ref: '#/components/schemas/GroupRole'
-        issuer:
-          description: >-
-            The OpenID Connect issuer whose `groups` claim manages this group. Such groups are
-            read-only through this API: name, description and membership come from the
-            provider, and the operations that change a group answer 403 for them.
-          type: string
-          format: uri
     GroupList:
       type: object
       required: [total, items]

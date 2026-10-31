@@ -14,7 +14,6 @@ export interface TokenClaims {
   subject: string;
   name: string | undefined;
   email: string | undefined;
-  groups: string[];
   /** Seconds since the epoch, when present. */
   expiresAt: number | undefined;
 }
@@ -75,7 +74,6 @@ export function createTokenVerifier(options: VerifierOptions): TokenVerifier {
       subject: payload.sub,
       name: stringClaim(payload['name']) ?? stringClaim(payload['preferred_username']),
       email: stringClaim(payload['email']),
-      groups: groupsClaim(payload['groups']),
       expiresAt: payload.exp,
     };
   };
@@ -83,16 +81,4 @@ export function createTokenVerifier(options: VerifierOptions): TokenVerifier {
 
 function stringClaim(value: unknown): string | undefined {
   return typeof value === 'string' && value !== '' ? value : undefined;
-}
-
-/** Group names from the claim; Keycloak may prefix them with `/` when configured for full paths. */
-function groupsClaim(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  const names = new Set<string>();
-  for (const item of value) {
-    if (typeof item !== 'string') continue;
-    const name = item.replace(/^\/+/, '').trim();
-    if (name) names.add(name);
-  }
-  return [...names];
 }

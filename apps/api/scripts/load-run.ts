@@ -118,7 +118,7 @@ for (const principal of Object.values(fixtures.principals)) {
   if (principal.subject === null) continue;
   tokens.set(
     principal.name,
-    await new SignJWT({ name: principal.name, groups: [], azp: LOAD_CLIENT_ID })
+    await new SignJWT({ name: principal.name, azp: LOAD_CLIENT_ID })
       .setProtectedHeader({ alg: 'ES256', kid: 'load' })
       .setIssuer(LOAD_ISSUER)
       .setSubject(principal.subject)

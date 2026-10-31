@@ -86,7 +86,6 @@ export async function buildServer(options: ServerOptions): Promise<FastifyInstan
   installAuth(app, {
     db,
     verifyToken: options.verifyToken,
-    adminGroup: config.oidc.adminGroup,
     ...(options.authCacheMs !== undefined ? { cacheMs: options.authCacheMs } : {}),
   });
   installResponseValidation(app, strict);

@@ -23,7 +23,6 @@ const config: Config = {
     issuer: LOAD_ISSUER,
     clientId: LOAD_CLIENT_ID,
     audience: LOAD_CLIENT_ID,
-    adminGroup: undefined,
   },
   port,
   publicUrl: `http://127.0.0.1:${port}`,

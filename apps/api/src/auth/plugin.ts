@@ -10,13 +10,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Kysely } from 'kysely';
 import type { Database } from '../db/index.js';
 import { forbidden, unauthorized } from '../problems.js';
-import {
-  ANONYMOUS,
-  resolveCaller,
-  type Caller,
-  type CallerOptions,
-  type UserCaller,
-} from './caller.js';
+import { ANONYMOUS, resolveCaller, type Caller, type UserCaller } from './caller.js';
 import type { TokenVerifier } from './verifier.js';
 
 declare module 'fastify' {
@@ -25,7 +19,7 @@ declare module 'fastify' {
   }
 }
 
-export interface AuthOptions extends CallerOptions {
+export interface AuthOptions {
   db: Kysely<Database>;
   verifyToken: TokenVerifier;
   /** Longest time a resolved token is reused without touching the database. */
@@ -56,7 +50,7 @@ export function installAuth(app: FastifyInstance, options: AuthOptions): void {
       return;
     }
     const claims = await options.verifyToken(token);
-    const caller = await resolveCaller(options.db, claims, options);
+    const caller = await resolveCaller(options.db, claims);
     const tokenExpiry = claims.expiresAt === undefined ? Infinity : claims.expiresAt * 1000;
     cache.set(token, { caller, expiresAt: Math.min(now + cacheMs, tokenExpiry) });
     if (cache.size > MAX_CACHED) {

@@ -5,7 +5,7 @@ import { requireAdmin, requireUser } from '../auth/plugin.js';
 import type { UserCaller } from '../auth/caller.js';
 import { AUTHENTICATED_PRINCIPAL_ID, PUBLIC_PRINCIPAL_ID, type Database } from '../db/index.js';
 import { isoDate } from '../annotations/serialize.js';
-import { conflict, notFound } from '../problems.js';
+import { notFound } from '../problems.js';
 import type { AppContext, Handlers } from './context.js';
 
 type User = components['schemas']['User'];
@@ -66,7 +66,7 @@ async function loadUser(db: Kysely<Database>, id: string, viewer: UserCaller): P
 const like = (q: string): string => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
 export function userHandlers(ctx: AppContext): Handlers {
-  const { db, config } = ctx;
+  const { db } = ctx;
   return {
     async getCurrentUser(request: FastifyRequest) {
       const caller = requireUser(request);
@@ -112,11 +112,6 @@ export function userHandlers(ctx: AppContext): Handlers {
       const caller = requireAdmin(request);
       const { id } = request.params as { id: string };
       const patch = request.body as UserPatch;
-      if (patch.isAdmin !== undefined && config.oidc.adminGroup !== undefined) {
-        throw conflict(
-          `administrators are the members of the identity provider's group ${config.oidc.adminGroup}; the flag cannot be set here`,
-        );
-      }
       const updated = await db
         .updateTable('users')
         .set({

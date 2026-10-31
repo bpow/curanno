@@ -28,7 +28,6 @@ export function groupHandlers(ctx: AppContext): Handlers {
       'groups.principal_id as id',
       'groups.name',
       'groups.description',
-      'groups.issuer',
       'groups.created_at',
       'groups.updated_at',
       eb
@@ -55,15 +54,7 @@ export function groupHandlers(ctx: AppContext): Handlers {
     modified: isoDate(row.updated_at),
     memberCount: Number(row.member_count ?? 0),
     ...(row.role ? { role: row.role } : {}),
-    ...(row.issuer !== null ? { issuer: row.issuer } : {}),
   });
-
-  /** Groups synchronized from the provider's `groups` claim follow the provider, not this API. */
-  function requireApiManaged(group: { issuer: string | null }): void {
-    if (group.issuer !== null) {
-      throw forbidden('the group is managed by the identity provider');
-    }
-  }
 
   /** The group, when the caller may see it: members and platform administrators. */
   async function loadVisible(request: FastifyRequest) {
@@ -79,7 +70,6 @@ export function groupHandlers(ctx: AppContext): Handlers {
     if (!result.caller.isAdmin && result.group.role !== 'admin') {
       throw forbidden('group administrators only');
     }
-    requireApiManaged(result.group);
     return result;
   }
 
@@ -160,7 +150,6 @@ export function groupHandlers(ctx: AppContext): Handlers {
               principal_id: principal.id,
               name: input.name,
               description: input.description ?? null,
-              issuer: null,
               created_by: caller.userId,
             })
             .execute();
@@ -279,7 +268,6 @@ export function groupHandlers(ctx: AppContext): Handlers {
       if (!caller.isAdmin && row.role !== 'admin' && caller.userId !== userId) {
         throw forbidden('group administrators only, or the member themself');
       }
-      requireApiManaged(row);
       await db.transaction().execute(async (trx) => {
         const role = await lockMembership(trx, id, userId, true);
         if (!role) throw notFound(`${userId} is not a member`);
