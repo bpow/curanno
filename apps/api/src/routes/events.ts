@@ -8,7 +8,11 @@
  * so a reconnecting client never replays the same window twice. A replay
  * runs to the end in pages before any live event is written, so a live
  * event cannot carry the stream past events not yet replayed (code review
- * of 2026-10-30, finding 6).
+ * of 2026-10-30, finding 6). A live event's own read check is pinned to
+ * when it occurred, not whatever the ACL holds when the check happens to
+ * run, so a grant landing moments later cannot retroactively make an
+ * earlier event visible that it was not at the time (security review,
+ * finding 24).
  */
 import { hasPermission } from '../annotations/store.js';
 import { toAnnotation } from '../annotations/serialize.js';
@@ -77,7 +81,9 @@ export function eventHandlers(ctx: AppContext): Handlers {
           const wanted = await resolveDocument();
           if (wanted === undefined || event.document_id !== wanted) return;
         }
-        if (!(await store.canRead(event.annotation_id, caller))) return skip(event);
+        if (!(await store.couldHaveRead(event.annotation_id, caller, event.occurred_at))) {
+          return skip(event);
+        }
         const data: Record<string, unknown> = { id: event.annotation_id };
         if (event.kind !== 'deleted') {
           const record = await store.get(event.annotation_id, caller);
@@ -142,6 +148,7 @@ export function eventHandlers(ctx: AppContext): Handlers {
               'annotation_events.annotation_id',
               'annotation_events.document_id',
               'annotation_events.kind',
+              'annotation_events.occurred_at',
             ])
             .where('annotation_events.id', '>', cursor)
             .where('annotation_events.id', '<=', bound)
@@ -151,7 +158,11 @@ export function eventHandlers(ctx: AppContext): Handlers {
           if (filtered) {
             page = page.where('annotation_events.document_id', '=', documentId ?? NIL_UUID);
           }
-          const events = (await page.execute()).map((row) => ({ ...row, id: Number(row.id) }));
+          const events = (await page.execute()).map((row) => ({
+            ...row,
+            id: Number(row.id),
+            occurred_at: row.occurred_at.toISOString(),
+          }));
           await sendReplayed(events);
           const lastRow = events.at(-1);
           if (events.length < replayPageSize || lastRow === undefined) break;

@@ -85,8 +85,6 @@ async function openStream(
             id: fields['id'] ?? '',
             data: JSON.parse(fields['data'] ?? '{}') as SseEvent['data'],
           };
-          // eslint-disable-next-line no-console
-          console.error('DEBUG event', path, JSON.stringify(event));
           const waiter = waiters.shift();
           if (waiter) waiter(event);
           else queue.push(event);
@@ -218,9 +216,6 @@ describe.skipIf(!databaseUrl)('events', () => {
       .where('name', '=', 'reviewers')
       .executeTakeFirstOrThrow();
     const shared = await create(alice, 'for reviewers');
-    // A beat for the (private) creation to clear delivery before the grant,
-    // so the two live events can't race past each other out of order.
-    await new Promise((r) => setTimeout(r, 50));
     const grant = await ctx.as(alice, {
       method: 'POST',
       url: `/x/annotations/${shared.id}/acl`,

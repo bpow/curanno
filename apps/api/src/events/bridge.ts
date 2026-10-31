@@ -13,6 +13,14 @@ export interface EventPayload {
   annotation_id: string;
   document_id: string | null;
   kind: AnnotationEventKind;
+  /**
+   * When the event was recorded, as Postgres printed it (microsecond
+   * precision) — a live subscriber's read check is pinned to this moment
+   * (events.ts), and a JS `Date` only keeps millisecond precision, which is
+   * coarser than the column and would round a same-transaction grant's own
+   * timestamp down past it.
+   */
+  occurred_at: string;
 }
 
 export type EventListener = (event: EventPayload) => void;
@@ -71,6 +79,7 @@ export class EventBridge {
           annotation_id: String(raw['annotation_id']),
           document_id: typeof raw['document_id'] === 'string' ? raw['document_id'] : null,
           kind: raw['kind'] as AnnotationEventKind,
+          occurred_at: String(raw['occurred_at']),
         };
       } catch (err) {
         this.log.warn({ err, payload: msg.payload }, 'ignoring malformed notification');

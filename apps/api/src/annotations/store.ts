@@ -55,6 +55,20 @@ export function hasPermission(ids: string[], permission: Permission) {
   return sql<boolean>`exists (select 1 from acl where acl.annotation_id = annotations.id and acl.permission = ${permission} and acl.principal_id = any(${principalArray(ids)}))`;
 }
 
+/**
+ * `true` when one of the principals already held `permission` no later than
+ * `asOf`. Pins the check to a point in time instead of whatever the ACL
+ * holds when the check happens to run, so a grant racing a live event's
+ * delivery cannot make an earlier event visible that was not at the time it
+ * occurred (events.ts). `asOf` is Postgres's own text rendering of a
+ * timestamptz (microsecond precision): a `Date` here would round down to
+ * millisecond precision, coarser than the column, and wrongly exclude a
+ * grant made in the very same transaction as the event.
+ */
+function hasHeldPermission(ids: string[], permission: Permission, asOf: string) {
+  return sql<boolean>`exists (select 1 from acl where acl.annotation_id = annotations.id and acl.permission = ${permission} and acl.principal_id = any(${principalArray(ids)}) and acl.granted_at <= ${asOf}::timestamptz)`;
+}
+
 export class AnnotationStore {
   constructor(
     private readonly db: Kysely<Database>,
@@ -328,6 +342,17 @@ export class AnnotationStore {
     const row = await this.visible(this.db, caller)
       .select('annotations.id')
       .where('annotations.id', '=', id)
+      .executeTakeFirst();
+    return row !== undefined;
+  }
+
+  /** Whether the caller already held read, no later than `asOf` (events.ts, live delivery). */
+  async couldHaveRead(id: string, caller: Caller, asOf: string): Promise<boolean> {
+    const row = await this.db
+      .selectFrom('annotations')
+      .where('annotations.id', '=', id)
+      .where(hasHeldPermission(caller.principalIds, 'read', asOf))
+      .select('annotations.id')
       .executeTakeFirst();
     return row !== undefined;
   }
