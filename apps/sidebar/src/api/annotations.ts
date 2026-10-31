@@ -231,10 +231,7 @@ export function rebuildInput(
   draft: AnnotationDraft,
   options: BuildOptions = {},
 ): AnnotationInput {
-  const input: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(annotation)) {
-    if (!SERVER_ASSIGNED.includes(key)) input[key] = value;
-  }
+  const input = clientPropertiesOf(annotation);
   delete input['body'];
   delete input['bodyValue'];
   const bodies = bodiesFrom(draft, options.structuredPurpose);
@@ -242,15 +239,26 @@ export function rebuildInput(
   return input as AnnotationInput;
 }
 
-/** The replacement that records a manual repair on the first specific-resource target (ADR 0010). */
+/** Everything in an annotation but what the server assigns. */
+function clientPropertiesOf(annotation: Annotation): Record<string, unknown> {
+  const input: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(annotation)) {
+    if (!SERVER_ASSIGNED.includes(key)) input[key] = value;
+  }
+  return input;
+}
+
+/**
+ * The replacement that records a manual repair on the first
+ * specific-resource target (ADR 0010). Everything else is sent back as it
+ * was: the editor's draft holds only some of the bodies an annotation can
+ * have, so it is not used here.
+ */
 export function repairInput(
   annotation: Annotation,
   selector: OneOrMany<Selector>,
 ): AnnotationInput {
-  const structuredPurpose = structuredPurposeOf(annotation);
-  const input = rebuildInput(annotation, draftOf(annotation), {
-    ...(structuredPurpose ? { structuredPurpose } : {}),
-  });
+  const input = clientPropertiesOf(annotation);
   const repair: AnchoringRepair = { selector, created: new Date().toISOString() };
   let done = false;
   const targets = targetsOf(annotation).map((target) => {
@@ -259,8 +267,4 @@ export function repairInput(
     return { ...target, anchoring: { state: 'repaired' as const, repair } };
   });
   return { ...input, target: single(targets) } as AnnotationInput;
-}
-
-export function structuredPurposeOf(annotation: Annotation): Motivation | undefined {
-  return toArray(structuredBodies(annotation)[0]?.purpose)[0];
 }

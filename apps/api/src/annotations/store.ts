@@ -4,13 +4,19 @@
  * annotation without it. Writes record an `annotation_events` row in the
  * same transaction so that the event stream sees exactly what was committed.
  */
-import { sql, type Kysely, type SelectQueryBuilder } from 'kysely';
+import {
+  sql,
+  type Kysely,
+  type SelectQueryBuilder,
+  type UpdateQueryBuilder,
+  type UpdateResult,
+} from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/postgres';
 import type { AnchoringState, Permission } from '@curanno/model';
 import type { Caller, UserCaller } from '../auth/caller.js';
 import type { Database } from '../db/index.js';
 import { documentForSource } from '../documents/service.js';
-import { unprocessable } from '../problems.js';
+import { preconditionFailed, unprocessable } from '../problems.js';
 import { stableJson, type ParsedAnnotation } from './input.js';
 import { annotationIdFromIri, type AnnotationRecord } from './serialize.js';
 
@@ -232,11 +238,17 @@ export class AnnotationStore {
     });
   }
 
-  /** Replace an annotation's content. The caller has already been checked for the permission and the ETag. */
+  /**
+   * Replace an annotation's content. The caller has already been checked
+   * for the permission; `expected` is the version `If-Match` named (`null`
+   * for `*`), checked again by the write itself so that a concurrent write
+   * between the read and this one fails with 412 instead of being lost.
+   */
   async replace(
     current: AnnotationRecord,
     parsed: ParsedAnnotation,
     caller: UserCaller,
+    expected: number | null,
   ): Promise<void> {
     for (const target of parsed.targets) {
       const before = current.targets.find((t) => t.position === parsed.targets.indexOf(target));
@@ -253,21 +265,23 @@ export class AnnotationStore {
     await this.db.transaction().execute(async (trx) => {
       const { parentId, documentIds } = await this.resolveReferences(trx, parsed, caller);
       const documentId = documentIds.find((d) => d !== undefined) ?? current.document_id;
+      await this.claimVersion(
+        trx
+          .updateTable('annotations')
+          .set({
+            document_id: documentId,
+            parent_id: parentId,
+            motivation: parsed.motivation,
+            data: JSON.stringify(parsed.data),
+            version: sql`version + 1`,
+            updated_at: sql`now()`,
+          })
+          .where('id', '=', current.id),
+        expected,
+      );
       await trx.deleteFrom('bodies').where('annotation_id', '=', current.id).execute();
       await trx.deleteFrom('targets').where('annotation_id', '=', current.id).execute();
       await this.writeParts(trx, current.id, parsed, documentIds);
-      await trx
-        .updateTable('annotations')
-        .set({
-          document_id: documentId,
-          parent_id: parentId,
-          motivation: parsed.motivation,
-          data: JSON.stringify(parsed.data),
-          version: sql`version + 1`,
-          updated_at: sql`now()`,
-        })
-        .where('id', '=', current.id)
-        .execute();
       await trx
         .insertInto('annotation_events')
         .values({
@@ -280,13 +294,20 @@ export class AnnotationStore {
     });
   }
 
-  async softDelete(current: AnnotationRecord, caller: UserCaller): Promise<void> {
+  /** Soft-delete an annotation; `expected` as for `replace`. */
+  async softDelete(
+    current: AnnotationRecord,
+    caller: UserCaller,
+    expected: number | null,
+  ): Promise<void> {
     await this.db.transaction().execute(async (trx) => {
-      await trx
-        .updateTable('annotations')
-        .set({ deleted_at: sql`now()`, updated_at: sql`now()`, version: sql`version + 1` })
-        .where('id', '=', current.id)
-        .execute();
+      await this.claimVersion(
+        trx
+          .updateTable('annotations')
+          .set({ deleted_at: sql`now()`, updated_at: sql`now()`, version: sql`version + 1` })
+          .where('id', '=', current.id),
+        expected,
+      );
       await trx
         .insertInto('annotation_events')
         .values({
@@ -306,6 +327,22 @@ export class AnnotationStore {
       .where('annotations.id', '=', id)
       .executeTakeFirst();
     return row !== undefined;
+  }
+
+  /**
+   * Run the update of the annotation row that a write starts with, only if
+   * the annotation is not deleted and, unless `expected` is null, is still
+   * at that version. The row stays locked until the transaction ends, so of
+   * two writes that read the same version one fails here with 412.
+   */
+  private async claimVersion(
+    update: UpdateQueryBuilder<Database, 'annotations', 'annotations', UpdateResult>,
+    expected: number | null,
+  ): Promise<void> {
+    let query = update.where('deleted_at', 'is', null);
+    if (expected !== null) query = query.where('version', '=', expected);
+    const result = await query.executeTakeFirst();
+    if (result.numUpdatedRows === 0n) throw preconditionFailed();
   }
 
   private async resolveReferences(

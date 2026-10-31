@@ -434,7 +434,7 @@ export interface paths {
         get?: never;
         /**
          * Add a member or change their role
-         * @description Group administrators and platform administrators only. Membership of provider-managed groups follows the provider and cannot be changed here (403).
+         * @description Group administrators and platform administrators only. The last administrator of a group cannot be made a member (409). Membership of provider-managed groups follows the provider and cannot be changed here (403).
          */
         put: operations["setMember"];
         post?: never;
@@ -2066,6 +2066,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     removeMember: {

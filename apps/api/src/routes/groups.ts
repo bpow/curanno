@@ -1,9 +1,9 @@
 import type { FastifyRequest } from 'fastify';
-import { sql } from 'kysely';
+import { sql, type Transaction } from 'kysely';
 import type { components } from '@curanno/api-client';
 import { requireUser } from '../auth/plugin.js';
 import type { UserCaller } from '../auth/caller.js';
-import type { GroupRole } from '../db/index.js';
+import type { Database, GroupRole } from '../db/index.js';
 import { isoDate } from '../annotations/serialize.js';
 import { conflict, forbidden, notFound } from '../problems.js';
 import { isUniqueViolation, type AppContext, type Handlers } from './context.js';
@@ -81,6 +81,42 @@ export function groupHandlers(ctx: AppContext): Handlers {
     }
     requireApiManaged(result.group);
     return result;
+  }
+
+  /**
+   * The member's current role in the group, after taking a lock on the
+   * group's row so that changes to its memberships are made one at a time.
+   * With `leavingAdmin`, a change that ends the member's administration,
+   * fails with 409 when they are the group's last administrator.
+   */
+  async function lockMembership(
+    trx: Transaction<Database>,
+    groupId: string,
+    userId: string,
+    leavingAdmin: boolean,
+  ): Promise<GroupRole | undefined> {
+    await trx
+      .selectFrom('groups')
+      .select('principal_id')
+      .where('principal_id', '=', groupId)
+      .forUpdate()
+      .execute();
+    const membership = await trx
+      .selectFrom('group_memberships')
+      .select('role')
+      .where('group_id', '=', groupId)
+      .where('user_id', '=', userId)
+      .executeTakeFirst();
+    if (leavingAdmin && membership?.role === 'admin') {
+      const admins = await trx
+        .selectFrom('group_memberships')
+        .select((eb) => eb.fn.countAll<string>().as('n'))
+        .where('group_id', '=', groupId)
+        .where('role', '=', 'admin')
+        .executeTakeFirstOrThrow();
+      if (Number(admins.n) <= 1) throw conflict('a group keeps at least one administrator');
+    }
+    return membership?.role;
   }
 
   return {
@@ -224,11 +260,14 @@ export function groupHandlers(ctx: AppContext): Handlers {
         .where('principal_id', '=', userId)
         .executeTakeFirst();
       if (!user) throw notFound(`no user ${userId}`);
-      await db
-        .insertInto('group_memberships')
-        .values({ group_id: group.id, user_id: userId, role, added_by: caller.userId })
-        .onConflict((oc) => oc.columns(['group_id', 'user_id']).doUpdateSet({ role }))
-        .execute();
+      await db.transaction().execute(async (trx) => {
+        await lockMembership(trx, group.id, userId, role !== 'admin');
+        await trx
+          .insertInto('group_memberships')
+          .values({ group_id: group.id, user_id: userId, role, added_by: caller.userId })
+          .onConflict((oc) => oc.columns(['group_id', 'user_id']).doUpdateSet({ role }))
+          .execute();
+      });
       return reply.code(204).send();
     },
 
@@ -242,22 +281,8 @@ export function groupHandlers(ctx: AppContext): Handlers {
       }
       requireApiManaged(row);
       await db.transaction().execute(async (trx) => {
-        const membership = await trx
-          .selectFrom('group_memberships')
-          .select('role')
-          .where('group_id', '=', id)
-          .where('user_id', '=', userId)
-          .executeTakeFirst();
-        if (!membership) throw notFound(`${userId} is not a member`);
-        if (membership.role === 'admin') {
-          const admins = await trx
-            .selectFrom('group_memberships')
-            .select((eb) => eb.fn.countAll<string>().as('n'))
-            .where('group_id', '=', id)
-            .where('role', '=', 'admin')
-            .executeTakeFirstOrThrow();
-          if (Number(admins.n) <= 1) throw conflict('a group keeps at least one administrator');
-        }
+        const role = await lockMembership(trx, id, userId, true);
+        if (!role) throw notFound(`${userId} is not a member`);
         await trx
           .deleteFrom('group_memberships')
           .where('group_id', '=', id)

@@ -960,8 +960,9 @@ paths:
       tags: [groups]
       summary: Add a member or change their role
       description: >-
-        Group administrators and platform administrators only. Membership of provider-managed
-        groups follows the provider and cannot be changed here (403).
+        Group administrators and platform administrators only. The last administrator of a
+        group cannot be made a member (409). Membership of provider-managed groups follows the
+        provider and cannot be changed here (403).
       requestBody:
         content:
           application/json:
@@ -981,6 +982,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
     delete:
       operationId: removeMember
       tags: [groups]
