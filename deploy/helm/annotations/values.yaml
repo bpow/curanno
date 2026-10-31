@@ -29,8 +29,6 @@ config:
   oidcClientId: annotations-sidebar
   # Accepted `aud` claim. Defaults to the client id when empty.
   oidcAudience: ''
-  # Members of this group (from the `groups` claim) are platform administrators.
-  oidcAdminGroup: ''
   # Origin under which annotation IRIs are minted: the ingress host, with its scheme.
   publicUrl: https://annotations.example
   logLevel: info

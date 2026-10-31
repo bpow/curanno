@@ -11,9 +11,6 @@ data:
   {{- with .Values.config.oidcAudience }}
   OIDC_AUDIENCE: {{ . | quote }}
   {{- end }}
-  {{- with .Values.config.oidcAdminGroup }}
-  OIDC_ADMIN_GROUP: {{ . | quote }}
-  {{- end }}
   PUBLIC_URL: {{ required "config.publicUrl is required" .Values.config.publicUrl | quote }}
   LOG_LEVEL: {{ .Values.config.logLevel | quote }}
   STATIC_ROOT: /app/static
