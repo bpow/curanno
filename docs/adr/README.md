@@ -37,3 +37,4 @@ An architecture decision record (ADR) captures one decision that shapes the syst
 | [0023](0023-browser-extension.md) | A Manifest V3 extension runs the guest as a content script in every frame | Accepted |
 | [0024](0024-guest-origin-from-the-browser.md) | A guest's origin comes from the browser, and every guest connects to the sidebar itself | Accepted |
 | [0025](0025-disclosure-by-origin.md) | A page is sent only its own origin's annotations, public ones, and those the user allows | Accepted |
+| [0026](0026-no-provider-group-sync.md) | Groups are managed entirely through our own API; OIDC is identity only | Accepted |

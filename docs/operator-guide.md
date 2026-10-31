@@ -35,7 +35,7 @@ Create a **public** OpenID Connect client (Authorization Code with PKCE, no clie
 - Post-logout redirect URIs: `https://annotations.example/sidebar/`, `https://annotations.example/`.
 - Web origins (CORS for the token endpoint): `https://annotations.example`.
 - Refresh tokens enabled for the client, so framed sidebars can renew without third-party cookies (ADR 0019).
-- A `groups` claim in access tokens listing the user's group names, if you want directory groups usable for sharing; and one group named in `config.oidcAdminGroup` whose members administer the platform. Without an admin group, make the first administrator with SQL (`update users set is_admin = true where ...`) after their first sign-in; they can then use `PATCH /x/users/{id}`.
+- No `groups` claim is needed: groups are managed entirely through `/x/groups` (ADR 0026). Make the first administrator with SQL (`update users set is_admin = true where ...`) after their first sign-in; they can then administer further ones with `PATCH /x/users/{id}`.
 
 The API accepts a token when its issuer matches, its signature verifies against the issuer's JWKS, it is within its validity (30 s tolerance) and either its `aud` is `config.oidcAudience` (default: the client id) or its `azp` is the client id, which is how Keycloak marks public-client access tokens. A token revoked at the provider is honoured for at most 60 s (the API's verification cache) or until it expires.
 
@@ -113,8 +113,8 @@ The OpenAPI document and the text model are versioned contracts (CONTRIBUTING.md
 
 ## 7. Operating notes
 
-- Administrators: members of `config.oidcAdminGroup`, or users with `is_admin` set when no admin group is configured. With an admin group configured, `PATCH /x/users/{id} {isAdmin}` is refused (409).
-- Groups from the provider's `groups` claim are owned by the issuer: membership follows the claim on every sign-in and the API cannot edit them. Groups created through the API are separate even when the names coincide.
+- Administrators: users with `is_admin` set, managed with SQL for the first one and `PATCH /x/users/{id}` thereafter.
+- Groups are created, renamed and have their membership managed entirely through `/x/groups` (ADR 0026); OIDC tokens are used only for identity.
 - Document identity: the API logs a warning (`a page links documents that are recorded as distinct; not merged`) when a page claims links to several known documents. It never merges them on its own; an operator who has established that they are one document merges with `mergeDocuments` in `apps/api/src/documents/service.ts` (a one-off script against the database). See [document-identity.md](document-identity.md), section 6.
 - Body profiles: registered by administrators through `PUT /x/profiles/{iri}` with a JSON Schema. A schema with a catastrophic regular expression slows every write; review schemas before registering them.
 - The PDF viewer fetches PDFs from the browser, so a PDF's host must allow cross-origin reads; otherwise users open the file from their computer. No fetching proxy is deployed (ADR 0021).
