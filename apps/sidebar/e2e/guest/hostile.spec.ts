@@ -8,9 +8,11 @@
  * embedding policy the sidebar is served with (ADR 0007, ADR 0019).
  */
 import { expect, test, type Response } from '@playwright/test';
+import { RPC_PROTOCOL, RPC_PROTOCOL_VERSION } from '@curanno/model';
 import {
   HOST_ORIGIN,
   PAGE_PATH,
+  PUBLIC_ANNOTATION_ID,
   SECRETS,
   SIDEBAR_URL,
   UNLISTED_ORIGIN,
@@ -194,4 +196,79 @@ test('a page on an origin outside frame-ancestors cannot embed the sidebar', asy
   expect(seen).not.toContain('sidebar.ready');
   expect(seen).not.toContain('guest.hello');
   expect(await highlightedTexts(page)).toEqual([]);
+});
+
+/**
+ * The relay attack from the 2026-10-30 review (ADR 0024): the page catches
+ * `sidebar.ready`, which hands it the sidebar's window as the event source,
+ * and posts its own `guest.connect` claiming to relay a frame of another
+ * origin. The sidebar must hold that guest to the page's own origin.
+ */
+const VICTIM_URL = 'https://victim.test/private.html';
+const VICTIM_QUOTE = 'Victim quote: only for pages on victim.test';
+const FORGER = `
+  if (location.origin === ${JSON.stringify(HOST_ORIGIN)}) {
+    const forged = { received: [], tried: false };
+    window.__forged = forged;
+    const envelope = (payload) => ({ protocol: ${JSON.stringify(RPC_PROTOCOL)}, version: ${RPC_PROTOCOL_VERSION}, ...payload });
+    window.addEventListener('message', (event) => {
+      if (forged.tried || event.data?.type !== 'sidebar.ready' || !event.source) return;
+      forged.tried = true;
+      // After the real guest, whose connect from this same window would replace the forged one.
+      setTimeout(() => forge(event.source), 500);
+    });
+    const forge = (sidebar) => {
+      const channel = new MessageChannel();
+      channel.port1.onmessage = (e) => forged.received.push(JSON.stringify(e.data));
+      sidebar.postMessage(
+        envelope({ type: 'guest.connect', guestId: 'forged', frameOrigin: 'https://victim.test' }),
+        '*',
+        [channel.port2],
+      );
+      channel.port1.postMessage(envelope({ type: 'guest.hello', guestId: 'forged', capabilities: { highlights: 'css-highlight' } }));
+      channel.port1.postMessage(envelope({
+        type: 'document.report',
+        document: { uri: ${JSON.stringify(VICTIM_URL)}, links: [{ uri: ${JSON.stringify(VICTIM_URL)}, relation: 'self' }] },
+      }));
+    };
+  }
+`;
+
+test('a hostile page cannot pass itself off as a frame of another origin', async ({ context }) => {
+  await seedSession(context);
+  await context.addInitScript(FORGER);
+  const api = await stubApi(context, PAGE_URL);
+  api.annotations.set(`${PUBLIC_ANNOTATION_ID.slice(0, -1)}2`, {
+    '@context': 'http://www.w3.org/ns/anno.jsonld',
+    id: `${PUBLIC_ANNOTATION_ID.slice(0, -1)}2`,
+    type: 'Annotation',
+    created: '2026-10-30T08:00:00Z',
+    modified: '2026-10-30T08:00:00Z',
+    permissions: ['read'],
+    body: { type: 'TextualBody', value: 'Private note on the victim page' },
+    target: {
+      type: 'SpecificResource',
+      source: VICTIM_URL,
+      selector: [{ type: 'TextQuoteSelector', exact: VICTIM_QUOTE }],
+    },
+  });
+  const page = await context.newPage();
+  await page.goto(PAGE_URL);
+  await injectGuest(page);
+
+  const received = (): Promise<string[]> =>
+    page.evaluate(
+      () => (window as unknown as { __forged: { received: string[] } }).__forged.received,
+    );
+  await expect
+    .poll(received)
+    .toEqual(expect.arrayContaining([expect.stringContaining('may not report')]));
+  await page.waitForTimeout(1500);
+  const all = (await received()).join('\n');
+  expect(all).not.toContain('annotations.anchor');
+  expect(all).not.toContain(VICTIM_QUOTE);
+  expect(
+    api.calls.filter((c) => c.url.searchParams.get('uri') === VICTIM_URL),
+    'the sidebar never looked the victim page up',
+  ).toEqual([]);
 });

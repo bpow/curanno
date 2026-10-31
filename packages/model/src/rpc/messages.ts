@@ -21,9 +21,11 @@ export const RPC_PROTOCOL = 'curanno/guest-sidebar';
 
 /**
  * Bumped for any change a peer of the previous version could not handle.
- * Additive optional fields do not bump it.
+ * Additive optional fields do not bump it. Version 2: guests in other
+ * frames connect to the sidebar directly instead of through the host
+ * (ADR 0024).
  */
-export const RPC_PROTOCOL_VERSION = 1;
+export const RPC_PROTOCOL_VERSION = 2;
 
 /** Fields present on every message. */
 export interface RpcEnvelope {
@@ -35,76 +37,37 @@ export interface RpcEnvelope {
 // Discovery: window-level messages exchanged before the port exists
 
 /**
- * Sent by the sidebar to `window.parent` with target origin `*` once its
- * message handler is installed. It carries nothing a host page could use.
+ * Sent by the sidebar, with target origin `*`, once its message handler is
+ * installed: to `window.parent`, and to every frame of the top page, again
+ * at intervals so that frames loaded later hear it too. A guest accepts it
+ * only when the event's origin is the sidebar origin it was configured
+ * with, and answers `guest.connect` to the event's source. It carries
+ * nothing a page could use.
  */
 export interface SidebarReadyMessage extends RpcEnvelope {
   type: 'sidebar.ready';
+  /**
+   * Random per sidebar load. A guest connected to this instance ignores
+   * the repeats; a new one (the sidebar reloaded) makes it connect again.
+   */
+  instance: string;
 }
 
 /**
- * Sent by the host (the guest in the frame that holds the sidebar) to the
- * sidebar frame, with the sidebar's origin as target origin: for itself in
- * reply to `sidebar.ready`, and for every guest in another frame of the
- * page that asked it for a port. Transfers one `MessagePort`; all further
- * messages of that guest travel over it.
+ * Sent by a guest to the sidebar's window, with the sidebar's origin as
+ * target origin so that only a window on that origin receives it, in reply
+ * to `sidebar.ready`. Transfers one `MessagePort`; all further messages of
+ * that guest travel over it. The sidebar takes the guest's origin from the
+ * event and its role from the sender: `window.parent` is the host, another
+ * frame of the same top page is a sub-frame guest.
  */
 export interface GuestConnectMessage extends RpcEnvelope {
   type: 'guest.connect';
   /** Distinguishes guests when one sidebar serves several frames. */
   guestId: string;
-  /**
-   * The origin of the frame the guest runs in when it is not the host's own
-   * frame, as the host observed it on `guest.discover`. Absent for the host.
-   */
-  frameOrigin?: string;
 }
 
-/**
- * Sent by the host to the sidebar frame when a guest's frame went away;
- * the sidebar forgets that guest.
- */
-export interface GuestDisconnectMessage extends RpcEnvelope {
-  type: 'guest.disconnect';
-  guestId: string;
-}
-
-/**
- * Sent by a guest in a frame other than the top one to `window.top`, with
- * target origin `*`, to ask the host there for a port to the sidebar. Sent
- * again whenever `host.ready` arrives, and at intervals until a port does.
- */
-export interface GuestDiscoverMessage extends RpcEnvelope {
-  type: 'guest.discover';
-  guestId: string;
-}
-
-/**
- * The host's answer to `guest.discover`, sent to the asking frame with its
- * origin as target origin, transferring the guest's end of a channel whose
- * other end went to the sidebar with `guest.connect`.
- */
-export interface HostPortMessage extends RpcEnvelope {
-  type: 'host.port';
-  guestId: string;
-}
-
-/**
- * Sent by the host to every frame in the page, with target origin `*`, when
- * its sidebar is ready to take connections (at start and after the sidebar
- * reloads); carries nothing. Guests in those frames then discover again.
- */
-export interface HostReadyMessage extends RpcEnvelope {
-  type: 'host.ready';
-}
-
-export type WindowMessage =
-  | SidebarReadyMessage
-  | GuestConnectMessage
-  | GuestDisconnectMessage
-  | GuestDiscoverMessage
-  | HostPortMessage
-  | HostReadyMessage;
+export type WindowMessage = SidebarReadyMessage | GuestConnectMessage;
 
 // ---------------------------------------------------------------------------
 // Payload types
@@ -117,8 +80,6 @@ export type GuestRole = 'host' | 'sub';
 
 export interface GuestCapabilities {
   highlights: HighlightTechnique;
-  /** Absent means `host`, which every guest was before several frames were served. */
-  role?: GuestRole;
 }
 
 /** One identifier the page exposes, as `POST /x/documents` takes it. */

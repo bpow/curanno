@@ -1,7 +1,14 @@
-import { RPC_PROTOCOL_VERSION, envelope, type SidebarMessage } from '@curanno/model';
+import {
+  RPC_PROTOCOL_VERSION,
+  envelope,
+  type SidebarMessage,
+  type SidebarReadyMessage,
+} from '@curanno/model';
 import { describe, expect, it, vi } from 'vitest';
 import { GuestConnection } from './connection.js';
 import { FakeSidebar } from './fake-sidebar.js';
+
+const READY = envelope<SidebarReadyMessage>({ type: 'sidebar.ready', instance: 'one' });
 
 /**
  * A pair of fake windows: `page` is where the guest runs, `frame` the
@@ -56,7 +63,7 @@ async function flush(): Promise<void> {
 describe('GuestConnection', () => {
   it('connects on sidebar.ready from the sidebar frame at the sidebar origin', async () => {
     const t = connect();
-    t.page.deliver(FakeSidebar.readyMessage());
+    t.page.deliver(READY);
     expect(t.frameInbox).toHaveLength(1);
     const [sent] = t.frameInbox;
     expect(sent?.origin).toBe(t.sidebarOrigin);
@@ -80,8 +87,8 @@ describe('GuestConnection', () => {
 
   it('ignores sidebar.ready from another origin, another source or without the envelope', () => {
     const t = connect();
-    t.page.deliver(FakeSidebar.readyMessage(), 'https://evil.test');
-    t.page.deliver(FakeSidebar.readyMessage(), t.sidebarOrigin, {});
+    t.page.deliver(READY, 'https://evil.test');
+    t.page.deliver(READY, t.sidebarOrigin, {});
     t.page.deliver({ type: 'sidebar.ready' });
     t.page.deliver(envelope({ type: 'sidebar.hello' }));
     expect(t.frameInbox).toHaveLength(0);
@@ -90,7 +97,7 @@ describe('GuestConnection', () => {
 
   it('drops messages until sidebar.hello and ignores malformed ones', async () => {
     const t = connect();
-    t.page.deliver(FakeSidebar.readyMessage());
+    t.page.deliver(READY);
     const port = t.frameInbox[0]?.ports[0] as MessagePort;
     const sidebar = new FakeSidebar({ autoHello: false });
     sidebar.attach(port);
@@ -111,13 +118,13 @@ describe('GuestConnection', () => {
 
   it('reconnects on a second sidebar.ready and rejects unknown versions', async () => {
     const t = connect();
-    t.page.deliver(FakeSidebar.readyMessage());
+    t.page.deliver(READY);
     const first = new FakeSidebar();
     first.attach(t.frameInbox[0]?.ports[0] as MessagePort);
     await flush();
     expect(t.connection.connected).toBe(true);
 
-    t.page.deliver(FakeSidebar.readyMessage());
+    t.page.deliver(READY);
     expect(t.connection.connected).toBe(false);
     const second = new FakeSidebar();
     second.attach(t.frameInbox[1]?.ports[0] as MessagePort);

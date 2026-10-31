@@ -43,6 +43,8 @@ export class FakeSidebar {
   activated: string[][] = [];
   sidebarOpen: boolean | undefined;
   guestId: string | undefined;
+  /** This load's `sidebar.ready` instance. */
+  readonly instance = Math.random().toString(36).slice(2);
   private port: PortLike | undefined;
   private readonly waiters: { type: string; resolve: (m: GuestMessage) => void }[] = [];
 
@@ -57,8 +59,8 @@ export class FakeSidebar {
   }
 
   /** The window-level `sidebar.ready` message, for the page that hosts the fake. */
-  static readyMessage(): SidebarReadyMessage {
-    return envelope<SidebarReadyMessage>({ type: 'sidebar.ready' });
+  readyMessage(): SidebarReadyMessage {
+    return envelope<SidebarReadyMessage>({ type: 'sidebar.ready', instance: this.instance });
   }
 
   /** Whether `data` is a `guest.connect` message; the caller attaches `ports[0]`. */

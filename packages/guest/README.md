@@ -21,7 +21,7 @@ The script the bookmarklet injects into an annotated page (ADR 0007, 0008). It h
 
 ## Frames and PDFs
 
-The bundle runs one guest per frame. In the top frame the guest is the **host**: it holds the sidebar iframe, injects the bundle into same-origin frames (now and as they appear or navigate) and gives the guests of all other frames their ports to the sidebar without reading their traffic. In any other frame the guest connects through the host ([protocol, section 3](../../docs/guest-sidebar-rpc.md)); a cross-origin frame's page has to load the bundle itself. Our PDF viewer (`apps/pdf-viewer`) builds the guest in with the PDF integration, which anchors each page's text layer as PDF.js renders it and the text content of pages not yet rendered.
+The bundle runs one guest per frame. In the top frame the guest is the **host**: it holds the sidebar iframe and injects the bundle into same-origin frames (now and as they appear or navigate). In any other frame the guest waits for the sidebar to announce itself and connects to it directly, so the sidebar learns the frame's origin from the browser ([protocol, section 3](../../docs/guest-sidebar-rpc.md), ADR 0024); a cross-origin frame's page has to load the bundle itself. Our PDF viewer (`apps/pdf-viewer`) builds the guest in with the PDF integration, which anchors each page's text layer as PDF.js renders it and the text content of pages not yet rendered.
 
 ## Anchoring
 

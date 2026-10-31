@@ -3,6 +3,7 @@
  * guards each side applies to what it receives. Specified in
  * docs/guest-sidebar-rpc.md.
  */
+export { framesBelow, isFrameOf, type FrameWindow } from './frames.js';
 export {
   hasEnvelope,
   parseGuestMessage,
@@ -25,8 +26,6 @@ export {
   type GuestAnchoringState,
   type GuestCapabilities,
   type GuestConnectMessage,
-  type GuestDisconnectMessage,
-  type GuestDiscoverMessage,
   type GuestDocument,
   type GuestErrorMessage,
   type GuestHelloMessage,
@@ -37,8 +36,6 @@ export {
   type HighlightsActivatedMessage,
   type HighlightsFocusMessage,
   type HighlightsHoveredMessage,
-  type HostPortMessage,
-  type HostReadyMessage,
   type Payload,
   type RpcEnvelope,
   type RpcMessage,

@@ -1,19 +1,22 @@
 /**
  * The connection of a guest in a frame other than the one holding the
- * sidebar (docs/guest-sidebar-rpc.md, section 3). It cannot reach the
- * sidebar's window, so it asks the host in the top frame for a port with
- * `guest.discover`, accepts `host.port` only from `window.top`, and then
- * speaks the ordinary port protocol. It asks again on `host.ready` (the
- * host or its sidebar started after this frame did) and at intervals until
- * a port arrives, since the host may be injected at any time.
+ * sidebar (docs/guest-sidebar-rpc.md, section 3; ADR 0024). It cannot find
+ * the sidebar's window, which sits in the host's closed shadow root, so it
+ * waits for the sidebar to announce itself: `sidebar.ready` from a window
+ * of this page whose origin is the configured sidebar origin. It answers
+ * that window with `guest.connect` and a port, addressed to the sidebar
+ * origin, so the browser delivers the port to the sidebar and nothing
+ * else, and the sidebar learns this frame's origin from the browser. The
+ * page around this frame takes no part in it.
  */
 import {
   RPC_PROTOCOL_VERSION,
   envelope,
+  isFrameOf,
   parseSidebarMessage,
   parseWindowMessage,
   type GuestCapabilities,
-  type GuestDiscoverMessage,
+  type GuestConnectMessage,
   type GuestErrorMessage,
   type GuestHelloMessage,
   type GuestMessage,
@@ -22,15 +25,22 @@ import {
 } from '@curanno/model';
 import type { Connection, PortLike } from './connection.js';
 
+/** The subset of the sidebar's `WindowProxy` the connection posts to. */
+interface SidebarWindowLike {
+  postMessage(message: unknown, targetOrigin: string, transfer?: Transferable[]): void;
+}
+
 export interface SubGuestConnectionOptions {
   /** The frame's own window. */
   window: Window;
+  /** The origin the sidebar is served from; the only origin accepted. */
+  sidebarOrigin: string;
   guestId: string;
   capabilities: GuestCapabilities;
   onMessage: (message: SidebarMessage) => void;
   onConnected?: () => void;
-  /** How often to ask again while no port has arrived. Default 2 s. */
-  discoverIntervalMs?: number;
+  /** Makes the channel; tests inject one. */
+  createChannel?: () => { port1: PortLike; port2: unknown };
 }
 
 export class SubGuestConnection implements Connection {
@@ -38,18 +48,15 @@ export class SubGuestConnection implements Connection {
   private readonly listener: (event: MessageEvent) => void;
   private port: PortLike | undefined;
   private portListener: ((event: { data: unknown }) => void) | undefined;
+  /** The `sidebar.ready` instance the current port was offered to. */
+  private instance: string | undefined;
   private ready = false;
   private closed = false;
-  private timer: ReturnType<typeof setInterval> | undefined;
 
   constructor(options: SubGuestConnectionOptions) {
     this.options = options;
     this.listener = (event) => this.onWindowMessage(event);
     options.window.addEventListener('message', this.listener);
-    this.discover();
-    this.timer = setInterval(() => {
-      if (!this.port) this.discover();
-    }, options.discoverIntervalMs ?? 2000);
   }
 
   get connected(): boolean {
@@ -70,49 +77,41 @@ export class SubGuestConnection implements Connection {
 
   close(): void {
     this.closed = true;
-    if (this.timer !== undefined) clearInterval(this.timer);
     this.options.window.removeEventListener('message', this.listener);
     this.dropPort();
   }
 
-  /** Ask the top frame's host for a port. Carries only the guest id. */
-  private discover(): void {
-    const top = this.options.window.top;
-    if (!top || top === this.options.window) return;
-    try {
-      top.postMessage(
-        envelope<GuestDiscoverMessage>({ type: 'guest.discover', guestId: this.options.guestId }),
-        '*',
-      );
-    } catch {
-      // A detached frame has no top to speak to.
-    }
-  }
-
   private onWindowMessage(event: MessageEvent): void {
     if (this.closed) return;
-    const top = this.options.window.top;
-    if (!top || event.source !== top) return;
+    if (event.origin !== this.options.sidebarOrigin) return;
+    if (!isFrameOf(event.source, this.options.window.top)) return;
     const message = parseWindowMessage(event.data);
-    if (!message || message.version !== RPC_PROTOCOL_VERSION) return;
-    if (message.type === 'host.ready') {
-      // A new sidebar: the old port, if any, leads nowhere now.
-      this.dropPort();
-      this.discover();
-      return;
-    }
-    if (message.type !== 'host.port' || message.guestId !== this.options.guestId) return;
-    const port = event.ports[0] as PortLike | undefined;
-    if (!port) return;
-    this.attach(port);
+    if (message?.type !== 'sidebar.ready' || message.version !== RPC_PROTOCOL_VERSION) return;
+    // The sidebar repeats itself for frames that start later; a new instance means it reloaded.
+    if (this.port && message.instance === this.instance) return;
+    this.connect(event.source as unknown as SidebarWindowLike, message.instance);
   }
 
-  private attach(port: PortLike): void {
+  private connect(sidebar: SidebarWindowLike, instance: string): void {
     this.dropPort();
+    const channel = this.options.createChannel?.() ?? new MessageChannel();
+    const port = channel.port1;
     this.port = port;
+    this.instance = instance;
     this.portListener = (event) => this.onPortMessage(port, event.data);
     port.addEventListener('message', this.portListener);
     port.start?.();
+    const connect = envelope<GuestConnectMessage>({
+      type: 'guest.connect',
+      guestId: this.options.guestId,
+    });
+    try {
+      sidebar.postMessage(connect, this.options.sidebarOrigin, [channel.port2 as Transferable]);
+    } catch {
+      // The sidebar went away meanwhile; the next `sidebar.ready` tries again.
+      this.dropPort();
+      return;
+    }
     const hello: Payload<GuestHelloMessage> = {
       type: 'guest.hello',
       guestId: this.options.guestId,
@@ -149,6 +148,7 @@ export class SubGuestConnection implements Connection {
     this.port?.close();
     this.port = undefined;
     this.portListener = undefined;
+    this.instance = undefined;
     this.ready = false;
   }
 }
