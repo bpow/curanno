@@ -69,4 +69,25 @@ describe('useGuestSync', () => {
     expect(guest.anchoring.value.has(IRI)).toBe(false);
     scope.stop();
   });
+
+  it('says whether each annotation is public, and asks again when that changes', async () => {
+    const store = useAnnotationsStore();
+    const guest = createFakeGuest({ document: { uri: PAGE, links: [] } });
+    const sent: { id: string; public: boolean | undefined }[][] = [];
+    const anchor = guest.anchor.bind(guest);
+    guest.anchor = (requests, uri) => {
+      sent.push(requests.map(({ id, public: p }) => ({ id, public: p })));
+      anchor(requests, uri);
+    };
+    const scope = effectScope();
+    scope.run(() => useGuestSync(guest, store));
+
+    store.applyEvent('created', IRI, annotation(original));
+    await nextTick();
+    // Shared with everyone: the same target, now public.
+    store.applyEvent('updated', IRI, { ...annotation(original), public: true });
+    await nextTick();
+    expect(sent).toEqual([[{ id: IRI, public: false }], [{ id: IRI, public: true }]]);
+    scope.stop();
+  });
 });

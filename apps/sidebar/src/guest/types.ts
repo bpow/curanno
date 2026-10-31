@@ -11,8 +11,29 @@
 import type { AnchoringState } from '@curanno/model';
 import type { Ref } from 'vue';
 
-export type { AnchorRequest, DocumentLink, GuestDocument, GuestSelection } from '@curanno/model';
-import type { AnchorRequest, GuestDocument, GuestSelection } from '@curanno/model';
+export type { DocumentLink, GuestDocument, GuestSelection } from '@curanno/model';
+import type {
+  AnchorRequest as WireAnchorRequest,
+  GuestDocument,
+  GuestSelection,
+} from '@curanno/model';
+
+/**
+ * What the sidebar asks to be anchored: the protocol's request, which is
+ * all a guest is sent, and whether anyone may read the annotation, which
+ * decides where it may be sent (ADR 0025).
+ */
+export interface AnchorRequest extends WireAnchorRequest {
+  public?: boolean;
+}
+
+/** An annotation kept from a page because it was made on another origin (ADR 0025). */
+export interface Withheld {
+  /** The page's origin, as the browser reported it. */
+  pageOrigin: string;
+  /** The host of the page the annotation was made on, or its source if not a web page. */
+  source: string;
+}
 
 /** A selection with the document of the frame it was made in. */
 export interface DocumentSelection extends GuestSelection {
@@ -30,6 +51,8 @@ export interface Guest {
   readonly anchoring: Readonly<Ref<ReadonlyMap<string, AnchoringState>>>;
   /** Annotation IRIs whose highlights the pointer is over, in any frame. */
   readonly hovered: Readonly<Ref<readonly string[]>>;
+  /** Annotations not sent to a page that shows their document, by IRI (ADR 0025). */
+  readonly withheld: Readonly<Ref<ReadonlyMap<string, Withheld>>>;
 
   /**
    * Asks the guests showing `documentUri` (every guest when omitted) to
@@ -44,6 +67,11 @@ export interface Guest {
   /** Scrolls the frame showing the annotation to its first highlight. */
   scrollTo(id: string): void;
   clearSelection(): void;
+  /**
+   * Lets pages on `pageOrigin` be sent the annotations made on `source`,
+   * for this session, and sends those withheld until now.
+   */
+  allow(pageOrigin: string, source: string): void;
   /**
    * Called when the user clicks a highlight in a page. The sidebar scrolls
    * to and expands the matching card. Returns an unsubscribe function.

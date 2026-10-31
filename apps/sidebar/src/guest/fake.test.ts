@@ -33,6 +33,22 @@ describe('fake guest', () => {
     expect(guest.anchoring.value.has('a1')).toBe(false);
   });
 
+  it("keeps another site's annotations from its document as a page would, until allowed", () => {
+    const guest = createFakeGuest({ document: { uri: 'https://mirror.test/a', links: [] } });
+    guest.anchor([
+      { id: 'own', target: 'https://mirror.test/a' },
+      { id: 'public', target: 'https://publisher.test/a', public: true },
+      { id: 'kept', target: 'https://publisher.test/a' },
+    ]);
+    expect([...guest.anchoring.value.keys()]).toEqual(['own', 'public']);
+    expect([...guest.withheld.value]).toEqual([
+      ['kept', { pageOrigin: 'https://mirror.test', source: 'publisher.test' }],
+    ]);
+    guest.allow('https://mirror.test', 'publisher.test');
+    expect(guest.anchoring.value.get('kept')).toBe('anchored');
+    expect(guest.withheld.value.size).toBe(0);
+  });
+
   it('delivers activations to subscribers until they unsubscribe', () => {
     const guest = createFakeGuest();
     const seen: string[][] = [];

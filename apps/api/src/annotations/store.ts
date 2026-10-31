@@ -14,7 +14,7 @@ import {
 import { jsonArrayFrom } from 'kysely/helpers/postgres';
 import type { AnchoringState, Permission } from '@curanno/model';
 import type { Caller, UserCaller } from '../auth/caller.js';
-import type { Database } from '../db/index.js';
+import { PUBLIC_PRINCIPAL_ID, type Database } from '../db/index.js';
 import { documentForSource } from '../documents/service.js';
 import { preconditionFailed, unprocessable } from '../problems.js';
 import { stableJson, type ParsedAnnotation } from './input.js';
@@ -106,6 +106,9 @@ export class AnnotationStore {
           Permission[]
         >`coalesce((select array_agg(distinct acl.permission order by acl.permission) from acl where acl.annotation_id = annotations.id and acl.principal_id = any(${principalArray(caller.principalIds)})), '{}')`.as(
           'permissions',
+        ),
+        sql<boolean>`exists (select 1 from acl where acl.annotation_id = annotations.id and acl.principal_id = ${PUBLIC_PRINCIPAL_ID} and acl.permission = 'read')`.as(
+          'public',
         ),
       ]);
   }

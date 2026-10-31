@@ -7,6 +7,7 @@ import {
   type SidebarMessage,
 } from '@curanno/model';
 import { afterEach, describe, expect, it } from 'vitest';
+import { createSessionConsent } from './disclosure';
 import { createRpcGuest, type MessageEventLike, type PortLike, type WindowLike } from './rpc';
 
 const GUEST_ORIGIN = 'https://host-page.test';
@@ -126,9 +127,11 @@ afterEach(() => {
   for (const c of cleanups.splice(0)) c();
 });
 
-async function connected(options: { announceIntervalMs?: number } = {}) {
+async function connected(
+  options: { announceIntervalMs?: number; consent?: ReturnType<typeof createSessionConsent> } = {},
+) {
   const w = sidebarWindow();
-  const guest = createRpcGuest({ window: w.win, ...options });
+  const guest = createRpcGuest({ window: w.win, consent: createSessionConsent(null), ...options });
   const port = guestPort();
   cleanups.push(
     () => guest.close(),
@@ -595,6 +598,136 @@ describe('the RPC guest', () => {
     }
     await flush();
     expect(t.guest.guests.value.map((g) => g.id)).toEqual(['g1', 'after']);
+  });
+
+  describe('disclosure (ADR 0025)', () => {
+    const SECRET = 'Secret quote from the publisher';
+    const own = { id: 'urn:own', target: ARTICLE.uri };
+    const elsewhere = {
+      id: 'urn:elsewhere',
+      target: {
+        type: 'SpecificResource',
+        source: 'https://publisher.test/paper',
+        selector: { type: 'TextQuoteSelector', exact: SECRET },
+      },
+    } as const;
+    const anchored = (received: SidebarMessage[]) =>
+      received
+        .filter((m) => m.type === 'annotations.anchor')
+        .flatMap((m) => (m.type === 'annotations.anchor' ? m.requests.map((r) => r.id) : []));
+
+    it('withholds annotations made on another origin unless anyone may read them', async () => {
+      const t = await connected();
+      t.port.send({ type: 'document.report', document: ARTICLE });
+      await flush();
+      t.guest.anchor(
+        [
+          own,
+          // http and https are one origin, as in document identity.
+          { id: 'urn:http', target: 'http://host-page.test/article' },
+          elsewhere,
+          { id: 'urn:public', target: 'https://publisher.test/paper', public: true },
+          { id: 'urn:pdf', target: 'urn:x-pdf:abc' },
+        ],
+        ARTICLE.uri,
+      );
+      await flush();
+      expect(anchored(t.port.received)).toEqual(['urn:own', 'urn:http', 'urn:public']);
+      expect(JSON.stringify(t.port.received)).not.toContain(SECRET);
+      // The wire carries the protocol's request only.
+      expect(JSON.stringify(t.port.received)).not.toContain('"public"');
+      expect([...t.guest.withheld.value]).toEqual([
+        ['urn:elsewhere', { pageOrigin: GUEST_ORIGIN, source: 'publisher.test' }],
+        ['urn:pdf', { pageOrigin: GUEST_ORIGIN, source: 'urn:x-pdf:abc' }],
+      ]);
+
+      // Focus and scrolling name only what the page was sent.
+      t.guest.focus(['urn:own', 'urn:elsewhere']);
+      t.guest.scrollTo('urn:elsewhere');
+      await flush();
+      expect(t.port.received.at(-1)).toEqual(
+        envelope({ type: 'highlights.focus', ids: ['urn:own'] }),
+      );
+    });
+
+    it('sends what the user allowed, to pages on that origin, for the session', async () => {
+      const consent = createSessionConsent(null);
+      const t = await connected({ consent });
+      t.port.send({ type: 'document.report', document: ARTICLE });
+      const frame = t.addFrame();
+      const framed = guestPort();
+      cleanups.push(() => framed.close());
+      t.deliver(envelope({ type: 'guest.connect', guestId: 'g2' }), {
+        origin: 'https://frames.test',
+        source: frame,
+        ports: [framed.transfer],
+      });
+      framed.send({ type: 'guest.hello', guestId: 'g2', capabilities: { highlights: 'overlay' } });
+      framed.send({ type: 'document.report', document: FRAMED });
+      await flush();
+      // Requests for every guest are held to the same rule, per guest.
+      t.guest.anchor([own, elsewhere]);
+      await flush();
+      expect(anchored(t.port.received)).toEqual(['urn:own']);
+      expect(anchored(framed.received)).toEqual([]);
+
+      t.guest.allow(GUEST_ORIGIN, 'publisher.test');
+      await flush();
+      expect(anchored(t.port.received)).toEqual(['urn:own', 'urn:elsewhere']);
+      expect(anchored(framed.received)).toEqual([]);
+      expect(consent.has('host-page.test', 'publisher.test')).toBe(true);
+      // The frame is still sent neither, but the host page shows both: nothing to offer.
+      expect(t.guest.withheld.value.size).toBe(0);
+
+      // A sidebar loaded later in the session remembers.
+      const again = await connected({ consent });
+      again.port.send({ type: 'document.report', document: ARTICLE });
+      again.guest.anchor([elsewhere], ARTICLE.uri);
+      await flush();
+      expect(anchored(again.port.received)).toEqual(['urn:elsewhere']);
+    });
+
+    it('takes a highlight back when an annotation stops being public', async () => {
+      const t = await connected();
+      t.port.send({ type: 'document.report', document: ARTICLE });
+      t.guest.anchor([{ ...elsewhere, public: true }], ARTICLE.uri);
+      await flush();
+      expect(anchored(t.port.received)).toEqual(['urn:elsewhere']);
+      t.guest.anchor([elsewhere], ARTICLE.uri);
+      await flush();
+      expect(t.port.received.at(-1)).toEqual(
+        envelope({ type: 'annotations.unanchor', ids: ['urn:elsewhere'] }),
+      );
+      expect(t.guest.withheld.value.has('urn:elsewhere')).toBe(true);
+    });
+
+    it('sends the trusted viewer what its PDF needs', async () => {
+      const w = sidebarWindow();
+      const viewer = createRpcGuest({
+        window: w.win,
+        trustedOrigins: ['https://pdf.test'],
+        consent: createSessionConsent(null),
+      });
+      const port = guestPort();
+      cleanups.push(
+        () => viewer.close(),
+        () => port.close(),
+      );
+      w.deliver(envelope({ type: 'guest.connect', guestId: 'v1' }), {
+        origin: 'https://pdf.test',
+        ports: [port.transfer],
+      });
+      port.send({ type: 'guest.hello', guestId: 'v1', capabilities: { highlights: 'overlay' } });
+      port.send({
+        type: 'document.report',
+        document: { uri: 'https://publisher.test/paper', links: [] },
+      });
+      await flush();
+      viewer.anchor([elsewhere], 'https://publisher.test/paper');
+      await flush();
+      expect(anchored(port.received)).toEqual(['urn:elsewhere']);
+      expect(viewer.withheld.value.size).toBe(0);
+    });
   });
 
   it('sends a guest the requests for its document when it reports it', async () => {

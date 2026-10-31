@@ -341,6 +341,7 @@ export const Annotation = schema('Annotation', {
     created: dateTime,
     modified: dateTime,
     permissions: { type: 'array', items: ref('Permission') },
+    public: { type: 'boolean' },
     ...annotationProperties,
   },
 });

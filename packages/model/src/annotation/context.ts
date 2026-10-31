@@ -41,5 +41,7 @@ export const EXTENSION_CONTEXT_DOCUMENT = {
     update: `${ns}Update`,
     delete: `${ns}Delete`,
     share: `${ns}Share`,
+    // Whether anyone may read the annotation (the `public` principal holds `read`).
+    public: { '@id': `${ns}public`, '@type': 'http://www.w3.org/2001/XMLSchema#boolean' },
   },
 } as const;

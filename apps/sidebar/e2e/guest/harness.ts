@@ -73,6 +73,8 @@ export interface StubApi {
   calls: ApiCall[];
   /** Annotations the stub has handed out, by IRI. */
   annotations: Map<string, Record<string, unknown>>;
+  /** URIs that search treats as another document's, as document identity links them. */
+  aliases: Map<string, string>;
 }
 
 const json = (body: unknown, status = 200, headers: Record<string, string> = {}) => ({
@@ -84,7 +86,7 @@ const json = (body: unknown, status = 200, headers: Record<string, string> = {})
 
 /** Answers the sidebar's API calls on its own origin. */
 export async function stubApi(context: BrowserContext, pageUrl: string): Promise<StubApi> {
-  const stub: StubApi = { calls: [], annotations: new Map() };
+  const stub: StubApi = { calls: [], annotations: new Map(), aliases: new Map() };
   stub.annotations.set(PUBLIC_ANNOTATION_ID, annotation(pageUrl));
   let counter = 0;
   await context.route(
@@ -106,9 +108,10 @@ export async function stubApi(context: BrowserContext, pageUrl: string): Promise
         case 'GET /x/profiles':
           return route.fulfill(json([]));
         case 'GET /x/search': {
+          const uri = url.searchParams.get('uri') ?? '';
           const items = [...stub.annotations.values()].filter((a) => {
             const target = a['target'] as { source?: string };
-            return target.source === url.searchParams.get('uri');
+            return target.source === uri || target.source === stub.aliases.get(uri);
           });
           return route.fulfill(json({ total: items.length, items }));
         }

@@ -45,6 +45,8 @@ export interface AnnotationRecord {
   bodies: StoredBody[];
   targets: StoredTarget[];
   permissions: Permission[];
+  /** Whether the `public` principal may read the annotation. */
+  public: boolean;
 }
 
 /** The W3C context, then this deployment's extension context (served at `/x/context.jsonld`). */
@@ -108,6 +110,7 @@ export function toAnnotation(record: AnnotationRecord, publicUrl: string): Annot
     target,
     ...data,
     permissions: record.permissions,
+    public: record.public,
   };
 }
 

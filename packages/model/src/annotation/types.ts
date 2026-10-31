@@ -286,6 +286,11 @@ export interface Annotation extends AnnotationProperties {
    * holds on this annotation. Ignored on input.
    */
   permissions?: Permission[];
+  /**
+   * Extension, server-populated on responses: whether anyone, signed in or
+   * not, may read this annotation. Ignored on input.
+   */
+  public?: boolean;
 }
 
 /**
