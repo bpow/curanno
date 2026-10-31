@@ -142,6 +142,38 @@ describe.skipIf(!databaseUrl)('access control', () => {
     expect(forBob.json<{ permissions: string[] }>().permissions).toEqual(['read']);
   });
 
+  it('says whether anyone may read an annotation, whoever asks, and ignores it on input', async () => {
+    for (const caller of [null, bob, alice]) {
+      const pub = await ctx.as(caller, {
+        method: 'GET',
+        url: `/annotations/${anns['public']?.id}`,
+      });
+      expect(pub.json<{ public: boolean }>().public).toBe(true);
+    }
+    for (const name of ['private', 'authenticated', 'curators']) {
+      const res = await ctx.as(alice, { method: 'GET', url: `/annotations/${anns[name]?.id}` });
+      expect(res.json<{ public: boolean }>().public, name).toBe(false);
+    }
+    const search = await ctx.as(bob, { method: 'GET', url: '/x/search?limit=100' });
+    const byId = new Map(
+      search
+        .json<{ items: { id: string; public: boolean }[] }>()
+        .items.map((a) => [a.id, a.public]),
+    );
+    expect(byId.get(anns['public']?.iri as string)).toBe(true);
+    expect(byId.get(anns['bobs']?.iri as string)).toBe(false);
+
+    // A client cannot make an annotation look public by saying so.
+    const res = await ctx.as(alice, {
+      method: 'POST',
+      url: '/annotations/',
+      headers: { 'content-type': 'application/ld+json' },
+      payload: { ...annotationOn('https://example.org/acl', 'Claims to be public'), public: true },
+    });
+    expect(res.statusCode, res.body).toBe(201);
+    expect(res.json<{ public: boolean }>().public).toBe(false);
+  });
+
   it('enforces update and delete permissions separately from read', async () => {
     const bobs = anns['bobs'] as Created;
     const update = (user: TestUser | null, ann: Created, etag = '*') =>

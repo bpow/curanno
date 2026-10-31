@@ -46,6 +46,7 @@ const SERVER_ASSIGNED = new Set([
   'created',
   'modified',
   'permissions',
+  'public',
 ]);
 
 /**

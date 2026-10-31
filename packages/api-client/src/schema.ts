@@ -931,6 +931,7 @@ export interface components {
             /** Format: date-time */
             modified?: string;
             permissions?: components["schemas"]["Permission"][];
+            public?: boolean;
             type: "Annotation" | string[];
             body?: components["schemas"]["Body"] | components["schemas"]["Body"][];
             bodyValue?: string;

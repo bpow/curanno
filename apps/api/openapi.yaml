@@ -2197,6 +2197,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Permission'
+        public:
+          type: boolean
         type:
           anyOf:
             - const: Annotation
