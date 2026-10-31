@@ -52,11 +52,7 @@ async function createGroup(): Promise<void> {
   <section>
     <h1>Groups</h1>
     <p class="muted">
-      {{
-        auth.isAdmin.value
-          ? 'Every group on this instance.'
-          : 'The groups you belong to. Groups from the identity provider are managed there.'
-      }}
+      {{ auth.isAdmin.value ? 'Every group on this instance.' : 'The groups you belong to.' }}
     </p>
     <form class="inline" @submit.prevent="search">
       <label class="field">
@@ -74,7 +70,6 @@ async function createGroup(): Promise<void> {
             <th>Description</th>
             <th>Members</th>
             <th>Your role</th>
-            <th>Source</th>
           </tr>
         </thead>
         <tbody>
@@ -85,14 +80,9 @@ async function createGroup(): Promise<void> {
             <td class="muted">{{ group.description ?? '' }}</td>
             <td>{{ group.memberCount ?? '' }}</td>
             <td>{{ group.role ?? '' }}</td>
-            <td>
-              <span v-if="group.issuer" class="badge" :title="String(group.issuer)">
-                identity provider
-              </span>
-            </td>
           </tr>
           <tr v-if="groups.data.value.items.length === 0">
-            <td colspan="5" class="muted">No groups.</td>
+            <td colspan="4" class="muted">No groups.</td>
           </tr>
         </tbody>
       </table>

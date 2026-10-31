@@ -10,7 +10,7 @@ With the compose stack up and the API running (see the [repository README](../..
 pnpm --filter @curanno/web dev
 ```
 
-The site is at <http://localhost:3001>. Sign in as `alice` / `alice` or `bob` / `bob`. Neither is a platform administrator; to see the Users page, make one an administrator with the API (`PATCH /x/users/{id}` with `{"isAdmin": true}` from an administrator, or `update users set is_admin = true` in Postgres for the first one), or set `OIDC_ADMIN_GROUP` on the API to a Keycloak group.
+The site is at <http://localhost:3001>. Sign in as `alice` / `alice` or `bob` / `bob`. Neither is a platform administrator; to see the Users page, make one an administrator with the API (`PATCH /x/users/{id}` with `{"isAdmin": true}` from an administrator, or `update users set is_admin = true` in Postgres for the first one).
 
 In development the dev server proxies `/annotations` and `/x` to the API (`API_PROXY_TARGET`, default `http://localhost:3000`), so the site and the API share an origin, which is how production serves them too. The proxy is a dev-server setting in `nuxt.config.ts`, not an application route.
 
@@ -35,7 +35,7 @@ The identity provider must list `<site origin>/auth/callback` among the client's
 | `/users`       | admins       | Every user, searchable, with paging                                                            |
 | `/users/:id`   | signed in    | One user; administrators can rename them and grant or remove the administrator flag           |
 | `/groups`      | signed in    | The caller's groups (every group for administrators), create a group                          |
-| `/groups/:id`  | signed in    | Rename, describe and delete the group, manage members and roles; provider-managed groups are read-only |
+| `/groups/:id`  | signed in    | Rename, describe and delete the group, manage members and roles                               |
 | `/browse`      | signed in    | Search over `/x/search` with every documented filter, paging and the total                    |
 | `/browse/:id`  | signed in    | One annotation: targets, bodies, the caller's permissions, the sharing panel for `share` holders |
 

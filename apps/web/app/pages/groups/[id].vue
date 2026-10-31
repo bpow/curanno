@@ -19,10 +19,7 @@ const group = useRequest(
   () => api.GET('/x/groups/{id}', { params: { path: { id: id.value } } }),
   [id],
 );
-const managed = computed(() => group.data.value?.issuer !== undefined);
-const canManage = computed(
-  () => !managed.value && (auth.isAdmin.value || group.data.value?.role === 'admin'),
-);
+const canManage = computed(() => auth.isAdmin.value || group.data.value?.role === 'admin');
 
 const edit = useAction();
 const name = ref('');
@@ -62,10 +59,6 @@ async function remove(): Promise<void> {
     <h1>{{ group.data.value?.name ?? 'Group' }}</h1>
     <ProblemAlert :problem="group.problem.value" />
     <template v-if="group.data.value">
-      <p v-if="managed" class="notice">
-        This group is managed by the identity provider ({{ group.data.value.issuer }}): its name and
-        membership follow the provider and cannot be changed here.
-      </p>
       <dl class="props">
         <dt>Description</dt>
         <dd>{{ group.data.value.description ?? '—' }}</dd>
@@ -100,7 +93,7 @@ async function remove(): Promise<void> {
       <MembershipEditor
         :group-id="group.data.value.id"
         :can-manage="canManage"
-        :current-user-id="managed ? undefined : auth.me.value?.id"
+        :current-user-id="auth.me.value?.id"
         @changed="group.run()"
       />
     </template>
