@@ -400,7 +400,7 @@ export interface paths {
         head?: never;
         /**
          * Update a group
-         * @description Group administrators and platform administrators only. Provider-managed groups (those with an `issuer`) cannot be changed (403).
+         * @description Group administrators and platform administrators only.
          */
         patch: operations["updateGroup"];
         trace?: never;
@@ -435,13 +435,13 @@ export interface paths {
         get?: never;
         /**
          * Add a member or change their role
-         * @description Group administrators and platform administrators only. The last administrator of a group cannot be made a member (409). Membership of provider-managed groups follows the provider and cannot be changed here (403).
+         * @description Group administrators and platform administrators only. The last administrator of a group cannot be made a member (409).
          */
         put: operations["setMember"];
         post?: never;
         /**
          * Remove a member
-         * @description Group administrators and platform administrators, or the member removing themselves. The last administrator of a group cannot be removed (409). Membership of provider-managed groups cannot be changed here (403).
+         * @description Group administrators and platform administrators, or the member removing themselves. The last administrator of a group cannot be removed (409).
          */
         delete: operations["removeMember"];
         options?: never;
@@ -670,11 +670,6 @@ export interface components {
             memberCount?: number;
             /** @description The caller's role in the group, when a member. */
             role?: components["schemas"]["GroupRole"];
-            /**
-             * Format: uri
-             * @description The OpenID Connect issuer whose `groups` claim manages this group. Such groups are read-only through this API: name, description and membership come from the provider, and the operations that change a group answer 403 for them.
-             */
-            issuer?: string;
         } & {
             [key: string]: unknown;
         };
