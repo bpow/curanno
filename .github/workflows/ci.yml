@@ -24,10 +24,6 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgres://annotations:annotations@localhost:5432/annotations
-      # The backup and restore test runs pg_dump and pg_restore from the
-      # Postgres container, whose major version matches the server's.
-      PG_DUMP: docker exec -i ${{ job.services.postgres.id }} pg_dump
-      PG_RESTORE: docker exec -i ${{ job.services.postgres.id }} pg_restore
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -39,7 +35,13 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm format
+      # The backup and restore test runs pg_dump and pg_restore from the
+      # Postgres container, whose major version matches the server's. These
+      # are step-level because job-level env cannot read the `job` context.
       - run: pnpm test
+        env:
+          PG_DUMP: docker exec -i ${{ job.services.postgres.id }} pg_dump
+          PG_RESTORE: docker exec -i ${{ job.services.postgres.id }} pg_restore
       - run: pnpm licenses:check
       - run: pnpm openapi:lint
       - run: pnpm api-client:check
