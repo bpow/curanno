@@ -5,7 +5,7 @@
   "description": "Management site (Nuxt): an ordinary client of the public API",
   "type": "module",
   "scripts": {
-    "dev": "tsc -b ../../packages/model ../../packages/api-client ../../packages/guest && nuxt dev",
+    "dev": "tsc -b ../../packages/model ../../packages/api-client ../../packages/guest && nuxt dev --port 3001",
     "build": "tsc -b ../../packages/model ../../packages/api-client ../../packages/guest && nuxt build",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
