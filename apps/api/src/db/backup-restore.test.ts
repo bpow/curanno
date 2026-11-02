@@ -67,6 +67,7 @@ describe.skipIf(!databaseUrl)('backup and restore', () => {
     for (const c of cleanups.reverse()) await c();
   });
 
+  // A dump and restore through the database container takes over 5s on CI runners.
   it('restores a populated database that serves the API as before', async () => {
     const original = await createTestContext();
     cleanups.push(() => original.close());
@@ -148,7 +149,7 @@ describe.skipIf(!databaseUrl)('backup and restore', () => {
     expect(more.statusCode).toBe(201);
     const events = await restored.db.selectFrom('annotation_events').selectAll().execute();
     expect(events.length).toBe(before.events.length + 1);
-  });
+  }, 30_000);
 
   // The whole contract on a restored copy of a fresh database.
   let restoredFresh: TestContext | undefined;
