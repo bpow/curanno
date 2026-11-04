@@ -67,6 +67,8 @@ export interface Guest {
   /** Scrolls the frame showing the annotation to its first highlight. */
   scrollTo(id: string): void;
   clearSelection(): void;
+  /** Asks the page to hide this sidebar; the bookmarklet or extension shows it again. */
+  closeSidebar(): void;
   /**
    * Lets pages on `pageOrigin` be sent the annotations made on `source`,
    * for this session, and sends those withheld until now.

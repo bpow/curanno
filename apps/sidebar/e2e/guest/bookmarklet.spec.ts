@@ -93,6 +93,16 @@ test('the sidebar takes the document from the guest and anchors its annotations'
       ),
     )
     .toBe(false);
+
+  // The sidebar's own close button hides it as well.
+  await sidebar.getByRole('button', { name: 'Close sidebar' }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.querySelector<HTMLElement>('[data-curanno-guest="sidebar"]')?.hidden ?? null,
+      ),
+    )
+    .toBe(true);
 });
 
 test('a selection in the page becomes an annotation through the sidebar', async () => {

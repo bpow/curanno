@@ -48,6 +48,16 @@ useGuestSync(guest, store);
   <header class="toolbar">
     <h1>Annotations</h1>
     <UserMenu />
+    <button
+      v-if="!isFakeGuest(guest)"
+      type="button"
+      class="close"
+      aria-label="Close sidebar"
+      title="Close sidebar"
+      @click="guest.closeSidebar()"
+    >
+      <span aria-hidden="true">×</span>
+    </button>
   </header>
   <FakeGuestPanel v-if="isFakeGuest(guest)" :guest="guest" />
   <p v-if="auth.error" class="alert" role="alert">{{ auth.error }}</p>
@@ -83,6 +93,11 @@ useGuestSync(guest, store);
 
 .live.open {
   background: light-dark(#1f8f4e, #5fd38d);
+}
+
+.close {
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
 }
 
 .document {
