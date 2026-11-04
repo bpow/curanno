@@ -17,8 +17,8 @@ In development the dev server proxies `/annotations` and `/x` to the API (`API_P
 | Setting                      | Default                                       | Meaning                                    |
 | ---------------------------- | --------------------------------------------- | ------------------------------------------ |
 | `NUXT_PUBLIC_API_BASE`       | empty, meaning the same origin                 | Base URL of the API                        |
-| `NUXT_PUBLIC_OIDC_ISSUER`    | `http://localhost:8080/realms/annotations-dev` | OpenID Connect issuer, without a trailing slash; required for a built site |
-| `NUXT_PUBLIC_OIDC_CLIENT_ID` | `annotations-sidebar`                         | Public client the site signs in as         |
+| `NUXT_PUBLIC_OIDC_ISSUER`    | in development `OIDC_ISSUER`, else `http://localhost:8080` | OpenID Connect issuer, without a trailing slash; required for a built site |
+| `NUXT_PUBLIC_OIDC_CLIENT_ID` | in development `OIDC_CLIENT_ID`                | Public client the site signs in as; required for a built site |
 | `NUXT_PUBLIC_PDF_VIEWER_URL` | `http://localhost:5174/pdf/`                  | The PDF viewer page, linked from the landing page and built into the bookmarklet |
 | `API_PROXY_TARGET`           | `http://localhost:3000`                       | Where the dev server proxies the API to    |
 
@@ -57,7 +57,7 @@ app/
   middleware/    auth, admin
   pages/         one file per route
   plugins/       auth.client.ts: creates the session store and the API client
-e2e/             Playwright test against Keycloak and the API
+e2e/             Playwright test against Zitadel and the API
 ```
 
 Auto-imports are off (`nuxt.config.ts`): components import what they use from `vue`, `#imports` and `#components`, so the component tests run with plain `@vue/test-utils` under happy-dom and a fake `fetch` behind the generated client. `pnpm --filter @curanno/web test` runs them; `pnpm --filter @curanno/web e2e` runs the Playwright test (needs the compose stack, a migrated database and `pnpm build` for the API's build output; the dev server is started or reused).

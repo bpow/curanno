@@ -3,7 +3,7 @@ import { defineConfig } from '@playwright/test';
 /**
  * The bookmarklet suite: the built guest bundle injected into corpus pages
  * the way the bookmarklet does it, the built sidebar in the iframe, and the
- * API answered by Playwright routes, so it needs neither Keycloak nor
+ * API answered by Playwright routes, so it needs neither Zitadel nor
  * Postgres. The pages come from real loopback servers (one on 127.0.0.1,
  * one on ::1 for the origin the sidebar must refuse), because Chromium does
  * not let a page it cannot place on the network embed a localhost frame.

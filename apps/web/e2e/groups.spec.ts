@@ -1,28 +1,12 @@
 /**
- * Alice signs in through the compose Keycloak, creates a group and adds
+ * Alice signs in through the compose Zitadel, creates a group and adds
  * bob from the membership editor; the result is checked through the API
- * with alice's own token. Bob is signed in once beforehand, through the
- * provider's password grant, so that he exists as a user to add.
+ * with alice's own token. Bob is signed in once beforehand, without a
+ * browser, so that he exists as a user to add.
  */
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-
-const ISSUER = process.env['OIDC_ISSUER'] ?? 'http://localhost:8080/realms/annotations-dev';
-const CLIENT_ID = process.env['OIDC_CLIENT_ID'] ?? 'annotations-sidebar';
-
-async function tokenFor(request: APIRequestContext, user: 'alice' | 'bob'): Promise<string> {
-  const response = await request.post(`${ISSUER}/protocol/openid-connect/token`, {
-    form: {
-      grant_type: 'password',
-      client_id: CLIENT_ID,
-      username: user,
-      password: user,
-      scope: 'openid',
-    },
-  });
-  expect(response.ok(), await response.text()).toBe(true);
-  return ((await response.json()) as { access_token: string }).access_token;
-}
+import { expect, test, type Page } from '@playwright/test';
+import { devAccessToken } from '../../api/src/test/dev-token.ts';
 
 /** Fails on any WCAG 2.1 A/AA or best-practice rule axe reports (docs/accessibility.md). */
 async function expectNoViolations(page: Page, label: string): Promise<void> {
@@ -42,16 +26,17 @@ test('the landing and sign-in pages have no axe violations', async ({ page }) =>
 });
 
 test('alice creates a group and adds bob', async ({ page, request }) => {
-  const bobToken = await tokenFor(request, 'bob');
+  const bobToken = await devAccessToken('bob');
   const bobMe = await request.get('/x/me', { headers: { authorization: `Bearer ${bobToken}` } });
   expect(bobMe.ok()).toBe(true);
   const bobId = ((await bobMe.json()) as { id: string }).id;
 
   // The groups page needs a user: the guard sends alice to the provider.
   await page.goto('/groups');
-  await page.getByLabel('Username or email').fill('alice');
+  await page.getByLabel('Loginname').fill('alice');
+  await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByLabel('Password', { exact: true }).fill('alice');
-  await page.getByRole('button', { name: 'Sign In' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/groups$/);
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
   await expectNoViolations(page, 'the groups page');
@@ -72,7 +57,7 @@ test('alice creates a group and adds bob', async ({ page, request }) => {
     .click();
   await expect(page.getByRole('row', { name: /Bob Reviewer/ })).toBeVisible();
 
-  const aliceToken = await tokenFor(request, 'alice');
+  const aliceToken = await devAccessToken('alice');
   const headers = { authorization: `Bearer ${aliceToken}` };
   const members = await request.get(`/x/groups/${groupId}/members`, { headers });
   expect(members.ok()).toBe(true);

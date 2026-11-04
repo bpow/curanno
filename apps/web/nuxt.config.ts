@@ -8,7 +8,35 @@
  * how production serves the two as well (the OpenAPI document's server URL
  * is `/`). The proxy is a dev-server setting, not an application route.
  */
+import { readFileSync } from 'node:fs';
+import { parseEnv } from 'node:util';
+
 const apiProxyTarget = process.env['API_PROXY_TARGET'] ?? 'http://localhost:3000';
+const dev = process.env['NODE_ENV'] !== 'production';
+
+/**
+ * In development the issuer and the client default to OIDC_ISSUER and
+ * OIDC_CLIENT_ID, from the environment or the repository .env that
+ * `deploy/zitadel/provision.ts` writes, so the API and the site name the
+ * same client. Only those two are read: the rest of that file configures
+ * the API.
+ */
+function repositoryEnv(): Record<string, string | undefined> {
+  if (!dev) return {};
+  try {
+    return {
+      ...parseEnv(readFileSync(new URL('../../.env', import.meta.url), 'utf8')),
+      ...process.env,
+    };
+  } catch {
+    return process.env;
+  }
+}
+const repoEnv = repositoryEnv();
+const oidcDefaults = {
+  issuer: repoEnv['OIDC_ISSUER'] ?? 'http://localhost:8080',
+  clientId: repoEnv['OIDC_CLIENT_ID'] ?? '',
+};
 
 /**
  * Sent with every page by Nitro. Scripts come from the site itself, plus
@@ -25,9 +53,8 @@ const apiProxyTarget = process.env['API_PROXY_TARGET'] ?? 'http://localhost:3000
  * browser receives then name the same provider. The trailing slash allows
  * every path under the issuer, where the provider's endpoints are.
  */
-const dev = process.env['NODE_ENV'] !== 'production';
 const issuerSource = dev
-  ? `${process.env['NUXT_PUBLIC_OIDC_ISSUER'] ?? 'http://localhost:8080/realms/annotations-dev'}/`
+  ? `${process.env['NUXT_PUBLIC_OIDC_ISSUER'] ?? oidcDefaults.issuer}/`
   : '{{NUXT_PUBLIC_OIDC_ISSUER}}/';
 const securityHeaders = {
   'Content-Security-Policy': [
@@ -66,8 +93,8 @@ export default defineNuxtConfig({
     // NUXT_PUBLIC_OIDC_CLIENT_ID and NUXT_PUBLIC_PDF_VIEWER_URL. Defaults match the compose stack.
     public: {
       apiBase: '',
-      oidcIssuer: 'http://localhost:8080/realms/annotations-dev',
-      oidcClientId: 'annotations-sidebar',
+      oidcIssuer: oidcDefaults.issuer,
+      oidcClientId: oidcDefaults.clientId,
       // The PDF viewer page, for the bookmarklet and the landing page (ADR 0021).
       pdfViewerUrl: 'http://localhost:5174/pdf/',
     },

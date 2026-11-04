@@ -1,6 +1,8 @@
 # Local development stack. Postgres is the only stateful dependency of the
-# platform itself; Keycloak stands in for the external OpenID Connect
-# provider (ADR 0005). Run with `podman compose up -d` (or docker compose).
+# platform itself; Zitadel stands in for the external OpenID Connect provider
+# (ADR 0005) and keeps its own database in the same Postgres. Run with
+# `podman compose up -d --wait` (or docker compose), then
+# `node deploy/zitadel/provision.ts` once to create the client and the users.
 services:
   postgres:
     image: docker.io/library/postgres:17-alpine
@@ -18,17 +20,92 @@ services:
       timeout: 3s
       retries: 10
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:26.4
-    command: ['start-dev', '--import-realm', '--http-port=8080']
+  zitadel:
+    image: ghcr.io/zitadel/zitadel:v4.20.1
+    # Root so the bootstrap tokens can be written to the bind mount.
+    user: '0'
+    command: start-from-init --masterkey MasterkeyNeedsToHave32Characters
     environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-      KC_HEALTH_ENABLED: 'true'
+      ZITADEL_EXTERNALDOMAIN: localhost
+      ZITADEL_EXTERNALPORT: 8080
+      ZITADEL_EXTERNALSECURE: 'false'
+      ZITADEL_TLS_ENABLED: 'false'
+      ZITADEL_DATABASE_POSTGRES_HOST: postgres
+      ZITADEL_DATABASE_POSTGRES_PORT: 5432
+      ZITADEL_DATABASE_POSTGRES_DATABASE: zitadel
+      ZITADEL_DATABASE_POSTGRES_USER_USERNAME: zitadel
+      ZITADEL_DATABASE_POSTGRES_USER_PASSWORD: zitadel
+      ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE: disable
+      ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: annotations
+      ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: annotations
+      ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: disable
+      ZITADEL_FIRSTINSTANCE_ORG_NAME: annotations-dev
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORDCHANGEREQUIRED: 'false'
+      # IAM_OWNER service account; deploy/zitadel/provision.ts uses its token.
+      ZITADEL_FIRSTINSTANCE_PATPATH: /zitadel/bootstrap/admin.pat
+      ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_USERNAME: provisioner
+      ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_NAME: Provisioner
+      ZITADEL_FIRSTINSTANCE_ORG_MACHINE_PAT_EXPIRATIONDATE: '2099-01-01T00:00:00Z'
+      # IAM_LOGIN_CLIENT service account for the login UI (and the live OIDC test).
+      ZITADEL_FIRSTINSTANCE_LOGINCLIENTPATPATH: /zitadel/bootstrap/login-client.pat
+      ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_USERNAME: login-client
+      ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_NAME: Login client
+      ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_PAT_EXPIRATIONDATE: '2099-01-01T00:00:00Z'
+      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: 'true'
+      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI: http://localhost:8080/ui/v2/login/
+      ZITADEL_OIDC_DEFAULTLOGINURLV2: http://localhost:8080/ui/v2/login/login?authRequest=
+      ZITADEL_OIDC_DEFAULTLOGOUTURLV2: http://localhost:8080/ui/v2/login/logout?post_logout_redirect=
+      # The development users' passwords are their usernames.
+      ZITADEL_DEFAULTINSTANCE_PASSWORDCOMPLEXITYPOLICY_MINLENGTH: 1
+      ZITADEL_DEFAULTINSTANCE_PASSWORDCOMPLEXITYPOLICY_HASLOWERCASE: 'false'
+      ZITADEL_DEFAULTINSTANCE_PASSWORDCOMPLEXITYPOLICY_HASUPPERCASE: 'false'
+      ZITADEL_DEFAULTINSTANCE_PASSWORDCOMPLEXITYPOLICY_HASNUMBER: 'false'
+      ZITADEL_DEFAULTINSTANCE_PASSWORDCOMPLEXITYPOLICY_HASSYMBOL: 'false'
+      ZITADEL_DEFAULTINSTANCE_LOGINPOLICY_ALLOWREGISTER: 'false'
+    volumes:
+      - ./deploy/zitadel/.bootstrap:/zitadel/bootstrap:Z
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', '/app/zitadel', 'ready']
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
+
+  zitadel-login:
+    image: ghcr.io/zitadel/zitadel-login:v4.20.1
+    user: '0'
+    environment:
+      ZITADEL_API_URL: http://zitadel:8080
+      NEXT_PUBLIC_BASE_PATH: /ui/v2/login
+      ZITADEL_SERVICE_USER_TOKEN_FILE: /zitadel/bootstrap/login-client.pat
+      ZITADEL_SESSION_COOKIE_SECRET: development-only-login-cookie-secret
+      CUSTOM_REQUEST_HEADERS: Host:localhost,X-Forwarded-Proto:http
+    volumes:
+      - ./deploy/zitadel/.bootstrap:/zitadel/bootstrap:ro,Z
+    depends_on:
+      zitadel:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'node', '/app/healthcheck.mjs', 'http://localhost:3000/ui/v2/login/healthy']
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 10s
+
+  # One origin for the API and the login UI, as an ingress or route gives
+  # them in a deployment (deploy/zitadel/values.yaml).
+  zitadel-proxy:
+    image: docker.io/library/caddy:2.10-alpine
     ports:
       - '8080:8080'
     volumes:
-      - ./deploy/keycloak/realm-dev.json:/opt/keycloak/data/import/realm-dev.json:ro,Z
+      - ./deploy/zitadel/Caddyfile:/etc/caddy/Caddyfile:ro,Z
+    depends_on:
+      zitadel-login:
+        condition: service_healthy
 
 volumes:
   postgres-data:

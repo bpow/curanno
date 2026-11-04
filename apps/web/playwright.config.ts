@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test';
 
 /**
  * End-to-end test against the real stack: the compose Postgres and
- * Keycloak (see the repository README), the API and the Nuxt dev server.
+ * Zitadel (see the repository README), the API and the Nuxt dev server.
  * The API is started from its build output unless one is already listening;
  * run `pnpm build` and `pnpm --filter @curanno/api migrate` first.
  */

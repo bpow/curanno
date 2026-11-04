@@ -1,0 +1,13 @@
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	handle /ui/v2/login* {
+		reverse_proxy zitadel-login:3000
+	}
+	handle {
+		reverse_proxy h2c://zitadel:8080
+	}
+}

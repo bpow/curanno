@@ -1,36 +1,27 @@
 /**
- * Live OpenID Connect: discovery, the JWKS and a real token from the compose
- * Keycloak (`deploy/keycloak/realm-dev.json`), obtained through the password
- * grant the development realm allows for alice, then accepted by the API.
- * Runs when OIDC_LIVE_ISSUER names a reachable issuer (CI's sidebar job sets
- * it; locally `podman compose up` and export it); skipped otherwise.
+ * Live OpenID Connect: discovery, the JWKS and a real token for alice from
+ * the compose Zitadel (provisioned by `deploy/zitadel/provision.ts
+ * --dev-users`), accepted by the API. Runs when OIDC_LIVE_ISSUER names a
+ * reachable issuer and OIDC_CLIENT_ID the provisioned client (CI's
+ * sidebar job sets both; locally export them after `podman compose up`);
+ * skipped otherwise.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDb } from '../db/index.js';
 import { buildServer } from '../server.js';
+import { devAccessToken } from '../test/dev-token.js';
 import { createTestContext, databaseUrl, type TestContext } from '../test/harness.js';
 import { createTokenVerifier } from './verifier.js';
 
 const issuer = process.env['OIDC_LIVE_ISSUER'];
-const clientId = process.env['OIDC_CLIENT_ID'] ?? 'annotations-sidebar';
+const clientId = process.env['OIDC_CLIENT_ID'];
 
-async function passwordGrant(user: string): Promise<string> {
-  const res = await fetch(`${issuer}/protocol/openid-connect/token`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'password',
-      client_id: clientId,
-      username: user,
-      password: user,
-      scope: 'openid',
-    }),
-  });
-  expect(res.ok, await res.clone().text()).toBe(true);
-  return ((await res.json()) as { access_token: string }).access_token;
-}
-
-describe.skipIf(!databaseUrl || !issuer)('live OpenID Connect', () => {
+describe.skipIf(!databaseUrl || !issuer || !clientId)('live OpenID Connect', () => {
+  const oidc = {
+    issuer: issuer as string,
+    clientId: clientId as string,
+    audience: clientId as string,
+  };
   let scratch: TestContext;
   beforeAll(async () => {
     scratch = await createTestContext();
@@ -38,8 +29,8 @@ describe.skipIf(!databaseUrl || !issuer)('live OpenID Connect', () => {
   afterAll(() => scratch.close());
 
   it('discovers the issuer, fetches its keys and accepts a token it issued', async () => {
-    const verify = createTokenVerifier({ issuer: issuer as string, clientId, audience: clientId });
-    const token = await passwordGrant('alice');
+    const verify = createTokenVerifier(oidc);
+    const token = await devAccessToken('alice', oidc);
     const claims = await verify(token);
     expect(claims.issuer).toBe(issuer);
     expect(claims.subject).toBeTruthy();
@@ -50,7 +41,7 @@ describe.skipIf(!databaseUrl || !issuer)('live OpenID Connect', () => {
     const app = await buildServer({
       config: { ...scratch.config, oidc: { ...scratch.config.oidc, issuer: issuer as string } },
       db,
-      verifyToken: createTokenVerifier({ issuer: issuer as string, clientId, audience: clientId }),
+      verifyToken: createTokenVerifier(oidc),
     });
     try {
       const me = await app.inject({
