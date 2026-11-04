@@ -20,15 +20,16 @@ Inside a page, the guest loads the sidebar in its iframe and the sidebar talks t
 
 The app lives under `/sidebar/`, the path the API serves it from in a deployment (ADR 0021), so development URLs are the deployed ones. The dev server proxies `/annotations` and `/x` to the API, so the sidebar talks to its own origin as the OpenAPI document assumes.
 
-Configuration is read at run time from `config.json` next to the app (`public/config.json` in development, with the compose stack's values; the API serves it from its environment in a deployment), with these build-time defaults behind it, all optional:
+In a deployment, configuration is read at run time from `config.json` next to the app, which the API generates from its environment. The dev server has no `config.json`, so these build-time values apply (set them in `.env.local`), all optional, with defaults matching the compose stack:
 
-| Variable                | Default                                            | Meaning                                                      |
-| ----------------------- | -------------------------------------------------- | ------------------------------------------------------------ |
-| `VITE_OIDC_ISSUER`      | `http://localhost:8080/realms/annotations-dev`     | OpenID Connect issuer                                        |
-| `VITE_OIDC_CLIENT_ID`   | `annotations-sidebar`                              | Public client (Authorization Code with PKCE)                 |
-| `VITE_API_URL`          | empty (same origin)                                | API origin, when it is not served under the sidebar's origin |
-| `VITE_API_PROXY_TARGET` | `http://localhost:3000`                            | Where the dev and preview servers proxy the API to           |
-| `VITE_FRAME_ANCESTORS`  | `'self' http://localhost:* http://127.0.0.1:*`     | `frame-ancestors` sent by the dev and preview servers        |
+| Variable                 | Default                                            | Meaning                                                      |
+| ------------------------ | -------------------------------------------------- | ------------------------------------------------------------ |
+| `VITE_OIDC_ISSUER`       | `http://localhost:8080/realms/annotations-dev`     | OpenID Connect issuer                                        |
+| `VITE_OIDC_CLIENT_ID`    | `annotations-sidebar`                              | Public client (Authorization Code with PKCE)                 |
+| `VITE_API_URL`           | empty (same origin)                                | API origin, when it is not served under the sidebar's origin |
+| `VITE_PDF_VIEWER_ORIGIN` | `http://localhost:5174`                            | The PDF viewer's origin (`pdfViewerOrigin`)                  |
+| `VITE_API_PROXY_TARGET`  | `http://localhost:3000`                            | Where the dev and preview servers proxy the API to           |
+| `VITE_FRAME_ANCESTORS`   | `'self' http://localhost:* http://127.0.0.1:*`     | `frame-ancestors` sent by the dev and preview servers        |
 
 ## Login and isolation
 
