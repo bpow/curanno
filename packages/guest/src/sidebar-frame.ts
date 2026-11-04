@@ -24,12 +24,22 @@ export class SidebarFrame {
   readonly host: HTMLElement;
   readonly iframe: HTMLIFrameElement;
   private readonly listeners = new Set<(open: boolean) => void>();
+  private readonly doc: Document;
+  /** The page element that last had focus, where focus goes back when the sidebar closes. */
+  private lastFocused: HTMLElement | undefined;
+  private readonly onFocusIn = (event: FocusEvent): void => {
+    if (event.target instanceof HTMLElement && event.target !== this.host) {
+      this.lastFocused = event.target;
+    }
+  };
 
   constructor(doc: Document, options: SidebarFrameOptions) {
     const url = new URL(options.sidebarPath, options.sidebarOrigin);
     if (url.origin !== options.sidebarOrigin) {
       throw new Error(`sidebar path ${options.sidebarPath} leaves origin ${options.sidebarOrigin}`);
     }
+    this.doc = doc;
+    doc.addEventListener('focusin', this.onFocusIn, true);
     this.host = doc.createElement('div');
     this.host.setAttribute(GUEST_ATTRIBUTE, 'sidebar');
     this.host.setAttribute('data-annotatable', 'false');
@@ -55,7 +65,10 @@ export class SidebarFrame {
 
   setOpen(open: boolean): void {
     if (this.open === open) return;
+    const focusInside = !open && this.doc.activeElement === this.host;
     this.host.hidden = !open;
+    // Hiding the frame that has focus would leave keyboard users stranded in it.
+    if (focusInside) this.returnFocus();
     for (const listener of this.listeners) listener(open);
   }
 
@@ -63,11 +76,18 @@ export class SidebarFrame {
     this.setOpen(!this.open);
   }
 
+  private returnFocus(): void {
+    this.iframe.blur();
+    this.doc.defaultView?.focus();
+    if (this.lastFocused?.isConnected) this.lastFocused.focus({ preventScroll: true });
+  }
+
   onVisibility(listener: (open: boolean) => void): void {
     this.listeners.add(listener);
   }
 
   remove(): void {
+    this.doc.removeEventListener('focusin', this.onFocusIn, true);
     this.host.remove();
     this.listeners.clear();
   }

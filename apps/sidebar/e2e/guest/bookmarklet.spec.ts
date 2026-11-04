@@ -145,3 +145,31 @@ test('a selection in the page becomes an annotation through the sidebar', async 
   await expect.poll(() => page.evaluate(() => document.getSelection()?.isCollapsed)).toBe(true);
   await expect(sidebar.getByRole('button', { name: 'Annotate selection' })).toHaveCount(0);
 });
+
+test('closing the sidebar from inside it returns focus to the page', async () => {
+  const close = sidebar.getByRole('button', { name: 'Close sidebar' });
+  const pageFocus = () =>
+    page.evaluate(() => ({
+      hasFocus: document.hasFocus(),
+      id: document.activeElement?.id ?? '',
+      tag: document.activeElement?.tagName ?? '',
+    }));
+
+  // Nothing in the page had focus: it goes to the page itself, not the hidden frame.
+  await close.focus();
+  await page.keyboard.press('Enter');
+  await expect.poll(pageFocus).toEqual({ hasFocus: true, id: '', tag: 'BODY' });
+
+  // Otherwise it goes back to the element the user left.
+  await page.evaluate(() => {
+    const button = document.createElement('button');
+    button.id = 'page-button';
+    button.textContent = 'Page button';
+    document.body.prepend(button);
+    button.focus();
+  });
+  await page.evaluate(injectSource());
+  await close.focus();
+  await page.keyboard.press('Enter');
+  await expect.poll(pageFocus).toEqual({ hasFocus: true, id: 'page-button', tag: 'BUTTON' });
+});
