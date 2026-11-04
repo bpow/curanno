@@ -34,7 +34,9 @@ export const SECRETS = {
 export const PUBLIC_ANNOTATION_ID = `${API_ORIGIN}/annotations/11111111-1111-4111-8111-111111111111`;
 export const PUBLIC_QUOTE = 'Four members supported it';
 
-const OIDC_USER_KEY = 'oidc.user:http://localhost:8080/realms/annotations-dev:annotations-sidebar';
+const OIDC_ISSUER = 'http://localhost:8080';
+const OIDC_CLIENT_ID = 'dev-client';
+const OIDC_USER_KEY = `oidc.user:${OIDC_ISSUER}:${OIDC_CLIENT_ID}`;
 
 function annotation(pageUrl: string): Record<string, unknown> {
   return {
@@ -172,11 +174,19 @@ export async function stubViewerConfig(context: BrowserContext): Promise<void> {
   await context.route(`${VIEWER_URL}config.json`, (route) =>
     route.fulfill(json({ sidebarOrigin: SIDEBAR_ORIGIN, sidebarPath: SIDEBAR_PATH })),
   );
+  await stubSidebarConfig(context);
+}
+
+/**
+ * The sidebar's `config.json`. It names the issuer and the client the stored
+ * session belongs to, which the build's defaults may not.
+ */
+async function stubSidebarConfig(context: BrowserContext): Promise<void> {
   await context.route(`${SIDEBAR_URL}config.json`, (route) =>
     route.fulfill(
       json({
-        oidcIssuer: 'http://localhost:8080/realms/annotations-dev',
-        oidcClientId: 'annotations-sidebar',
+        oidcIssuer: OIDC_ISSUER,
+        oidcClientId: OIDC_CLIENT_ID,
         apiUrl: '',
         pdfViewerOrigin: VIEWER_ORIGIN,
       }),
@@ -186,6 +196,7 @@ export async function stubViewerConfig(context: BrowserContext): Promise<void> {
 
 /** Signs the sidebar in: a stored session with `token`, as oidc-client-ts would have left it. */
 export async function seedSession(context: BrowserContext, token = SECRETS.token): Promise<void> {
+  await stubSidebarConfig(context);
   const user = {
     access_token: token,
     token_type: 'Bearer',
