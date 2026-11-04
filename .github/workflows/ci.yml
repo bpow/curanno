@@ -216,3 +216,8 @@ jobs:
       - uses: azure/setup-helm@v4
       - run: helm lint deploy/helm/annotations --set secrets.databaseUrl=postgres://ci
       - run: helm template ci deploy/helm/annotations --set secrets.databaseUrl=postgres://ci --set ingress.enabled=true > /dev/null
+      # The values for the official Zitadel chart (deploy/zitadel/README.md) must render.
+      - run: helm repo add zitadel https://charts.zitadel.com
+      - run: >-
+          helm template zitadel zitadel/zitadel --version 10.4.0
+          --skip-schema-validation -f deploy/zitadel/values.yaml > /dev/null

@@ -1,0 +1,111 @@
+# Values for the official Zitadel chart (https://charts.zitadel.com, chart
+# 10.4.0) on OpenShift, running Zitadel v4.20.1 as compose.yaml does. A
+# pilot: the instance has the compose stack's shape (API and login UI v2
+# under one host, the login UI at /ui/v2/login) plus what a cluster adds.
+# See deploy/zitadel/README.md.
+#
+# Before installing, create in the namespace:
+#   - zitadel-masterkey: key `masterkey`, exactly 32 characters, kept forever
+#     (it encrypts secrets in the database; losing it loses the instance)
+#   - zitadel-db: key `dsn`, a postgres:// URL for an existing Postgres 14+
+#     whose user may create the `zitadel` database, or owns it already
+# and set the host below in its three places.
+
+image:
+  tag: v4.20.1
+
+# OpenShift's restricted SCC assigns the user and group from the namespace's
+# range and refuses the chart's fixed 1000. The nulls clear it; the chart-wide
+# blocks are the ones the setup jobs use. The chart's schema wants integers,
+# so install with --skip-schema-validation.
+podSecurityContext: &pod-security
+  runAsNonRoot: true
+  runAsUser: null
+  fsGroup: null
+securityContext: &container-security
+  runAsNonRoot: true
+  runAsUser: null
+  readOnlyRootFilesystem: true
+  privileged: false
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+
+zitadel:
+  masterkeySecretName: zitadel-masterkey
+  podSecurityContext: *pod-security
+  securityContext: *container-security
+  configmapConfig:
+    ExternalDomain: zitadel.apps.cloudapps.unc.edu
+    ExternalPort: 443
+    ExternalSecure: true
+    TLS:
+      Enabled: false
+    FirstInstance:
+      Org:
+        Name: annotations
+        Human:
+          UserName: admin
+          PasswordChangeRequired: true
+        # IAM_OWNER service account; the chart stores its token in the
+        # secret iam-admin-pat, which deploy/zitadel/provision.ts uses.
+        Machine:
+          Machine:
+            Username: iam-admin
+            Name: Provisioner
+          Pat:
+            ExpirationDate: '2029-01-01T00:00:00Z'
+    DefaultInstance:
+      LoginPolicy:
+        AllowRegister: false
+    LogStore:
+      Access:
+        Stdout:
+          Enabled: true
+
+env:
+  - name: ZITADEL_DATABASE_POSTGRES_DSN
+    valueFrom:
+      secretKeyRef:
+        name: zitadel-db
+        key: dsn
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 1Gi
+
+# OpenShift turns each Ingress into a Route; the router terminates TLS.
+ingress:
+  enabled: true
+  annotations:
+    route.openshift.io/termination: edge
+  hosts:
+    - host: zitadel.apps.cloudapps.unc.edu
+      paths:
+        - path: /
+          pathType: Prefix
+
+login:
+  enabled: true
+  image:
+    tag: v4.20.1
+  podSecurityContext: *pod-security
+  securityContext: *container-security
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  ingress:
+    enabled: true
+    annotations:
+      route.openshift.io/termination: edge
+    hosts:
+      - host: zitadel.apps.cloudapps.unc.edu
+        paths:
+          - path: /ui/v2/login
+            pathType: Prefix

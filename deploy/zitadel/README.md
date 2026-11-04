@@ -7,6 +7,7 @@ Zitadel is the OpenID Connect provider for development and CI, and the likely on
 | `../../compose.yaml` | Zitadel v4.20.1, its login UI v2 and a Caddy proxy that serves both on `localhost:8080` |
 | `Caddyfile`     | `/ui/v2/login` to the login UI, everything else to Zitadel, as an ingress does in a cluster |
 | `provision.ts`  | Creates or updates the project, the public client and (`--dev-users`) alice and bob        |
+| `values.yaml`   | Values for the official chart on OpenShift                                                 |
 | `.bootstrap/`   | Written by Zitadel on first start: the provisioner's and the login UI's tokens (ignored by git) |
 
 ## Development
@@ -19,3 +20,27 @@ node deploy/zitadel/provision.ts --dev-users --write-env .env
 Zitadel keeps its state in a `zitadel` database in the compose Postgres and creates its first instance only once, writing the two tokens to `.bootstrap/`. The tokens and the database go together: after deleting either, drop the other too (`podman compose exec postgres dropdb -U annotations zitadel` and `rm -r deploy/zitadel/.bootstrap`), then start the stack and provision again. The client id changes whenever the instance is recreated, which is why `provision.ts` writes it to `.env`.
 
 There is no password grant in Zitadel. Tests that need a token without a browser use `apps/api/src/test/dev-token.ts`, which drives the code flow with the login UI's token the way the login UI does.
+
+## Cluster (pilot)
+
+`values.yaml` is for chart 10.4.0 from `https://charts.zitadel.com`. It runs the same images as compose, uses an existing Postgres, and puts the API and the login UI on one host through two Ingresses, which OpenShift turns into edge-terminated Routes. It leaves the pod and container user unset for OpenShift's restricted SCC, which the chart's schema does not allow, hence `--skip-schema-validation`.
+
+```bash
+kubectl create secret generic zitadel-masterkey --from-literal=masterkey="$(openssl rand -hex 16)"
+kubectl create secret generic zitadel-db --from-literal=dsn='postgres://zitadel:...@postgres:5432/zitadel?sslmode=require'
+helm repo add zitadel https://charts.zitadel.com
+helm upgrade --install zitadel zitadel/zitadel --version 10.4.0 \
+  --skip-schema-validation -f deploy/zitadel/values.yaml
+```
+
+Keep the masterkey somewhere other than the cluster: it encrypts the instance's keys in the database. The setup job stores the provisioner's token in the secret `iam-admin-pat`; with it, create the client for the deployment's origin:
+
+```bash
+kubectl get secret iam-admin-pat -o jsonpath='{.data.pat}' | base64 -d > /tmp/zitadel-admin.pat
+node deploy/zitadel/provision.ts --issuer https://zitadel.apps.cloudapps.unc.edu \
+  --pat-file /tmp/zitadel-admin.pat --origin https://annotations.example
+```
+
+and set the printed `OIDC_ISSUER` and `OIDC_CLIENT_ID` as the annotations chart's `config.oidcIssuer` and `config.oidcClientId`. Sign in to the console at `/ui/console` as `admin@annotations.<host>` with Zitadel's default initial password `Password1!`, which must be changed on first use.
+
+Open questions for production: where Postgres runs (an operator such as CloudNativePG, or a managed instance), whether to run more than one replica (Zitadel is stateless apart from Postgres), and SMTP for password resets.
