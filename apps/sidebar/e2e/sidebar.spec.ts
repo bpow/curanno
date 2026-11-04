@@ -3,7 +3,7 @@
  * shares with him, then follows her edit and deletion live over the event
  * stream, and his guest is asked to anchor and then to unanchor the
  * annotation as it arrives and goes. Uses the development guest (no page)
- * and the compose Keycloak users; every run annotates a fresh document URI.
+ * and the compose Zitadel users; every run annotates a fresh document URI.
  */
 import { expect, test, type Page } from '@playwright/test';
 
@@ -12,9 +12,10 @@ const DOCUMENT = `https://example.test/e2e/${Date.now()}-${Math.random().toStrin
 async function login(page: Page, user: 'alice' | 'bob'): Promise<void> {
   await page.goto(`/sidebar/?uri=${encodeURIComponent(DOCUMENT)}`);
   await page.getByRole('button', { name: 'Log in' }).click();
-  await page.getByLabel('Username or email').fill(user);
+  await page.getByLabel('Loginname').fill(user);
+  await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByLabel('Password', { exact: true }).fill(user);
-  await page.getByRole('button', { name: 'Sign In' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
   await expect(page).toHaveURL(
     new RegExp(`uri=${encodeURIComponent(DOCUMENT).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),

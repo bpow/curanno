@@ -20,12 +20,12 @@ Inside a page, the guest loads the sidebar in its iframe and the sidebar talks t
 
 The app lives under `/sidebar/`, the path the API serves it from in a deployment (ADR 0021), so development URLs are the deployed ones. The dev server proxies `/annotations` and `/x` to the API, so the sidebar talks to its own origin as the OpenAPI document assumes.
 
-In a deployment, configuration is read at run time from `config.json` next to the app, which the API generates from its environment. The dev server has no `config.json`, so these build-time values apply (set them in `.env.local`), all optional, with defaults matching the compose stack:
+In a deployment, configuration is read at run time from `config.json` next to the app, which the API generates from its environment. The dev server has no `config.json`, so these build-time values apply (set them in `.env.local`), all optional. `VITE_OIDC_ISSUER` and `VITE_OIDC_CLIENT_ID` fall back to `OIDC_ISSUER` and `OIDC_CLIENT_ID` from the environment or the repository `.env`, which `deploy/zitadel/provision.ts` writes:
 
 | Variable                 | Default                                            | Meaning                                                      |
 | ------------------------ | -------------------------------------------------- | ------------------------------------------------------------ |
-| `VITE_OIDC_ISSUER`       | `http://localhost:8080/realms/annotations-dev`     | OpenID Connect issuer                                        |
-| `VITE_OIDC_CLIENT_ID`    | `annotations-sidebar`                              | Public client (Authorization Code with PKCE)                 |
+| `VITE_OIDC_ISSUER`       | `OIDC_ISSUER`, else `http://localhost:8080`        | OpenID Connect issuer                                        |
+| `VITE_OIDC_CLIENT_ID`    | `OIDC_CLIENT_ID`                                   | Public client (Authorization Code with PKCE)                 |
 | `VITE_API_URL`           | empty (same origin)                                | API origin, when it is not served under the sidebar's origin |
 | `VITE_PDF_VIEWER_ORIGIN` | `http://localhost:5174`                            | The PDF viewer's origin (`pdfViewerOrigin`)                  |
 | `VITE_API_PROXY_TARGET`  | `http://localhost:3000`                            | Where the dev and preview servers proxy the API to           |
@@ -47,7 +47,7 @@ The built assets (`pnpm --filter @curanno/sidebar build`, output in `dist/`) are
 3. Keep `popup-callback.html` and `silent-renew.html` reachable at the sidebar's base URL; both are registered redirect URIs.
 4. If a `script-src` directive is added, allow `'unsafe-eval'` or precompile the profile schemas: Ajv compiles JSON Schemas to functions at runtime.
 
-The identity provider must list `<base>`, `<base>popup-callback.html` and `<base>silent-renew.html` as redirect URIs and the sidebar origin as a web origin; `deploy/keycloak/realm-dev.json` does this for the dev ports.
+The identity provider must list `<base>`, `<base>popup-callback.html` and `<base>silent-renew.html` as redirect URIs and the sidebar origin as a web origin; `deploy/zitadel/provision.ts` does this for the dev ports.
 
 ## Layout
 
@@ -60,7 +60,7 @@ The identity provider must list `<base>`, `<base>popup-callback.html` and `<base
 | `src/profiles/`                  | Ajv-backed `ProfileRegistry` and the field list an editor is built from                      |
 | `src/guest/`                     | The `Guest` interface, the RPC guest (`rpc.ts`) and the development guest (`fake.ts`)         |
 | `src/components/`                | Cards, threads, editors, sharing panel, composer, development guest panel                    |
-| `e2e/`                           | Playwright test over Keycloak, the API and the dev server; `e2e/guest/` the bookmarklet suite |
+| `e2e/`                           | Playwright test over Zitadel, the API and the dev server; `e2e/guest/` the bookmarklet suite  |
 
 Replies are annotations whose target is the parent's IRI; they are threaded client-side. Each reply has its own ACL (ADR 0006), so a reply is visible to its author until shared. Edits and deletions fetch the annotation first and send its ETag as `If-Match`; a 412 is shown as a conflict with a reload action. Anchoring state is whatever the guest last reported for the annotation, falling back to the stored state; an orphaned or ambiguous annotation can be repaired from the current selection, which records `anchoring.repair` and leaves the original selectors in place (ADR 0010).
 
@@ -74,9 +74,9 @@ pnpm --filter @curanno/sidebar e2e:guest  # Playwright; needs `pnpm build`, the 
 
 The transport test (`src/guest/rpc.test.ts`) drives the RPC guest with hand-made window messages and a `MessageChannel`: connect, hello, document report, anchoring results, hover and activation, a connect from the wrong source, an unknown protocol version, a reconnecting guest, a second guest in another frame with its own document, the refusal of a document on another origin, and requests routed by document.
 
-The end-to-end test starts the API from `apps/api/dist` (or reuses a running one) and the dev server, logs in as both development users in separate browser contexts, and checks that bob sees alice's annotation only after she shares it and then follows her edit and deletion live. CI runs it in the `sidebar-e2e` job with the Postgres service and a Keycloak container.
+The end-to-end test starts the API from `apps/api/dist` (or reuses a running one) and the dev server, logs in as both development users in separate browser contexts, and checks that bob sees alice's annotation only after she shares it and then follows her edit and deletion live. CI runs it in the `sidebar-e2e` job against the compose stack.
 
-The bookmarklet suite (`e2e/guest/`, `playwright.guest.config.ts`) needs neither Keycloak nor Postgres: it serves corpus pages from the guest package, injects the built bundle the way the bookmarklet does, opens the built sidebar (`pnpm preview`) in the frame with a session seeded into `sessionStorage`, and answers the API from Playwright routes. Its `pdf.spec.ts` opens a corpus PDF in the built viewer app (`apps/pdf-viewer`, on its own preview origin) and checks the fingerprint identity, highlights on rendered and not-yet-rendered pages, and an annotation made from a selection in the text layer. Its `frames.spec.ts` runs the bookmarklet on a page (`e2e/guest/pages/`) with a same-origin and a cross-origin frame and checks that one sidebar serves all three documents. It checks that the sidebar takes the document from the guest's report, that anchor requests become highlights and highlights drive the cards, that a selection becomes an annotation (registering the document first), and, with a hostile script hooking every message channel in the page, that nothing but IRIs and selectors ever crosses and that an origin outside `frame-ancestors` cannot embed the sidebar (success criterion 6). CI runs it in the `bookmarklet-e2e` job.
+The bookmarklet suite (`e2e/guest/`, `playwright.guest.config.ts`) needs neither Zitadel nor Postgres: it serves corpus pages from the guest package, injects the built bundle the way the bookmarklet does, opens the built sidebar (`pnpm preview`) in the frame with a session seeded into `sessionStorage`, and answers the API from Playwright routes. Its `pdf.spec.ts` opens a corpus PDF in the built viewer app (`apps/pdf-viewer`, on its own preview origin) and checks the fingerprint identity, highlights on rendered and not-yet-rendered pages, and an annotation made from a selection in the text layer. Its `frames.spec.ts` runs the bookmarklet on a page (`e2e/guest/pages/`) with a same-origin and a cross-origin frame and checks that one sidebar serves all three documents. It checks that the sidebar takes the document from the guest's report, that anchor requests become highlights and highlights drive the cards, that a selection becomes an annotation (registering the document first), and, with a hostile script hooking every message channel in the page, that nothing but IRIs and selectors ever crosses and that an origin outside `frame-ancestors` cannot embed the sidebar (success criterion 6). CI runs it in the `bookmarklet-e2e` job.
 
 ## Guests
 

@@ -6,11 +6,12 @@ The project is a pnpm workspace written in TypeScript. You need Node 24 or later
 
 ```bash
 pnpm install
-podman compose up -d
+podman compose up -d --wait
+node deploy/zitadel/provision.ts --dev-users --write-env .env
 pnpm test
 ```
 
-`podman compose up` starts Postgres and a Keycloak instance with a seeded development realm. `pnpm test` runs every package's tests; `pnpm lint` and `pnpm typecheck` run the checks CI runs.
+`podman compose up` starts Postgres and a Zitadel instance; `provision.ts` creates its development client and users. `pnpm test` runs every package's tests; `pnpm lint` and `pnpm typecheck` run the checks CI runs.
 
 ## Branches and commits
 

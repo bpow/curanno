@@ -1,6 +1,6 @@
 /**
  * Runtime configuration. The build-time defaults (`VITE_*` variables, then
- * the compose stack's values) are overridden by `config.json` next to the
+ * the compose stack's issuer) are overridden by `config.json` next to the
  * app, which the API serves from its own environment in a deployment so one
  * image runs everywhere (plan, section 9). Nothing here may come from the
  * host page (ADR 0007): page-supplied configuration must never choose the
@@ -20,8 +20,9 @@ export interface RuntimeConfig {
 export const config = {
   apiUrl: import.meta.env.VITE_API_URL ?? '',
   oidc: {
-    issuer: import.meta.env.VITE_OIDC_ISSUER ?? 'http://localhost:8080/realms/annotations-dev',
-    clientId: import.meta.env.VITE_OIDC_CLIENT_ID ?? 'annotations-sidebar',
+    issuer: import.meta.env.VITE_OIDC_ISSUER ?? 'http://localhost:8080',
+    // Zitadel generates client ids; there is no usable default.
+    clientId: import.meta.env.VITE_OIDC_CLIENT_ID ?? '',
   },
   pdfViewerOrigin: import.meta.env.VITE_PDF_VIEWER_ORIGIN ?? 'http://localhost:5174',
 };

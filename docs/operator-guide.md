@@ -38,9 +38,9 @@ Create a **public** OpenID Connect client (Authorization Code with PKCE, no clie
 - Access tokens must be JWTs (in Zitadel, the application's auth token type set to JWT). A user's display name comes from the token's `name` claim, then `preferred_username`, and their email from `email`; when the token lacks either, the API asks the provider's userinfo endpoint with the same token, which covers providers such as Zitadel that keep profile claims out of access tokens. Without either source, users appear by their subject identifier until an administrator sets a display name.
 - No `groups` claim is needed: groups are managed entirely through `/x/groups` (ADR 0026). Make the first administrator with SQL (`update users set is_admin = true where ...`) after their first sign-in; they can then administer further ones with `PATCH /x/users/{id}`.
 
-The API accepts a token when its issuer matches, its signature verifies against the issuer's JWKS, it is within its validity (30 s tolerance) and either its `aud` is `config.oidcAudience` (default: the client id) or its `azp` is the client id, which is how Keycloak marks public-client access tokens. A token revoked at the provider is honoured for at most 60 s (the API's verification cache) or until it expires.
+The API accepts a token when its issuer matches, its signature verifies against the issuer's JWKS, it is within its validity (30 s tolerance) and either its `aud` is `config.oidcAudience` (default: the client id) or its `azp` is the client id, which is how some providers (Keycloak) mark public-client access tokens; Zitadel puts the client id in `aud`. A token revoked at the provider is honoured for at most 60 s (the API's verification cache) or until it expires.
 
-The development realm in `deploy/keycloak/realm-dev.json` is a worked example (client `annotations-sidebar`, users `alice` and `bob`).
+With Zitadel, `deploy/zitadel/provision.ts` creates this client (and prints its generated id) against any instance; `deploy/zitadel/README.md` covers running Zitadel itself with its official chart.
 
 ## 4. Deploy the chart
 

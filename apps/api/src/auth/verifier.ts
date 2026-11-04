@@ -4,7 +4,8 @@
  * key set instead. A token is accepted when it is signed by the issuer, is
  * within its validity window, and was issued for this API: either `aud`
  * names the configured audience or `azp` is the configured client, which is
- * how Keycloak marks access tokens obtained by a public client.
+ * how some providers (Keycloak) mark access tokens obtained by a public
+ * client; Zitadel lists the client in `aud`.
  *
  * A token without a name or email is completed from the issuer's userinfo
  * endpoint: some providers (Zitadel by default) keep profile claims out of

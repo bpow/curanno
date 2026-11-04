@@ -20,7 +20,7 @@ An annotation system built on the [W3C Web Annotation Data Model](https://www.w3
 | `apps/pdf-viewer`     | `@curanno/pdf-viewer` | PDF.js viewer page with the guest built in ([README](apps/pdf-viewer/README.md)) |
 | `apps/extension`      | `@curanno/extension`  | Chromium extension running the guest in every frame ([README](apps/extension/README.md)) |
 | `apps/web`            | `@curanno/web`        | Nuxt management site ([README](apps/web/README.md))        |
-| `deploy/`             |                     | Compose stack and Keycloak development realm               |
+| `deploy/`             |                     | Helm chart, and Zitadel's compose setup, provisioning and chart values |
 | `docs/`               |                     | Analysis, plan and ADRs                                    |
 
 ## Development
@@ -29,8 +29,9 @@ Requires Node 24 or later, pnpm 11, and podman (or docker) with the compose plug
 
 ```bash
 pnpm install
-podman compose up -d
+podman compose up -d --wait
 cp .env.example .env
+node deploy/zitadel/provision.ts --dev-users --write-env .env
 pnpm --filter @curanno/api migrate
 pnpm --filter @curanno/api dev
 pnpm check
@@ -45,13 +46,13 @@ Other scripts:
 | `pnpm --filter @curanno/api migrate`        | Applies `apps/api/migrations/*.sql` to `DATABASE_URL`                  |
 | `pnpm --filter @curanno/api dev`            | Builds and runs the API, restarting on changes to the build output     |
 | `pnpm --filter @curanno/sidebar dev`        | Runs the sidebar on port 5173, proxying the API (`apps/sidebar/README.md`) |
-| `pnpm --filter @curanno/sidebar e2e`        | Playwright test of the sidebar against Keycloak and the API           |
+| `pnpm --filter @curanno/sidebar e2e`        | Playwright test of the sidebar against Zitadel and the API            |
 | `pnpm --filter @curanno/sidebar e2e:guest`  | Playwright test of the bookmarklet, guest, sidebar and PDF viewer on corpus pages, API stubbed |
 | `pnpm --filter @curanno/pdf-viewer dev`     | Runs the PDF viewer on port 5174 (`apps/pdf-viewer/README.md`)        |
 | `pnpm --filter @curanno/extension build`    | Builds the unpacked extension into `apps/extension/dist` (`apps/extension/README.md`) |
 | `pnpm --filter @curanno/extension test:browser` | Playwright test of the built extension in Chromium against the fake sidebar |
 | `pnpm --filter @curanno/web dev`            | Runs the management site on port 3001, proxying the API (`apps/web/README.md`) |
-| `pnpm --filter @curanno/web e2e`            | Playwright test of the management site against Keycloak and the API   |
+| `pnpm --filter @curanno/web e2e`            | Playwright test of the management site against Zitadel and the API    |
 | `pnpm openapi:lint`                       | Lints `apps/api/openapi.yaml` with Redocly                             |
 | `pnpm api-client:generate`                | Regenerates `packages/api-client/src/schema.ts` from the OpenAPI document |
 | `pnpm --filter @curanno/guest bundle`       | Builds the guest bundle `packages/guest/build/guest.js`                 |
@@ -64,7 +65,7 @@ Other scripts:
 | `podman build -t annotations-api -f Dockerfile .` | Builds the API image                                           |
 | `helm lint deploy/helm/annotations`       | Validates the Helm chart (see `deploy/helm/annotations/values.yaml`)   |
 
-The compose stack provides Postgres on port 5432 and Keycloak on port 8080. Keycloak imports the `annotations-dev` realm from `deploy/keycloak/realm-dev.json`, with users `alice` (group `curators`) and `bob` (group `reviewers`), both with their username as password. The Keycloak admin console login is `admin` / `admin`. All of this is for local development only.
+The compose stack provides Postgres on port 5432 and Zitadel on port 8080 (issuer `http://localhost:8080`, its login UI under `/ui/v2/login`), keeping its own `zitadel` database in the same Postgres. `deploy/zitadel/provision.ts --dev-users` creates the client and the users `alice` and `bob`, both with their username as password, and writes the generated client id to `.env` as `OIDC_CLIENT_ID`; the API, the sidebar's and the site's dev servers and the end-to-end tests read it from there. It is idempotent, so run it again after recreating the stack. The Zitadel console is at <http://localhost:8080/ui/console> as `zitadel-admin@annotations-dev.localhost` / `Password1!`. All of this is for local development only; see [deploy/zitadel/README.md](deploy/zitadel/README.md).
 
 The API is configured entirely through environment variables; `.env.example` documents each one. A request with a bearer token from the configured issuer acts as that user, created on first sight with the groups in the token's `groups` claim; a request without a token acts as the `public` principal and may only read.
 
@@ -74,7 +75,7 @@ Release 1.0: Phases 0 to 6 of the [project plan](docs/web-annotation-plan.md) ar
 
 - **Server** (`apps/api`): the W3C Web Annotation Protocol (one container with paging, `Prefer`, ETags and conditional requests) and the `/x/` extensions (search over document identity and full text, per-annotation ACLs enforced in SQL, body profiles, documents, server-sent events over `LISTEN/NOTIFY`, users and groups, the JSON-LD extension context), OIDC bearer-token authentication, structured logs with request ids, Prometheus metrics, liveness and readiness probes, and the static clients served from the same process (ADR 0021).
 - **Clients**: the guest in `packages/guest` anchors on the text model (ADR 0012, 0013, 0017) in HTML pages and in PDF.js text layers, draws highlights with the CSS Custom Highlight API, re-anchors after changes, and speaks the [guest/sidebar RPC protocol](docs/guest-sidebar-rpc.md), one guest per frame with the host frame relaying the others. The sidebar in `apps/sidebar` serves every frame's document, follows the event stream live, signs in through a popup when framed (ADR 0019), and passes the axe checks. The PDF viewer in `apps/pdf-viewer` opens PDFs by URL or from a file and identifies them by fingerprint. The management site in `apps/web` administers users, groups and sharing.
-- **Assurance**: the contract test over every operation, the multi-principal ACL suite, the event-stream tests, the backup and restore test, a live OIDC test against Keycloak, the text-model fixtures through the guest, the anchoring corpus gate, the bookmarklet suite (HTML, PDF, frames, hostile page, accessibility), the sidebar and site Playwright suites, both images and the chart, all in CI. The [security review](docs/security-review.md) records the findings and their fixes.
+- **Assurance**: the contract test over every operation, the multi-principal ACL suite, the event-stream tests, the backup and restore test, a live OIDC test against Zitadel, the text-model fixtures through the guest, the anchoring corpus gate, the bookmarklet suite (HTML, PDF, frames, hostile page, accessibility), the sidebar and site Playwright suites, both images and the chart, all in CI. The [security review](docs/security-review.md) records the findings and their fixes.
 - **Documentation**: [user guide](docs/user-guide.md), [operator guide](docs/operator-guide.md), [accessibility](docs/accessibility.md), the specifications and the ADRs.
 
 To try the bookmarklet locally: start the compose stack, migrate and run the API (above), then
