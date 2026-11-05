@@ -9,7 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { alice, createTestContext, databaseUrl, type TestContext } from './test/harness.js';
 
 function fakeClients(): string {
-  const root = mkdtempSync(path.join(tmpdir(), 'annotations-static-'));
+  const root = mkdtempSync(path.join(tmpdir(), 'curanno-static-'));
   mkdirSync(path.join(root, 'sidebar', 'assets'), { recursive: true });
   mkdirSync(path.join(root, 'pdf'), { recursive: true });
   writeFileSync(path.join(root, 'sidebar', 'index.html'), '<!doctype html><title>Sidebar</title>');
@@ -91,7 +91,7 @@ describe.skipIf(!databaseUrl)('operational plumbing', () => {
     const config = await ctx.app.inject({ method: 'GET', url: '/sidebar/config.json' });
     expect(config.json()).toEqual({
       oidcIssuer: 'https://idp.test',
-      oidcClientId: 'annotations-sidebar',
+      oidcClientId: 'curanno-sidebar',
       apiUrl: '',
       pdfViewerOrigin: 'https://pdf.annotations.test',
     });

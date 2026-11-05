@@ -343,12 +343,12 @@ describe('the options page', () => {
     await expect.poll(() => p.textContent('#sidebarUrl-error')).toMatch(/http/);
     expect(await worker.evaluate(() => chrome.storage.sync.get('sidebarUrl'))).toEqual({});
 
-    await p.fill('#sidebarUrl', 'https://annotations.example/sidebar/');
+    await p.fill('#sidebarUrl', 'https://curanno.example/sidebar/');
     await p.check('#publicCounts');
     await p.click('button[type=submit]');
     await expect.poll(() => p.textContent('#status')).toMatch(/Saved/);
     expect(await worker.evaluate(() => chrome.storage.sync.get(null))).toMatchObject({
-      sidebarUrl: 'https://annotations.example/sidebar/',
+      sidebarUrl: 'https://curanno.example/sidebar/',
       publicCounts: true,
     });
     await p.close();

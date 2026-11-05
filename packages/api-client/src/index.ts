@@ -9,7 +9,7 @@ import type { paths } from './schema.js';
 export type * from './schema.js';
 
 export interface ApiClientOptions {
-  /** Origin and base path of the API, for example `https://annotations.example`. */
+  /** Origin and base path of the API, for example `https://curanno.example`. */
   baseUrl: string;
   /** Returns the bearer token for a request, or undefined for an anonymous request. */
   token?: () => string | undefined | Promise<string | undefined>;

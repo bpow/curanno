@@ -49,7 +49,7 @@ export function validateSettings(settings: Settings): SettingsProblems {
     const api = httpUrl(settings.apiUrl);
     if (!api) problems.apiUrl = 'Enter an http or https origin, or leave it empty.';
     else if (api.origin !== settings.apiUrl.replace(/\/$/, '')) {
-      problems.apiUrl = 'Enter an origin without a path, such as https://annotations.example.';
+      problems.apiUrl = 'Enter an origin without a path, such as https://curanno.example.';
     }
   }
   if (settings.pdfViewerUrl && !httpUrl(settings.pdfViewerUrl)) {

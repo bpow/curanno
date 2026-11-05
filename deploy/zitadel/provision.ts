@@ -12,7 +12,7 @@
  *
  *   node deploy/zitadel/provision.ts --dev-users --write-env .env
  *   node deploy/zitadel/provision.ts --issuer https://idp.example \
- *     --pat-file admin.pat --origin https://annotations.example
+ *     --pat-file admin.pat --origin https://curanno.example
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';

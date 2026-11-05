@@ -31,7 +31,7 @@ config:
   # Accepted `aud` claim. Defaults to the client id when empty.
   oidcAudience: ''
   # Origin under which annotation IRIs are minted: the ingress host, with its scheme.
-  publicUrl: https://annotations.example
+  publicUrl: https://curanno.example
   logLevel: info
   # Origins allowed to embed the sidebar, as Content-Security-Policy source
   # expressions (space-separated). The PDF viewer's origin is added automatically.
@@ -72,7 +72,7 @@ migrations:
 # The PDF viewer, served by the API image for this host name only (ADR 0021).
 # Needs a DNS name and a certificate of its own; empty serves no viewer.
 pdfViewer:
-  host: pdf.annotations.example
+  host: pdf.curanno.example
 
 # The management site (apps/web), a Nitro server from the `web` image target.
 web:
@@ -106,7 +106,7 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-buffering: 'off'
     nginx.ingress.kubernetes.io/proxy-http-version: '1.1'
   # The main host: `config.publicUrl` without the scheme.
-  host: annotations.example
+  host: curanno.example
   # Whether /metrics is reachable through the ingress. Off by default: scrape
   # the API Service inside the cluster instead (port http, path /metrics).
   metrics: false

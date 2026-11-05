@@ -9,9 +9,9 @@ import {
 } from './settings.js';
 
 const deployed = {
-  sidebarUrl: 'https://annotations.example/sidebar/',
+  sidebarUrl: 'https://curanno.example/sidebar/',
   apiUrl: '',
-  pdfViewerUrl: 'https://pdf.annotations.example/pdf/',
+  pdfViewerUrl: 'https://pdf.curanno.example/pdf/',
   publicCounts: false,
 };
 
@@ -45,20 +45,18 @@ describe('mergeSettings', () => {
 describe('derived locations', () => {
   it('splits the sidebar URL and falls back to its origin for the API', () => {
     expect(sidebarLocation(deployed)).toEqual({
-      sidebarOrigin: 'https://annotations.example',
+      sidebarOrigin: 'https://curanno.example',
       sidebarPath: '/sidebar/',
     });
-    expect(apiOrigin(deployed)).toBe('https://annotations.example');
+    expect(apiOrigin(deployed)).toBe('https://curanno.example');
     expect(apiOrigin({ ...deployed, apiUrl: 'https://api.example' })).toBe('https://api.example');
   });
 
   it('excludes the sidebar origin, and the viewer origin when there is one', () => {
     expect(excludedOrigins(deployed)).toEqual([
-      'https://annotations.example',
-      'https://pdf.annotations.example',
+      'https://curanno.example',
+      'https://pdf.curanno.example',
     ]);
-    expect(excludedOrigins({ ...deployed, pdfViewerUrl: '' })).toEqual([
-      'https://annotations.example',
-    ]);
+    expect(excludedOrigins({ ...deployed, pdfViewerUrl: '' })).toEqual(['https://curanno.example']);
   });
 });

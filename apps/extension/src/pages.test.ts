@@ -34,7 +34,7 @@ describe('addresses', () => {
   });
 
   it('searches one page anonymously for its total', () => {
-    const url = new URL(publicCountUrl('https://annotations.example', 'https://x.example/p?q=1#h'));
+    const url = new URL(publicCountUrl('https://curanno.example', 'https://x.example/p?q=1#h'));
     expect(url.pathname).toBe('/x/search');
     expect(url.searchParams.get('uri')).toBe('https://x.example/p?q=1#h');
     expect(url.searchParams.get('limit')).toBe('1');

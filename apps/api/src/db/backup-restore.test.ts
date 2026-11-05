@@ -35,7 +35,7 @@ const PAGE = 'https://example.org/backed-up';
 async function createDatabase(): Promise<{ url: string; drop: () => Promise<void> }> {
   const admin = new pg.Client({ connectionString: databaseUrl });
   await admin.connect();
-  const name = `annotations_restore_${randomBytes(6).toString('hex')}`;
+  const name = `curanno_restore_${randomBytes(6).toString('hex')}`;
   await admin.query(`create database ${name}`);
   return {
     url: withDatabase(databaseUrl as string, name),
@@ -61,7 +61,7 @@ function restore(toUrl: string, file: string): void {
 }
 
 describe.skipIf(!databaseUrl)('backup and restore', () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'annotations-backup-'));
+  const dir = mkdtempSync(path.join(tmpdir(), 'curanno-backup-'));
   const cleanups: (() => Promise<void>)[] = [];
   afterAll(async () => {
     for (const c of cleanups.reverse()) await c();

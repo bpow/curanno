@@ -39,7 +39,7 @@ Keep the masterkey somewhere other than the cluster: it encrypts the instance's 
 ```bash
 helm upgrade --install curanno deploy/helm/curanno \
   --set config.oidcIssuer=https://zitadel.apps.cloudapps.unc.edu \
-  --set config.publicUrl=https://annotations.example \
+  --set config.publicUrl=https://curanno.example \
   --set zitadel.provision.enabled=true
 ```
 
@@ -48,7 +48,7 @@ Without the hook, run the script from a checkout and set the printed `OIDC_CLIEN
 ```bash
 kubectl get secret iam-admin-pat -o jsonpath='{.data.pat}' | base64 -d > /tmp/zitadel-admin.pat
 node deploy/zitadel/provision.ts --issuer https://zitadel.apps.cloudapps.unc.edu \
-  --pat-file /tmp/zitadel-admin.pat --origin https://annotations.example
+  --pat-file /tmp/zitadel-admin.pat --origin https://curanno.example
 ```
  Sign in to the console at `/ui/console` as `admin@annotations.<host>` with Zitadel's default initial password `Password1!`, which must be changed on first use.
 

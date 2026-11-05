@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { createTokenVerifier } from './verifier.js';
 
 const ISSUER = 'https://idp.test';
-const CLIENT_ID = 'annotations-sidebar';
+const CLIENT_ID = 'curanno-sidebar';
 const USERINFO = 'https://idp.test/oidc/v1/userinfo';
 
 let sign: (claims: JWTPayload) => Promise<string>;
