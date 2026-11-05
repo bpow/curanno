@@ -34,10 +34,10 @@ helm upgrade --install zitadel zitadel/zitadel --version 10.4.0 \
   --skip-schema-validation -f deploy/zitadel/values.yaml
 ```
 
-Keep the masterkey somewhere other than the cluster: it encrypts the instance's keys in the database. The setup job stores the provisioner's token in the secret `iam-admin-pat`. Installed in the same namespace with `zitadel.provision.enabled=true`, the annotations chart uses it: a hook Job runs `provision.ts` from the API image before every install and upgrade, creating or updating the client for `config.publicUrl` (plus `zitadel.provision.extraOrigins`), and writes the generated id to the ConfigMap `<fullname>-oidc` (`annotations-oidc` for a release named annotations), which the API and the site read in place of `config.oidcClientId`. Helm does not manage that ConfigMap, so it outlives `helm uninstall`. If the client id changes (only when the Zitadel instance is recreated), restart both deployments.
+Keep the masterkey somewhere other than the cluster: it encrypts the instance's keys in the database. The setup job stores the provisioner's token in the secret `iam-admin-pat`. Installed in the same namespace with `zitadel.provision.enabled=true`, the annotations chart uses it: a hook Job runs `provision.ts` from the API image before every install and upgrade, creating or updating the client for `config.publicUrl` (plus `zitadel.provision.extraOrigins`), and writes the generated id to the ConfigMap `<fullname>-oidc` (`curanno-oidc` for a release named annotations), which the API and the site read in place of `config.oidcClientId`. Helm does not manage that ConfigMap, so it outlives `helm uninstall`. If the client id changes (only when the Zitadel instance is recreated), restart both deployments.
 
 ```bash
-helm upgrade --install annotations deploy/helm/annotations \
+helm upgrade --install curanno deploy/helm/curanno \
   --set config.oidcIssuer=https://zitadel.apps.cloudapps.unc.edu \
   --set config.publicUrl=https://annotations.example \
   --set zitadel.provision.enabled=true

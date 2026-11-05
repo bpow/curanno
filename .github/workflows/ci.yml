@@ -197,17 +197,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - run: docker build --target api -t annotations-api -f Dockerfile .
-      - run: docker build --target web -t annotations-web -f Dockerfile .
+      - run: docker build --target api -t curanno-api -f Dockerfile .
+      - run: docker build --target web -t curanno-web -f Dockerfile .
       - run: >-
-          docker run --rm annotations-api node -e
+          docker run --rm curanno-api node -e
           "const fs = require('node:fs'); for (const f of ['openapi.yaml', 'static/sidebar/index.html', 'static/pdf/index.html', 'static/guest.js', 'zitadel/provision.ts']) fs.accessSync(f); console.log('api image ok')"
-      - run: docker run --rm annotations-web node -e "require('node:fs').accessSync('server/index.mjs'); console.log('web image ok')"
+      - run: docker run --rm curanno-web node -e "require('node:fs').accessSync('server/index.mjs'); console.log('web image ok')"
       # The site's CSP names the issuer it is started with, not the one it was built with.
       - run: >-
           docker run -d --rm -p 3001:3001
           -e NUXT_PUBLIC_OIDC_ISSUER=https://idp.ci.test
-          annotations-web
+          curanno-web
       - run: node apps/web/scripts/check-runtime-csp.mjs http://localhost:3001 https://idp.ci.test
 
   helm:
@@ -215,9 +215,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: azure/setup-helm@v4
-      - run: helm lint deploy/helm/annotations --set secrets.databaseUrl=postgres://ci --set config.oidcClientId=ci
-      - run: helm template ci deploy/helm/annotations --set secrets.databaseUrl=postgres://ci --set config.oidcClientId=ci --set ingress.enabled=true > /dev/null
-      - run: helm template ci deploy/helm/annotations --set secrets.databaseUrl=postgres://ci --set zitadel.provision.enabled=true > /dev/null
+      - run: helm lint deploy/helm/curanno --set secrets.databaseUrl=postgres://ci --set config.oidcClientId=ci
+      - run: helm template ci deploy/helm/curanno --set secrets.databaseUrl=postgres://ci --set config.oidcClientId=ci --set ingress.enabled=true > /dev/null
+      - run: helm template ci deploy/helm/curanno --set secrets.databaseUrl=postgres://ci --set zitadel.provision.enabled=true > /dev/null
       # The values for the official Zitadel chart (deploy/zitadel/README.md) must render.
       - run: helm repo add zitadel https://charts.zitadel.com
       - run: >-

@@ -1,0 +1,20 @@
+{{ include "curanno.fullname" . }} is deploying {{ .Values.replicaCount }} replica(s) of {{ include "curanno.image" . }}{{- if .Values.web.enabled }} and {{ .Values.web.replicaCount }} of {{ include "curanno.webImage" . }}{{- end }}.
+
+Configuration comes from the ConfigMap {{ include "curanno.fullname" . }} and the Secret {{ include "curanno.secretName" . }} (DATABASE_URL). Migrations run in an init container before each pod starts.
+
+The API image serves the sidebar at {{ .Values.config.publicUrl }}/sidebar/ and the guest bundle at {{ .Values.config.publicUrl }}/guest.js{{- with .Values.pdfViewer.host }}, and the PDF viewer at https://{{ . }}/pdf/ (that host only){{- end }}. {{- if .Values.zitadel.provision.enabled }} The provisioning Job registered these redirect URIs with Zitadel and wrote the client id to the ConfigMap {{ include "curanno.oidcConfigMap" . }}:{{- else }} Register these redirect URIs with the identity provider for client {{ .Values.config.oidcClientId }}:{{- end }} {{ .Values.config.publicUrl }}/sidebar/, {{ .Values.config.publicUrl }}/sidebar/popup-callback.html, {{ .Values.config.publicUrl }}/sidebar/silent-renew.html{{- if .Values.web.enabled }}, {{ .Values.config.publicUrl }}/auth/callback{{- end }}.
+
+Health: GET /healthz (liveness) and GET /readyz (readiness; checks the database). Metrics: GET /metrics on the API Service{{- if not .Values.ingress.metrics }} (not on the ingress){{- end }}.
+
+Server-sent events (GET /x/events) hold a response open for as long as the sidebar is open. Whatever sits in front of the Service must allow that:
+  - ingress-nginx: the annotations in values.yaml (proxy-read-timeout, proxy-buffering off) are applied when ingress.enabled is true.
+  - Traefik: set a long `respondingTimeouts.readTimeout`/`idleTimeout` on the entrypoint; it does not buffer.
+  - HAProxy ingress: `haproxy.org/timeout-server` or `timeout tunnel` of an hour or more.
+  - Cloud load balancers: raise the backend idle timeout (ALB default 60 s).
+The server writes a keepalive comment every 30 s, so a timeout above that keeps idle streams alive, and clients reconnect with Last-Event-ID if a proxy does cut them.
+{{- if not .Values.ingress.enabled }}
+
+No Ingress was created (ingress.enabled=false). Port-forward to try it:
+  kubectl port-forward svc/{{ include "curanno.fullname" . }} 3000:{{ .Values.service.port }}
+Without an ingress nothing serves the main host's paths and the viewer host together; the operator guide (docs/operator-guide.md) describes the routing an ingress must do.
+{{- end }}

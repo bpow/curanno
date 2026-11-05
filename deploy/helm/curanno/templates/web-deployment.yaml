@@ -2,15 +2,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "annotations.fullname" . }}-web
+  name: {{ include "curanno.fullname" . }}-web
   labels:
-    {{- include "annotations.labels" . | nindent 4 }}
+    {{- include "curanno.labels" . | nindent 4 }}
     app.kubernetes.io/component: web
 spec:
   replicas: {{ .Values.web.replicaCount }}
   selector:
     matchLabels:
-      {{- include "annotations.selectorLabels" . | nindent 6 }}
+      {{- include "curanno.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: web
   template:
     metadata:
@@ -20,7 +20,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "annotations.selectorLabels" . | nindent 8 }}
+        {{- include "curanno.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: web
     spec:
       {{- with .Values.imagePullSecrets }}
@@ -31,7 +31,7 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: web
-          image: {{ include "annotations.webImage" . }}
+          image: {{ include "curanno.webImage" . }}
           imagePullPolicy: {{ .Values.web.image.pullPolicy }}
           ports:
             - name: http
@@ -39,10 +39,10 @@ spec:
               protocol: TCP
           envFrom:
             - configMapRef:
-                name: {{ include "annotations.fullname" . }}-web
+                name: {{ include "curanno.fullname" . }}-web
           {{- if .Values.zitadel.provision.enabled }}
           env:
-            {{- include "annotations.provisionedClientId" (dict "root" . "name" "NUXT_PUBLIC_OIDC_CLIENT_ID") | nindent 12 }}
+            {{- include "curanno.provisionedClientId" (dict "root" . "name" "NUXT_PUBLIC_OIDC_CLIENT_ID") | nindent 12 }}
           {{- end }}
           livenessProbe:
             httpGet:
@@ -76,9 +76,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "annotations.fullname" . }}-web
+  name: {{ include "curanno.fullname" . }}-web
   labels:
-    {{- include "annotations.labels" . | nindent 4 }}
+    {{- include "curanno.labels" . | nindent 4 }}
     app.kubernetes.io/component: web
 spec:
   type: {{ .Values.service.type }}
@@ -88,6 +88,6 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "annotations.selectorLabels" . | nindent 4 }}
+    {{- include "curanno.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: web
 {{- end }}

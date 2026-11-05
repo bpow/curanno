@@ -8,7 +8,7 @@
  * written there as OIDC_ISSUER and OIDC_CLIENT_ID. The compose stack writes
  * deploy/zitadel/.bootstrap/oidc.env, which development falls back to. In a
  * cluster, --write-configmap stores the two in a ConfigMap of the pod's
- * namespace through its service account (the annotations chart's hook Job).
+ * namespace through its service account (the curanno chart's hook Job).
  *
  *   node deploy/zitadel/provision.ts --dev-users --write-env .env
  *   node deploy/zitadel/provision.ts --issuer https://idp.example \

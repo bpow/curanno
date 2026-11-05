@@ -61,8 +61,8 @@ Other scripts:
 | `pnpm --filter @curanno/guest trial`        | Anchoring regression corpus; fails on a guessed must-not-match anchor  |
 | `pnpm load:seed -- [--annotations N ...]`  | Fills `DATABASE_URL` with load-test data at representative volumes (`docs/performance.md`) |
 | `pnpm load:run -- [--out results.json]`   | Runs the load test against that database and explains the search queries |
-| `podman build -t annotations-api -f Dockerfile .` | Builds the API image                                           |
-| `helm lint deploy/helm/annotations --set config.oidcClientId=dev` | Validates the Helm chart (see `deploy/helm/annotations/values.yaml`)   |
+| `podman build -t curanno-api -f Dockerfile .` | Builds the API image                                           |
+| `helm lint deploy/helm/curanno --set config.oidcClientId=dev` | Validates the Helm chart (see `deploy/helm/curanno/values.yaml`)   |
 
 The compose stack provides Postgres on port 5432 and Zitadel on port 8080 (issuer `http://localhost:8080`, its login UI under `/ui/v2/login`), keeping its own `zitadel` database in the same Postgres. Its `zitadel-provision` service runs `deploy/zitadel/provision.ts --dev-users` on every `up`: it creates the client and the users `alice` and `bob`, both with their username as password, and writes the generated client id to `deploy/zitadel/.bootstrap/oidc.env`. The API, the sidebar's and the site's dev servers and the end-to-end tests fall back to that file when `OIDC_ISSUER` and `OIDC_CLIENT_ID` are not set in the environment or `.env`. The Zitadel console is at <http://localhost:8080/ui/console> as `zitadel-admin@annotations-dev.localhost` / `Password1!`. All of this is for local development only; see [deploy/zitadel/README.md](deploy/zitadel/README.md).
 
