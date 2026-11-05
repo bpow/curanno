@@ -301,6 +301,3 @@ export interface Annotation extends AnnotationProperties {
 export interface AnnotationInput extends AnnotationProperties {
   '@context'?: JsonLdContext;
 }
-
-/** The resource identifiers the protocol uses for annotations and containers. */
-export const ANNOTATION_TYPE = 'Annotation';
