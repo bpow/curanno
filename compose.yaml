@@ -8,15 +8,15 @@ services:
   postgres:
     image: docker.io/library/postgres:17-alpine
     environment:
-      POSTGRES_USER: annotations
-      POSTGRES_PASSWORD: annotations
-      POSTGRES_DB: annotations
+      POSTGRES_USER: curanno
+      POSTGRES_PASSWORD: curanno
+      POSTGRES_DB: curanno
     ports:
       - '5432:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U annotations -d annotations']
+      test: ['CMD-SHELL', 'pg_isready -U curanno -d curanno']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -37,8 +37,8 @@ services:
       ZITADEL_DATABASE_POSTGRES_USER_USERNAME: zitadel
       ZITADEL_DATABASE_POSTGRES_USER_PASSWORD: zitadel
       ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE: disable
-      ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: annotations
-      ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: annotations
+      ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: curanno
+      ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: curanno
       ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: disable
       ZITADEL_FIRSTINSTANCE_ORG_NAME: curanno-dev
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORDCHANGEREQUIRED: 'false'
