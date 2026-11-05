@@ -1,8 +1,9 @@
 # Local development stack. Postgres is the only stateful dependency of the
 # platform itself; Zitadel stands in for the external OpenID Connect provider
 # (ADR 0005) and keeps its own database in the same Postgres. Run with
-# `podman compose up -d --wait` (or docker compose), then
-# `node deploy/zitadel/provision.ts` once to create the client and the users.
+# `podman compose up -d --wait` (or docker compose); zitadel-provision then
+# creates the client and the development users and writes the client id to
+# deploy/zitadel/.bootstrap/oidc.env, which the dev servers fall back to.
 services:
   postgres:
     image: docker.io/library/postgres:17-alpine
@@ -106,6 +107,42 @@ services:
     depends_on:
       zitadel-login:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '-q',
+          '-O',
+          '/dev/null',
+          'http://localhost:8080/.well-known/openid-configuration',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Idempotent, so it runs on every `up`. It shares the proxy's network
+  # namespace because Zitadel picks the instance by host: the issuer must be
+  # reached as localhost:8080 here too. It stays up, healthy once done,
+  # because `up --wait` fails on a container that exits.
+  zitadel-provision:
+    image: docker.io/library/node:24-alpine
+    network_mode: service:zitadel-proxy
+    init: true
+    working_dir: /provision
+    command:
+      - sh
+      - -c
+      - node provision.ts --dev-users --write-env .bootstrap/oidc.env && touch /tmp/done && exec sleep infinity
+    volumes:
+      - ./deploy/zitadel:/provision:Z
+    depends_on:
+      zitadel-proxy:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'test', '-f', '/tmp/done']
+      interval: 2s
+      retries: 30
 
 volumes:
   postgres-data:

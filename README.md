@@ -31,7 +31,6 @@ Requires Node 24 or later, pnpm 11, and podman (or docker) with the compose plug
 pnpm install
 podman compose up -d --wait
 cp .env.example .env
-node deploy/zitadel/provision.ts --dev-users --write-env .env
 pnpm --filter @curanno/api migrate
 pnpm --filter @curanno/api dev
 pnpm check
@@ -65,7 +64,7 @@ Other scripts:
 | `podman build -t annotations-api -f Dockerfile .` | Builds the API image                                           |
 | `helm lint deploy/helm/annotations`       | Validates the Helm chart (see `deploy/helm/annotations/values.yaml`)   |
 
-The compose stack provides Postgres on port 5432 and Zitadel on port 8080 (issuer `http://localhost:8080`, its login UI under `/ui/v2/login`), keeping its own `zitadel` database in the same Postgres. `deploy/zitadel/provision.ts --dev-users` creates the client and the users `alice` and `bob`, both with their username as password, and writes the generated client id to `.env` as `OIDC_CLIENT_ID`; the API, the sidebar's and the site's dev servers and the end-to-end tests read it from there. It is idempotent, so run it again after recreating the stack. The Zitadel console is at <http://localhost:8080/ui/console> as `zitadel-admin@annotations-dev.localhost` / `Password1!`. All of this is for local development only; see [deploy/zitadel/README.md](deploy/zitadel/README.md).
+The compose stack provides Postgres on port 5432 and Zitadel on port 8080 (issuer `http://localhost:8080`, its login UI under `/ui/v2/login`), keeping its own `zitadel` database in the same Postgres. Its `zitadel-provision` service runs `deploy/zitadel/provision.ts --dev-users` on every `up`: it creates the client and the users `alice` and `bob`, both with their username as password, and writes the generated client id to `deploy/zitadel/.bootstrap/oidc.env`. The API, the sidebar's and the site's dev servers and the end-to-end tests fall back to that file when `OIDC_ISSUER` and `OIDC_CLIENT_ID` are not set in the environment or `.env`. The Zitadel console is at <http://localhost:8080/ui/console> as `zitadel-admin@annotations-dev.localhost` / `Password1!`. All of this is for local development only; see [deploy/zitadel/README.md](deploy/zitadel/README.md).
 
 The API is configured entirely through environment variables; `.env.example` documents each one. A request with a bearer token from the configured issuer acts as that user, created on first sight with the groups in the token's `groups` claim; a request without a token acts as the `public` principal and may only read.
 

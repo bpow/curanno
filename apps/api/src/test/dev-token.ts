@@ -7,8 +7,9 @@
  * finalize the request with the session and redeem the code. The users and
  * the client are made by `deploy/zitadel/provision.ts --dev-users`, and every
  * development user's password is their username. The issuer and the client
- * default to OIDC_ISSUER and OIDC_CLIENT_ID from the environment, then from
- * the repository .env that provision.ts writes.
+ * default to OIDC_ISSUER and OIDC_CLIENT_ID from the environment, the
+ * repository .env, then deploy/zitadel/.bootstrap/oidc.env, which the
+ * compose stack's provisioner writes.
  *
  * Imported by the live OIDC test and by the management site's end-to-end test.
  */
@@ -21,9 +22,9 @@ const REDIRECT_URI = 'http://localhost:5173/sidebar/';
 
 const repo = (path: string): URL => new URL(`../../../../${path}`, import.meta.url);
 
-function repositoryEnv(): Record<string, string | undefined> {
+function envFile(path: string): Record<string, string | undefined> {
   try {
-    return parseEnv(readFileSync(repo('.env'), 'utf8'));
+    return parseEnv(readFileSync(repo(path), 'utf8'));
   } catch {
     return {};
   }
@@ -50,7 +51,11 @@ export async function devAccessToken(
   username: string,
   oidc: { issuer?: string | undefined; clientId?: string | undefined } = {},
 ): Promise<string> {
-  const env = { ...repositoryEnv(), ...process.env };
+  const env = {
+    ...envFile('deploy/zitadel/.bootstrap/oidc.env'),
+    ...envFile('.env'),
+    ...process.env,
+  };
   const issuer = oidc.issuer ?? env['OIDC_ISSUER'] ?? 'http://localhost:8080';
   const clientId = oidc.clientId ?? env['OIDC_CLIENT_ID'];
   if (!clientId) throw new Error('OIDC_CLIENT_ID is not set: run deploy/zitadel/provision.ts');

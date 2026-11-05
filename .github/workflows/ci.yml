@@ -89,8 +89,9 @@ jobs:
   # The sidebar's end-to-end test needs Postgres, Zitadel, the API and the
   # Vite dev server. Postgres and Zitadel come from compose.yaml, as they do
   # locally (the Zitadel proxy mounts its Caddyfile from the checkout, which
-  # `services:` containers cannot), and provision.ts exports the client id
-  # it creates to the later steps. Playwright starts the API and Vite.
+  # `services:` containers cannot); its provisioner writes the client id to
+  # deploy/zitadel/.bootstrap/oidc.env, exported here for the live test.
+  # Playwright starts the API and Vite.
   sidebar-e2e:
     runs-on: ubuntu-latest
     env:
@@ -113,7 +114,7 @@ jobs:
       - name: Wait for the compose stack
         run: docker compose up -d --wait --wait-timeout 300 || (docker compose logs; exit 1)
       - run: pnpm --filter @curanno/api migrate
-      - run: node deploy/zitadel/provision.ts --dev-users --write-env "$GITHUB_ENV"
+      - run: cat deploy/zitadel/.bootstrap/oidc.env >> "$GITHUB_ENV"
       - run: pnpm --filter @curanno/sidebar e2e
       # Discovery, the JWKS and a real token from this Zitadel, accepted by the API.
       - run: pnpm vitest run apps/api/src/auth/oidc-live.test.ts
@@ -179,7 +180,7 @@ jobs:
       - name: Wait for the compose stack
         run: docker compose up -d --wait --wait-timeout 300 || (docker compose logs; exit 1)
       - run: pnpm --filter @curanno/api migrate
-      - run: node deploy/zitadel/provision.ts --dev-users --write-env "$GITHUB_ENV"
+      - run: cat deploy/zitadel/.bootstrap/oidc.env >> "$GITHUB_ENV"
       - run: pnpm --filter @curanno/web e2e
       - uses: actions/upload-artifact@v4
         if: failure()
