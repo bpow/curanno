@@ -35,7 +35,6 @@ export {
   rangeFromPoints,
   resolvePosition,
   textOfRange,
-  utf16RangeOf,
   type DescribeOptions,
   type QuoteMatch,
   type TextRange,
