@@ -12,18 +12,18 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_USER: annotations
-          POSTGRES_PASSWORD: annotations
-          POSTGRES_DB: annotations
+          POSTGRES_USER: curanno
+          POSTGRES_PASSWORD: curanno
+          POSTGRES_DB: curanno
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U annotations -d annotations"
+          --health-cmd "pg_isready -U curanno -d curanno"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
     env:
-      DATABASE_URL: postgres://annotations:annotations@localhost:5432/annotations
+      DATABASE_URL: postgres://curanno:curanno@localhost:5432/curanno
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -95,7 +95,7 @@ jobs:
   sidebar-e2e:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: postgres://annotations:annotations@localhost:5432/annotations
+      DATABASE_URL: postgres://curanno:curanno@localhost:5432/curanno
       PUBLIC_URL: http://localhost:3000
       PORT: 3000
       LOG_LEVEL: warn
@@ -161,7 +161,7 @@ jobs:
   web-e2e:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: postgres://annotations:annotations@localhost:5432/annotations
+      DATABASE_URL: postgres://curanno:curanno@localhost:5432/curanno
       PUBLIC_URL: http://localhost:3000
       PORT: 3000
       LOG_LEVEL: warn
