@@ -1,5 +1,5 @@
 -- Groups are no longer synchronized from an identity provider's `groups`
--- claim (ADR 0010): OIDC is used for identity only, and every group is
+-- claim (ADR 0026): OIDC is used for identity only, and every group is
 -- managed through our own API. Existing provider-synced memberships become
 -- plain local memberships; nothing further will add or remove members for
 -- them automatically.
