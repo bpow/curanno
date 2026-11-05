@@ -16,7 +16,7 @@ describe.skipIf(!adminUrl)('load seed', () => {
   let admin: pg.Client;
   let url: string;
   let db: pg.Client;
-  const dbName = `annotations_load_${randomBytes(4).toString('hex')}`;
+  const dbName = `curanno_load_${randomBytes(4).toString('hex')}`;
 
   const count = async (sql: string, params: unknown[] = []): Promise<number> =>
     Number((await db.query<{ n: string }>(sql, params)).rows[0]?.n);

@@ -29,11 +29,11 @@ Push both to your registry and set `image.repository`, `web.image.repository` an
 
 ## 3. Configure the identity provider
 
-Create a **public** OpenID Connect client (Authorization Code with PKCE, no client secret) for the sidebar and the site. With `PUBLIC_URL` being `https://annotations.example`:
+Create a **public** OpenID Connect client (Authorization Code with PKCE, no client secret) for the sidebar and the site. With `PUBLIC_URL` being `https://curanno.example`:
 
-- Redirect URIs: `https://annotations.example/sidebar/`, `https://annotations.example/sidebar/popup-callback.html`, `https://annotations.example/sidebar/silent-renew.html`, `https://annotations.example/auth/callback`.
-- Post-logout redirect URIs: `https://annotations.example/sidebar/`, `https://annotations.example/`.
-- Web origins (CORS for the token endpoint): `https://annotations.example`.
+- Redirect URIs: `https://curanno.example/sidebar/`, `https://curanno.example/sidebar/popup-callback.html`, `https://curanno.example/sidebar/silent-renew.html`, `https://curanno.example/auth/callback`.
+- Post-logout redirect URIs: `https://curanno.example/sidebar/`, `https://curanno.example/`.
+- Web origins (CORS for the token endpoint): `https://curanno.example`.
 - Refresh tokens enabled for the client, so framed sidebars can renew without third-party cookies (ADR 0019). The sidebar and the site request the `offline_access` scope, which most providers require before they issue a refresh token; the client must be allowed to request it. In Keycloak, `offline_access` issues offline tokens, which outlive the browser session, and users need the realm's `offline_access` role.
 - Access tokens must be JWTs (in Zitadel, the application's auth token type set to JWT). A user's display name comes from the token's `name` claim, then `preferred_username`, and their email from `email`; when the token lacks either, the API asks the provider's userinfo endpoint with the same token, which covers providers such as Zitadel that keep profile claims out of access tokens. Without either source, users appear by their subject identifier until an administrator sets a display name.
 - No `groups` claim is needed: groups are managed entirely through `/x/groups` (ADR 0026). Make the first administrator with SQL (`update users set is_admin = true where ...`) after their first sign-in; they can then administer further ones with `PATCH /x/users/{id}`.
@@ -47,12 +47,12 @@ With Zitadel, `deploy/zitadel/provision.ts` creates this client (and prints its 
 ```bash
 helm upgrade --install curanno deploy/helm/curanno \
   --namespace annotations --create-namespace \
-  --set config.publicUrl=https://annotations.example \
+  --set config.publicUrl=https://curanno.example \
   --set config.oidcIssuer=https://idp.example \
-  --set config.oidcClientId=annotations-sidebar \
+  --set config.oidcClientId=curanno-sidebar \
   --set "config.frameAncestors='self' https://*.example.org" \
-  --set pdfViewer.host=pdf.annotations.example \
-  --set ingress.enabled=true --set ingress.host=annotations.example \
+  --set pdfViewer.host=pdf.curanno.example \
+  --set ingress.enabled=true --set ingress.host=curanno.example \
   --set secrets.existingSecret=curanno-database
 ```
 
@@ -66,7 +66,7 @@ Values worth knowing (`deploy/helm/curanno/values.yaml` documents each):
 
 ### Deploying with Zitadel
 
-Zitadel runs as its own release of the official chart, in the same namespace as the annotations release so the provisioning Job can read Zitadel's token Secret. With `zitadel.example` as Zitadel's host and `annotations.example` as the platform's:
+Zitadel runs as its own release of the official chart, in the same namespace as the annotations release so the provisioning Job can read Zitadel's token Secret. With `zitadel.example` as Zitadel's host and `curanno.example` as the platform's:
 
 1. **Postgres.** One server can hold both databases: `annotations` for the platform and `zitadel` for Zitadel, each with its own user. Zitadel's user must own its database or be allowed to create it.
 2. **Zitadel's secrets.** The masterkey encrypts Zitadel's keys in its database, so keep a copy outside the cluster; losing it loses the instance.
@@ -90,12 +90,12 @@ Zitadel runs as its own release of the official chart, in the same namespace as 
 
    ```bash
    helm upgrade --install curanno deploy/helm/curanno -n curanno \
-     --set config.publicUrl=https://annotations.example \
+     --set config.publicUrl=https://curanno.example \
      --set config.oidcIssuer=https://zitadel.example \
      --set zitadel.provision.enabled=true \
      --set "config.frameAncestors='self' https://*.example.org" \
-     --set pdfViewer.host=pdf.annotations.example \
-     --set ingress.enabled=true --set ingress.host=annotations.example \
+     --set pdfViewer.host=pdf.curanno.example \
+     --set ingress.enabled=true --set ingress.host=curanno.example \
      --set secrets.existingSecret=curanno-database
    ```
 
@@ -169,7 +169,7 @@ The OpenAPI document and the text model are versioned contracts (CONTRIBUTING.md
 
 ## 8. Checks on a new cluster
 
-After the first deployment: `curl https://annotations.example/readyz`; open `https://annotations.example/` and sign in; drag the bookmarklet to the bookmarks bar; annotate a page on an allowed origin and a PDF in the viewer; open the same page in another browser as another user and share an annotation across; confirm the sidebar frame is refused on a page outside `frameAncestors` (the browser's console shows the CSP refusal); scrape `/metrics` from inside the cluster; run a backup and a restore into a scratch database.
+After the first deployment: `curl https://curanno.example/readyz`; open `https://curanno.example/` and sign in; drag the bookmarklet to the bookmarks bar; annotate a page on an allowed origin and a PDF in the viewer; open the same page in another browser as another user and share an annotation across; confirm the sidebar frame is refused on a page outside `frameAncestors` (the browser's console shows the CSP refusal); scrape `/metrics` from inside the cluster; run a backup and a restore into a scratch database.
 
 ## 9. Reproducing the load test
 

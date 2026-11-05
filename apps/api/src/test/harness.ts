@@ -15,7 +15,7 @@ import type { Kysely } from 'kysely';
 import { buildServer } from '../server.js';
 
 export const ISSUER = 'https://idp.test';
-export const CLIENT_ID = 'annotations-sidebar';
+export const CLIENT_ID = 'curanno-sidebar';
 export const PUBLIC_URL = 'https://annotations.test';
 
 export interface TestUser {
@@ -83,7 +83,7 @@ export interface TestContextOptions {
 
 export async function createTestContext(options: TestContextOptions = {}): Promise<TestContext> {
   if (!databaseUrl) throw new Error('DATABASE_URL is not set');
-  const dbName = `annotations_test_${randomBytes(6).toString('hex')}`;
+  const dbName = `curanno_test_${randomBytes(6).toString('hex')}`;
   const admin = new pg.Client({ connectionString: databaseUrl });
   await admin.connect();
   let testUrl: string;

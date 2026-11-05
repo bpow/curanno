@@ -41,7 +41,7 @@ For a deployment, build the bundle and generate the bookmarklet for where it and
 
 ```bash
 pnpm --filter @curanno/guest bundle
-pnpm --filter @curanno/guest bookmarklet -- --bundle-url https://annotations.example/guest.js --sidebar-origin https://annotations.example --sidebar-path /sidebar/
+pnpm --filter @curanno/guest bookmarklet -- --bundle-url https://curanno.example/guest.js --sidebar-origin https://curanno.example --sidebar-path /sidebar/
 ```
 
 ## Tests

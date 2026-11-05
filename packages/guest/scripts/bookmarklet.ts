@@ -1,9 +1,9 @@
 /**
  * Prints the bookmarklet for a deployed guest bundle and sidebar.
  *
- *   pnpm --filter @curanno/guest bookmarklet --bundle-url https://annotations.example/guest.js \
- *       --sidebar-origin https://annotations.example [--sidebar-path /sidebar/] \
- *       [--pdf-viewer-url https://pdf.annotations.example/pdf/]
+ *   pnpm --filter @curanno/guest bookmarklet --bundle-url https://curanno.example/guest.js \
+ *       --sidebar-origin https://curanno.example [--sidebar-path /sidebar/] \
+ *       [--pdf-viewer-url https://pdf.curanno.example/pdf/]
  */
 // The built package: the scripts run under Node, which cannot load the
 // library's TypeScript sources directly. `pnpm build` first.
