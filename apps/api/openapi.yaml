@@ -1,9 +1,9 @@
 openapi: 3.1.0
 info:
-  title: Web annotation platform API
+  title: CurAnno API
   version: 0.1.0
   description: |
-    The API of the web annotation platform.
+    The API of CurAnno.
 
     Paths without a prefix implement the [W3C Web Annotation Protocol](https://www.w3.org/TR/annotation-protocol/):
     one annotation container at `/annotations/` with paging and `Prefer` handling, and annotation
