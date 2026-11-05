@@ -2,6 +2,8 @@
 
 Part of the Phase 2 guest trial. Automated checks were run with `pnpm --filter @curanno/guest trial:a11y` in headless Chromium (raw output in [`results/a11y.json`](results/a11y.json)); the rest comes from reading the candidates' code. No screen reader was driven during this trial; the manual pass that remains is listed at the end.
 
+> The Recogito overlay and selection handling measured here were removed from the trial tools after this evaluation. These findings, and the overlay rows in the committed results, are a record; b1f7add is the last commit that can reproduce them.
+
 ## What each candidate does with a selection
 
 **Recogito Text Annotator 4.3.7.** The selection handler listens to `pointerdown`/`pointerup`, `selectstart` and `selectionchange`, and binds hotkeys for `Shift+Arrow` (all four) and `Ctrl/⌘+A`. A selection made with the keyboard is turned into an annotation when **Shift is released** over a non-collapsed selection. Measured on the React page:

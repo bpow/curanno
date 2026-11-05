@@ -4,7 +4,7 @@
  *
  *   pnpm --filter @curanno/guest trial [--all] [--candidate id] [case-id ...]
  *
- * Runs the guest candidates unless `--all` adds the Phase 2 ones. Exits 1
+ * Runs the guest candidates unless `--all` adds the Hypothesis one. Exits 1
  * when the guest guesses on a `mustNotMatch` annotation (plan, section 8,
  * success criterion 5) or when an expectation cannot be located.
  */

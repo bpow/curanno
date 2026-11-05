@@ -1,7 +1,7 @@
 /**
- * Highlight rendering comparison: wrapped elements, Recogito's overlay spans
- * and the CSS Custom Highlight API, on the pages that re-render their DOM
- * and on the nested-scroll page. Writes `results/highlights.json`; the
+ * Highlight rendering comparison: wrapped elements and the CSS Custom
+ * Highlight API, on the pages that re-render their DOM and on the
+ * nested-scroll page. Writes `results/highlights.json`; the
  * evaluation is in `highlight-rendering.md`.
  *
  *   pnpm --filter @curanno/guest trial:highlights
@@ -16,7 +16,7 @@ import { countVisible } from './visible.ts';
 import { startServer } from './server.ts';
 
 const RESULTS_DIR = path.resolve(import.meta.dirname, '../results');
-const TECHNIQUES = ['wrap', 'overlay', 'css-highlight'] as const;
+const TECHNIQUES = ['wrap', 'css-highlight'] as const;
 type Technique = (typeof TECHNIQUES)[number];
 type Span = { start: number; end: number };
 
@@ -28,8 +28,6 @@ type Step = {
   /** Root textContent equals a clean render of the same state. */
   textIntact: boolean | null;
   consoleErrors: number;
-  /** Overlay only: pixel distance between the highlight and its text, per annotation. */
-  overlayOffsets?: (number | null)[];
   elementsAdded?: number;
 };
 
@@ -152,36 +150,22 @@ try {
           document.querySelector('.outer')!.scrollTop += 80;
         });
         await page.waitForTimeout(300);
-        const step: Step = {
+        steps.push({
           step: 'after-scroll',
           visible: await countVisible(page, root, spans),
           of: spans.length,
           textIntact: null,
           consoleErrors: errors.length,
-        };
-        if (technique === 'overlay') {
-          step.overlayOffsets = await page.evaluate(
-            ([r, s]) => window.__trialHl.overlayOffsets(r, s),
-            [root, spans] as const,
-          );
-        }
-        steps.push(step);
+        });
         await page.setViewportSize({ width: 900, height: 700 });
         await page.waitForTimeout(300);
-        const resized: Step = {
+        steps.push({
           step: 'after-resize',
           visible: await countVisible(page, root, spans),
           of: spans.length,
           textIntact: null,
           consoleErrors: errors.length,
-        };
-        if (technique === 'overlay') {
-          resized.overlayOffsets = await page.evaluate(
-            ([r, s]) => window.__trialHl.overlayOffsets(r, s),
-            [root, spans] as const,
-          );
-        }
-        steps.push(resized);
+        });
       }
       rows.push({ caseId: c.id, technique, steps });
       console.log(
