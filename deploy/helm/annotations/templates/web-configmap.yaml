@@ -13,7 +13,9 @@ data:
   NUXT_PUBLIC_API_BASE: ''
   # Also fills in the site's Content-Security-Policy when it starts, so it must be set.
   NUXT_PUBLIC_OIDC_ISSUER: {{ required "config.oidcIssuer is required" .Values.config.oidcIssuer | trimSuffix "/" | quote }}
+  {{- if not .Values.zitadel.provision.enabled }}
   NUXT_PUBLIC_OIDC_CLIENT_ID: {{ .Values.config.oidcClientId | quote }}
+  {{- end }}
   {{- with .Values.pdfViewer.host }}
   NUXT_PUBLIC_PDF_VIEWER_URL: {{ printf "https://%s/pdf/" . | quote }}
   {{- else }}

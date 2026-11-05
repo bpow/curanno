@@ -5,9 +5,10 @@
  * `compose up`, or against a deployed instance with its own token.
  *
  * Zitadel generates client ids, so the id is printed and, with --write-env,
- * written there as OIDC_ISSUER and OIDC_CLIENT_ID (the API, the sidebar's
- * and the site's dev servers and the end-to-end tests read the repository's
- * .env). In CI, --write-env "$GITHUB_ENV" exports them to later steps.
+ * written there as OIDC_ISSUER and OIDC_CLIENT_ID. The compose stack writes
+ * deploy/zitadel/.bootstrap/oidc.env, which development falls back to. In a
+ * cluster, --write-configmap stores the two in a ConfigMap of the pod's
+ * namespace through its service account (the annotations chart's hook Job).
  *
  *   node deploy/zitadel/provision.ts --dev-users --write-env .env
  *   node deploy/zitadel/provision.ts --issuer https://idp.example \
@@ -27,6 +28,7 @@ const { values: args } = parseArgs({
     origin: { type: 'string', multiple: true },
     'dev-users': { type: 'boolean', default: false },
     'write-env': { type: 'string' },
+    'write-configmap': { type: 'string' },
   },
 });
 
@@ -156,4 +158,30 @@ if (envFile) {
   }
   writeFileSync(envFile, text.replace(/^\n/, ''));
   console.log(`wrote ${Object.keys(settings).join(' and ')} to ${envFile}`);
+}
+
+const configMap = args['write-configmap'];
+if (configMap) {
+  // The API server's CA comes from NODE_EXTRA_CA_CERTS, set by the Job.
+  const account = '/var/run/secrets/kubernetes.io/serviceaccount';
+  const namespace = readFileSync(`${account}/namespace`, 'utf8').trim();
+  const url = new URL(
+    `https://kubernetes.default.svc/api/v1/namespaces/${namespace}/configmaps/${configMap}`,
+  );
+  url.search = new URLSearchParams({ fieldManager: 'zitadel-provision', force: 'true' }).toString();
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      authorization: `Bearer ${readFileSync(`${account}/token`, 'utf8').trim()}`,
+      'content-type': 'application/apply-patch+yaml',
+    },
+    body: JSON.stringify({
+      apiVersion: 'v1',
+      kind: 'ConfigMap',
+      metadata: { name: configMap },
+      data: settings,
+    }),
+  });
+  if (!res.ok) throw new Error(`ConfigMap ${configMap}: ${res.status} ${await res.text()}`);
+  console.log(`wrote ${Object.keys(settings).join(' and ')} to ConfigMap ${configMap}`);
 }

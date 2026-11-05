@@ -10,3 +10,4 @@ packages/guest/corpus
 packages/guest/trial
 docs
 deploy
+!deploy/zitadel/provision.ts

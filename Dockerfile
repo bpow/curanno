@@ -48,6 +48,8 @@ COPY --from=build /out/dist ./dist
 COPY --from=build /out/openapi.yaml ./openapi.yaml
 COPY --from=build /out/migrations ./migrations
 COPY --from=build /out/static ./static
+# Run by the chart's Zitadel provisioning Job (zitadel.provision in its values).
+COPY deploy/zitadel/provision.ts ./zitadel/provision.ts
 USER node
 EXPOSE 3000
 ENV PORT=3000

@@ -40,6 +40,10 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "annotations.fullname" . }}-web
+          {{- if .Values.zitadel.provision.enabled }}
+          env:
+            {{- include "annotations.provisionedClientId" (dict "root" . "name" "NUXT_PUBLIC_OIDC_CLIENT_ID") | nindent 12 }}
+          {{- end }}
           livenessProbe:
             httpGet:
               path: /
