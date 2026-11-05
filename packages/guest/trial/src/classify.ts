@@ -36,16 +36,6 @@ export function classify(expected: Span | null | 'mustNotMatch', actual: Span | 
   return 'wrong';
 }
 
-export const VERDICTS: Verdict[] = [
-  'anchored',
-  'approximate',
-  'missed',
-  'orphaned',
-  'wrong',
-  'guessed',
-  'invalid',
-];
-
 export type Counts = Record<Verdict, number>;
 
 export function emptyCounts(): Counts {
