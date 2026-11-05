@@ -28,7 +28,8 @@ export function createUserManager(): UserManager {
     authority: config.oidc.issuer,
     client_id: config.oidc.clientId,
     response_type: 'code',
-    scope: 'openid profile email',
+    // Zitadel, Okta, Auth0 and Entra ID issue refresh tokens only for offline_access.
+    scope: 'openid profile email offline_access',
     redirect_uri: base,
     post_logout_redirect_uri: base,
     popup_redirect_uri: new URL('popup-callback.html', base).href,
