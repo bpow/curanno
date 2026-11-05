@@ -50,7 +50,6 @@ helm upgrade --install annotations deploy/helm/annotations \
   --set config.publicUrl=https://annotations.example \
   --set config.oidcIssuer=https://idp.example/realms/annotations \
   --set config.oidcClientId=annotations-sidebar \
-  --set config.oidcAdminGroup=annotations-admins \
   --set "config.frameAncestors='self' https://*.example.org" \
   --set pdfViewer.host=pdf.annotations.example \
   --set ingress.enabled=true --set ingress.host=annotations.example \
