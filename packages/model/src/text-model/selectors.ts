@@ -1,12 +1,7 @@
 import type { TextPositionSelector, TextQuoteSelector } from '../annotation/types.js';
 import type { TextPoint } from './adapter.js';
 import { codePointLength, sliceCodePoints } from './code-points.js';
-import {
-  textCodePointIndex,
-  textOffsetFromPoint,
-  textUtf16Index,
-  type TextMap,
-} from './normalize.js';
+import { textCodePointIndex, textOffsetFromPoint, type TextMap } from './normalize.js';
 
 /** Code points of context recorded on each side of a quote. */
 export const DEFAULT_CONTEXT_LENGTH = 32;
@@ -129,11 +124,6 @@ export function findQuote(
     return a.start - b.start;
   });
   return matches;
-}
-
-/** Convenience: the UTF-16 slice of `map.text` for a range. */
-export function utf16RangeOf(map: TextMap<unknown>, range: TextRange): [number, number] {
-  return [textUtf16Index(map, range.start), textUtf16Index(map, range.end)];
 }
 
 function commonPrefixLength(a: string, b: string): number {
