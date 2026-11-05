@@ -40,7 +40,7 @@ Create a **public** OpenID Connect client (Authorization Code with PKCE, no clie
 
 The API accepts a token when its issuer matches, its signature verifies against the issuer's JWKS, it is within its validity (30 s tolerance) and either its `aud` is `config.oidcAudience` (default: the client id) or its `azp` is the client id, which is how some providers (Keycloak) mark public-client access tokens; Zitadel puts the client id in `aud`. A token revoked at the provider is honoured for at most 60 s (the API's verification cache) or until it expires.
 
-With Zitadel, `deploy/zitadel/provision.ts` creates this client (and prints its generated id) against any instance, and the chart can run it as a hook Job that supplies the id itself (`zitadel.provision.enabled`); `deploy/zitadel/README.md` covers both and running Zitadel itself with its official chart.
+With Zitadel, `deploy/zitadel/provision.ts` creates this client (and prints its generated id) against any instance, and the chart can run it as a hook Job that supplies the id itself (`zitadel.provision.enabled`); [Deploying with Zitadel](#deploying-with-zitadel) walks through running Zitadel and the chart together, and `deploy/zitadel/README.md` has the details.
 
 ## 4. Deploy the chart
 
@@ -63,6 +63,53 @@ Values worth knowing (`deploy/helm/annotations/values.yaml` documents each):
 - `pdfViewer.host`: a second host name for the PDF viewer, with its own certificate, so a PDF.js defect never runs on the sidebar's origin (ADR 0021). Point its DNS at the ingress; the chart adds the ingress rule.
 - `ingress.metrics`: whether `/metrics` is reachable from outside (default no). Scrape the API Service inside the cluster instead.
 - `web.enabled`: the management site; off, the API still serves the sidebar and viewer, and users install the bookmarklet from `pnpm --filter @curanno/guest bookmarklet` output instead of the landing page.
+
+### Deploying with Zitadel
+
+Zitadel runs as its own release of the official chart, in the same namespace as the annotations release so the provisioning Job can read Zitadel's token Secret. With `zitadel.example` as Zitadel's host and `annotations.example` as the platform's:
+
+1. **Postgres.** One server can hold both databases: `annotations` for the platform and `zitadel` for Zitadel, each with its own user. Zitadel's user must own its database or be allowed to create it.
+2. **Zitadel's secrets.** The masterkey encrypts Zitadel's keys in its database, so keep a copy outside the cluster; losing it loses the instance.
+
+   ```bash
+   kubectl -n annotations create secret generic zitadel-masterkey --from-literal=masterkey="$(openssl rand -hex 16)"
+   kubectl -n annotations create secret generic zitadel-db --from-literal=dsn='postgres://zitadel:...@postgres:5432/zitadel?sslmode=require'
+   ```
+
+3. **Zitadel.** Copy `deploy/zitadel/values.yaml` and set the host in its three places (`ExternalDomain` and both Ingresses). The values are written for OpenShift; elsewhere, drop the Route annotation and set the Ingress class and TLS. Wait for the setup Job to finish: it creates the first instance and stores an IAM owner's token in the Secret `iam-admin-pat`.
+
+   ```bash
+   helm repo add zitadel https://charts.zitadel.com
+   helm upgrade --install zitadel zitadel/zitadel --version 10.4.0 -n annotations \
+     --skip-schema-validation -f zitadel-values.yaml
+   ```
+
+   `https://zitadel.example/.well-known/openid-configuration` should now answer. The console is at `/ui/console` as `admin@annotations.zitadel.example`, with the initial password `Password1!`, which must be changed on first use.
+
+4. **The platform.** Install the chart with `zitadel.provision.enabled=true` and no `config.oidcClientId`. Before every install and upgrade, a hook Job registers the client for `config.publicUrl` and writes the client's id to the ConfigMap `annotations-oidc`, which the API and the site read.
+
+   ```bash
+   helm upgrade --install annotations deploy/helm/annotations -n annotations \
+     --set config.publicUrl=https://annotations.example \
+     --set config.oidcIssuer=https://zitadel.example \
+     --set zitadel.provision.enabled=true \
+     --set "config.frameAncestors='self' https://*.example.org" \
+     --set pdfViewer.host=pdf.annotations.example \
+     --set ingress.enabled=true --set ingress.host=annotations.example \
+     --set secrets.existingSecret=annotations-database
+   ```
+
+   If the install fails at the hook, `kubectl -n annotations logs job/annotations-zitadel-provision` shows why. The Job is deleted when it succeeds.
+
+5. **Users and the first administrator.** Self-registration is off (`AllowRegister: false`), so create users in the console or connect an external identity provider to Zitadel. After the first administrator has signed in once, set the flag in the platform's database:
+
+   ```sql
+   update users set is_admin = true where issuer = 'https://zitadel.example' and email = 'someone@example.org';
+   ```
+
+6. **Checks.** Run section 8.
+
+The ConfigMap `annotations-oidc` is not managed by Helm, so it survives `helm uninstall`. The client id changes only when the Zitadel instance is recreated; when it does, run `helm upgrade` and restart both deployments.
 
 ### Ingress requirements
 
