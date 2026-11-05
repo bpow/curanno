@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fileUrlFrom, nameOf, viewerUrlFor } from './source.js';
+import { fileUrlFrom, nameOf } from './source.js';
 
 describe('fileUrlFrom', () => {
   it('accepts absolute http(s) URLs only', () => {
@@ -11,14 +11,6 @@ describe('fileUrlFrom', () => {
     expect(fileUrlFrom('?file=javascript:alert(1)')).toBeUndefined();
     expect(fileUrlFrom('?file=file:///etc/passwd')).toBeUndefined();
     expect(fileUrlFrom('')).toBeUndefined();
-  });
-});
-
-describe('viewerUrlFor', () => {
-  it('builds the viewer URL with the PDF in the file parameter', () => {
-    expect(viewerUrlFor('https://pdf.annotations.example/pdf/', 'https://e.org/a b.pdf')).toBe(
-      'https://pdf.annotations.example/pdf/?file=https%3A%2F%2Fe.org%2Fa+b.pdf',
-    );
   });
 });
 

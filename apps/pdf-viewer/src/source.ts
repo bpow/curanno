@@ -23,13 +23,6 @@ export function fileUrlFrom(search: string): string | undefined {
   return url.href;
 }
 
-/** The viewer URL for a PDF at `pdfUrl`, as the bookmarklet and links build it. */
-export function viewerUrlFor(viewerBase: string, pdfUrl: string): string {
-  const url = new URL(viewerBase);
-  url.searchParams.set('file', pdfUrl);
-  return url.href;
-}
-
 /** A display name for a PDF: its URL's last path segment, or the URL itself. */
 export function nameOf(url: string): string {
   try {
