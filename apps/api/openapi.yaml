@@ -793,8 +793,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
   /x/principals:
     get:
       operationId: searchPrincipals
@@ -914,7 +912,7 @@ paths:
       summary: Delete a group
       description: >-
         Group administrators and platform administrators only. ACL rows granted to the group
-        are removed with it. Provider-managed groups cannot be deleted (403).
+        are removed with it.
       responses:
         '204':
           description: Deleted
