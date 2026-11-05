@@ -1,12 +1,12 @@
 {{- if .Values.ingress.enabled }}
-{{- $api := include "annotations.fullname" . }}
+{{- $api := include "curanno.fullname" . }}
 {{- $web := printf "%s-web" $api }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ $api }}
   labels:
-    {{- include "annotations.labels" . | nindent 4 }}
+    {{- include "curanno.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}

@@ -6,8 +6,8 @@ Deploying, configuring, backing up and upgrading the platform. The system is two
 
 | Component | Image | Serves |
 | --- | --- | --- |
-| API | `annotations-api` (Dockerfile target `api`) | The W3C protocol and `/x/` extensions; the sidebar at `/sidebar/`, the guest bundle at `/guest.js`, the JSON-LD context at `/x/context.jsonld`; the PDF viewer at `/pdf/` on its own host; `/healthz`, `/readyz`, `/metrics` |
-| Management site | `annotations-web` (target `web`) | The landing page (with the bookmarklet) and the administration pages, under the same host as the API |
+| API | `curanno-api` (Dockerfile target `api`) | The W3C protocol and `/x/` extensions; the sidebar at `/sidebar/`, the guest bundle at `/guest.js`, the JSON-LD context at `/x/context.jsonld`; the PDF viewer at `/pdf/` on its own host; `/healthz`, `/readyz`, `/metrics` |
+| Management site | `curanno-web` (target `web`) | The landing page (with the bookmarklet) and the administration pages, under the same host as the API |
 | Postgres 17 | yours | Everything stateful |
 | OpenID Connect provider | yours | Sign-in for the sidebar and the site (ADR 0005, 0019) |
 
@@ -18,11 +18,11 @@ Both images read their configuration from environment variables; nothing is bake
 From the repository root, for a release tag `1.0.0`:
 
 ```bash
-podman build --target api -t ghcr.io/example/annotations-api:1.0.0 -f Dockerfile .
+podman build --target api -t ghcr.io/example/curanno-api:1.0.0 -f Dockerfile .
 ```
 
 ```bash
-podman build --target web -t ghcr.io/example/annotations-web:1.0.0 -f Dockerfile .
+podman build --target web -t ghcr.io/example/curanno-web:1.0.0 -f Dockerfile .
 ```
 
 Push both to your registry and set `image.repository`, `web.image.repository` and the tags in the chart's values (the tag defaults to the chart's `appVersion`). CI builds both images on every change without publishing them.
@@ -45,7 +45,7 @@ With Zitadel, `deploy/zitadel/provision.ts` creates this client (and prints its 
 ## 4. Deploy the chart
 
 ```bash
-helm upgrade --install annotations deploy/helm/annotations \
+helm upgrade --install curanno deploy/helm/curanno \
   --namespace annotations --create-namespace \
   --set config.publicUrl=https://annotations.example \
   --set config.oidcIssuer=https://idp.example \
@@ -53,10 +53,10 @@ helm upgrade --install annotations deploy/helm/annotations \
   --set "config.frameAncestors='self' https://*.example.org" \
   --set pdfViewer.host=pdf.annotations.example \
   --set ingress.enabled=true --set ingress.host=annotations.example \
-  --set secrets.existingSecret=annotations-database
+  --set secrets.existingSecret=curanno-database
 ```
 
-Values worth knowing (`deploy/helm/annotations/values.yaml` documents each):
+Values worth knowing (`deploy/helm/curanno/values.yaml` documents each):
 
 - `secrets.databaseUrl` or `secrets.existingSecret`: the Postgres connection string. Migrations run from an init container before each API pod starts and take an advisory lock, so replicas starting together are safe.
 - `config.frameAncestors`: the origins allowed to embed the sidebar, as CSP source expressions. This is the clickjacking defence (ADR 0007): list the sites your users annotate, or `https:` for any https site if you accept the trade. Users of the browser extension annotate whatever site they are on, so serving them needs `https:`. The viewer's origin is added for you.
@@ -72,34 +72,34 @@ Zitadel runs as its own release of the official chart, in the same namespace as 
 2. **Zitadel's secrets.** The masterkey encrypts Zitadel's keys in its database, so keep a copy outside the cluster; losing it loses the instance.
 
    ```bash
-   kubectl -n annotations create secret generic zitadel-masterkey --from-literal=masterkey="$(openssl rand -hex 16)"
-   kubectl -n annotations create secret generic zitadel-db --from-literal=dsn='postgres://zitadel:...@postgres:5432/zitadel?sslmode=require'
+   kubectl -n curanno create secret generic zitadel-masterkey --from-literal=masterkey="$(openssl rand -hex 16)"
+   kubectl -n curanno create secret generic zitadel-db --from-literal=dsn='postgres://zitadel:...@postgres:5432/zitadel?sslmode=require'
    ```
 
 3. **Zitadel.** Copy `deploy/zitadel/values.yaml` and set the host in its three places (`ExternalDomain` and both Ingresses). The values are written for OpenShift; elsewhere, drop the Route annotation and set the Ingress class and TLS. Wait for the setup Job to finish: it creates the first instance and stores an IAM owner's token in the Secret `iam-admin-pat`.
 
    ```bash
    helm repo add zitadel https://charts.zitadel.com
-   helm upgrade --install zitadel zitadel/zitadel --version 10.4.0 -n annotations \
+   helm upgrade --install zitadel zitadel/zitadel --version 10.4.0 -n curanno \
      --skip-schema-validation -f zitadel-values.yaml
    ```
 
    `https://zitadel.example/.well-known/openid-configuration` should now answer. The console is at `/ui/console` as `admin@annotations.zitadel.example`, with the initial password `Password1!`, which must be changed on first use.
 
-4. **The platform.** Install the chart with `zitadel.provision.enabled=true` and no `config.oidcClientId`. Before every install and upgrade, a hook Job registers the client for `config.publicUrl` and writes the client's id to the ConfigMap `annotations-oidc`, which the API and the site read.
+4. **The platform.** Install the chart with `zitadel.provision.enabled=true` and no `config.oidcClientId`. Before every install and upgrade, a hook Job registers the client for `config.publicUrl` and writes the client's id to the ConfigMap `curanno-oidc`, which the API and the site read.
 
    ```bash
-   helm upgrade --install annotations deploy/helm/annotations -n annotations \
+   helm upgrade --install curanno deploy/helm/curanno -n curanno \
      --set config.publicUrl=https://annotations.example \
      --set config.oidcIssuer=https://zitadel.example \
      --set zitadel.provision.enabled=true \
      --set "config.frameAncestors='self' https://*.example.org" \
      --set pdfViewer.host=pdf.annotations.example \
      --set ingress.enabled=true --set ingress.host=annotations.example \
-     --set secrets.existingSecret=annotations-database
+     --set secrets.existingSecret=curanno-database
    ```
 
-   If the install fails at the hook, `kubectl -n annotations logs job/annotations-zitadel-provision` shows why. The Job is deleted when it succeeds.
+   If the install fails at the hook, `kubectl -n curanno logs job/curanno-zitadel-provision` shows why. The Job is deleted when it succeeds.
 
 5. **Users and the first administrator.** Self-registration is off (`AllowRegister: false`), so create users in the console or connect an external identity provider to Zitadel. After the first administrator has signed in once, set the flag in the platform's database:
 
@@ -109,7 +109,7 @@ Zitadel runs as its own release of the official chart, in the same namespace as 
 
 6. **Checks.** Run section 8.
 
-The ConfigMap `annotations-oidc` is not managed by Helm, so it survives `helm uninstall`. The client id changes only when the Zitadel instance is recreated; when it does, run `helm upgrade` and restart both deployments.
+The ConfigMap `curanno-oidc` is not managed by Helm, so it survives `helm uninstall`. The client id changes only when the Zitadel instance is recreated; when it does, run `helm upgrade` and restart both deployments.
 
 ### Ingress requirements
 
@@ -129,7 +129,7 @@ The ConfigMap `annotations-oidc` is not managed by Helm, so it survives `helm un
 The database is the only state. Back it up with the script, which dumps in pg_dump's compressed custom format without ownership or privilege statements:
 
 ```bash
-DATABASE_URL=postgres://... scripts/db-backup.sh backups/annotations-$(date +%F).dump
+DATABASE_URL=postgres://... scripts/db-backup.sh backups/curanno-$(date +%F).dump
 ```
 
 Run it from a machine with `pg_dump` of at least the server's major version, or run the one inside the database container or a `postgres:17` pod (`PG_DUMP="kubectl exec -i postgres-0 -- pg_dump" scripts/db-backup.sh ...`); the dump goes through stdout so either works. Schedule it (a CronJob with a `postgres:17` image and the script works) and keep dumps off the cluster.
@@ -137,7 +137,7 @@ Run it from a machine with `pg_dump` of at least the server's major version, or 
 To restore, create an empty database, restore into it, run the migrations against it to confirm the schema is current, and point the API at it:
 
 ```bash
-TARGET_DATABASE_URL=postgres://... scripts/db-restore.sh backups/annotations-2026-10-30.dump
+TARGET_DATABASE_URL=postgres://... scripts/db-restore.sh backups/curanno-2026-10-30.dump
 ```
 
 ```bash

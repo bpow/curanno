@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "annotations.fullname" . }}-web
+  name: {{ include "curanno.fullname" . }}-web
   labels:
-    {{- include "annotations.labels" . | nindent 4 }}
+    {{- include "curanno.labels" . | nindent 4 }}
     app.kubernetes.io/component: web
 data:
   PORT: '3001'

@@ -1,7 +1,7 @@
 # Images for the platform, built from the repository root (ADR 0021):
 #
-#   podman build --target api -t annotations-api -f Dockerfile .
-#   podman build --target web -t annotations-web -f Dockerfile .
+#   podman build --target api -t curanno-api -f Dockerfile .
+#   podman build --target web -t curanno-web -f Dockerfile .
 #
 # `api` holds the compiled server, the OpenAPI document it binds to, the SQL
 # migrations (run with `node dist/db/migrate.js`), the production dependencies
@@ -9,7 +9,7 @@
 # (/sidebar/), the PDF viewer (/pdf/) and the guest bundle (/guest.js).
 # `web` holds the management site's Nitro server. Both read their
 # configuration from environment variables (see .env.example and
-# deploy/helm/annotations/values.yaml); nothing is baked in.
+# deploy/helm/curanno/values.yaml); nothing is baked in.
 #
 # Both run as uid 1000 in group 0, and every file belongs to group 0 and is
 # readable by it, so OpenShift can run them as an arbitrary uid from the

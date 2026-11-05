@@ -1,13 +1,13 @@
 {{- if .Values.zitadel.provision.enabled }}
-{{- $name := printf "%s-zitadel-provision" (include "annotations.fullname" .) }}
-{{- $configMap := include "annotations.oidcConfigMap" . }}
+{{- $name := printf "%s-zitadel-provision" (include "curanno.fullname" .) }}
+{{- $configMap := include "curanno.oidcConfigMap" . }}
 {{- /* Hooks run before the release's own objects exist, so the Job's account and role are hooks too. */}}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ $name }}
   labels:
-    {{- include "annotations.labels" . | nindent 4 }}
+    {{- include "curanno.labels" . | nindent 4 }}
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-weight: '-10'
@@ -18,7 +18,7 @@ kind: Role
 metadata:
   name: {{ $name }}
   labels:
-    {{- include "annotations.labels" . | nindent 4 }}
+    {{- include "curanno.labels" . | nindent 4 }}
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-weight: '-10'
@@ -34,7 +34,7 @@ kind: RoleBinding
 metadata:
   name: {{ $name }}
   labels:
-    {{- include "annotations.labels" . | nindent 4 }}
+    {{- include "curanno.labels" . | nindent 4 }}
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-weight: '-10'
@@ -53,7 +53,7 @@ kind: Job
 metadata:
   name: {{ $name }}
   labels:
-    {{- include "annotations.labels" . | nindent 4 }}
+    {{- include "curanno.labels" . | nindent 4 }}
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
@@ -62,7 +62,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "annotations.selectorLabels" . | nindent 8 }}
+        {{- include "curanno.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: zitadel-provision
     spec:
       serviceAccountName: {{ $name }}
@@ -75,7 +75,7 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: provision
-          image: {{ include "annotations.image" . }}
+          image: {{ include "curanno.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
             - node

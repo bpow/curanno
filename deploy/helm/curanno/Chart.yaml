@@ -1,5 +1,5 @@
 apiVersion: v2
-name: annotations
+name: curanno
 description: W3C Web Annotation platform (API with the sidebar, PDF viewer and guest; management site) against an existing Postgres
 type: application
 version: 1.0.0
