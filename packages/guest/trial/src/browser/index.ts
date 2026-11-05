@@ -5,7 +5,6 @@
 import type { Expectation, Selection, Selector } from '../corpus.ts';
 import { guest, guestSweep } from './candidates/guest.ts';
 import { hypothesis } from './candidates/hypothesis.ts';
-import { recogitoDefault, recogitoQuote } from './candidates/recogito.ts';
 import type { AnchorResult, Candidate } from './candidates/types.ts';
 import {
   describeRange,
@@ -19,17 +18,12 @@ import {
 import './highlights.ts';
 
 /**
- * The guest candidates run by default. The Phase 2 candidates stay for
+ * The guest candidates run by default. The Hypothesis candidate stays for
  * reference (`--all`): since the corpus selectors follow the project text
- * model they measure those libraries on selectors they do not implement.
+ * model it measures that code on selectors it does not implement.
  */
 const defaultCandidates: Candidate[] = [guest, guestSweep];
-const legacyCandidates: Candidate[] = [
-  recogitoDefault,
-  recogitoQuote(0, 'recogito-quote', ' with no score threshold (Hypothesis policy)'),
-  recogitoQuote(0.8, 'recogito-quote-strict', ' rejecting matches scoring below 0.8'),
-  hypothesis,
-];
+const legacyCandidates: Candidate[] = [hypothesis];
 const candidates = [...defaultCandidates, ...legacyCandidates];
 
 function resolveRoot(selector?: string): HTMLElement {

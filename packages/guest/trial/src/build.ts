@@ -22,7 +22,6 @@ export async function build(): Promise<void> {
     format: 'iife',
     target: 'es2022',
     outfile: path.join(BUILD_DIR, '__trial/runtime.js'),
-    loader: { '.css': 'text' },
     logLevel: 'warning',
   });
 

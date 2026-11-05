@@ -5,7 +5,7 @@ Runs the guest's anchoring against the [regression corpus](../corpus/README.md) 
 ```bash
 pnpm --filter @curanno/guest trial                 # all cases, the guest candidates
 pnpm --filter @curanno/guest trial synth-hidden    # one case
-pnpm --filter @curanno/guest trial --all           # include the Phase 2 candidates
+pnpm --filter @curanno/guest trial --all           # include the Hypothesis candidate
 pnpm --filter @curanno/guest trial --candidate hypothesis
 ```
 
@@ -34,21 +34,18 @@ Defined in `src/browser/candidates/`. Run by default:
 - **guest**: `anchor()` from `packages/guest/src/anchoring`, on the project text model (ADR 0012, 0013): RangeSelector, then TextPosition, each checked against the quote, then quote matching with the minimum score and the quote-length floor from ADR 0017. The gate applies to this candidate.
 - **guest-sweep**: the same code with both thresholds off, so the report's threshold sweep shows what every candidate match scored. Its `guessed` verdicts are expected and not gated.
 
-Kept from Phase 2 and run only with `--all`. The corpus selectors now follow the project text model (code points of normalized text), which these libraries do not implement, so their numbers measure them on foreign selectors and are no longer comparable with the Phase 2 report, which is recorded in ADR 0017:
+Kept from Phase 2 and run only with `--all`. The corpus selectors now follow the project text model (code points of normalized text), which this code does not implement, so its numbers measure it on foreign selectors and are no longer comparable with the Phase 2 report, which is recorded in ADR 0017:
 
 - **hypothesis**: `anchor()` from the vendored client code (`../vendor/hypothesis`). W3C `RangeSelector`s are converted to the client's XPath shape first.
-- **recogito-default**: `createTextAnnotator` with the bundled `W3CTextFormat` adapter and no `selectorReviveFn`, so annotations are revived by `TextPositionSelector` offsets alone.
-- **recogito-quote**: `createTextAnnotator` with our adapter (`src/browser/recogito-w3c-adapter.ts`, which keeps prefix and suffix) and a `selectorReviveFn` that accepts a position hit only when its text still equals the quote and otherwise runs `src/browser/match-quote.ts`, a fuzzy matcher over `approx-string-match` scored like the Hypothesis one, with no minimum score.
-- **recogito-quote-strict**: the same with matches scoring below 0.8 rejected. The summary also contains a threshold sweep computed from `recogito-quote`'s recorded scores.
 
-Both Recogito candidates go through the library's real loading path (adapter, revive, store) so the trial measures what the integration would do, not just the algorithm.
+The Recogito candidates ADR 0017 compares were removed once that decision was settled; the last commit with them is b1f7add.
 
 ## Other commands
 
 - `pnpm --filter @curanno/guest corpus:describe [--force] [case ...]` generates selectors from each annotation's `select` through the guest's `describe`, and checks that annotations marked `notAnnotatable` cannot be described.
 - `pnpm --filter @curanno/guest corpus:pdf` renders `cases/*/src/*.html` to PDFs.
 - `pnpm --filter @curanno/guest trial:highlights` compares highlight rendering techniques on the re-rendering and nested-scroll pages; see [highlight-rendering.md](highlight-rendering.md).
-- `pnpm --filter @curanno/guest trial:a11y` runs the keyboard and accessibility-tree checks; see [keyboard-and-screen-reader.md](keyboard-and-screen-reader.md).
+- `pnpm --filter @curanno/guest trial:a11y` runs the accessibility-tree checks; see [keyboard-and-screen-reader.md](keyboard-and-screen-reader.md).
 
 ## Files
 
