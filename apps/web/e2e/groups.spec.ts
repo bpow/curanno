@@ -21,7 +21,7 @@ async function expectNoViolations(page: Page, label: string): Promise<void> {
 
 test('the landing and sign-in pages have no axe violations', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Annotation platform' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'CurAnno' })).toBeVisible();
   await expectNoViolations(page, 'the landing page');
 });
 

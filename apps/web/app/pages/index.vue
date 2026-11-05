@@ -25,7 +25,7 @@ onMounted(() => {
 
 <template>
   <section class="prose">
-    <h1>Annotation platform</h1>
+    <h1>CurAnno</h1>
     <p>
       Annotate web pages and PDFs, share what you write, and work in groups. Everything here goes
       through the public API with your own login.

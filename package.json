@@ -1,5 +1,5 @@
 {
-  "name": "web-annotation-platform",
+  "name": "curanno",
   "private": true,
   "version": "0.0.0",
   "description": "W3C Web Annotation platform: Fastify API, framework-free guest, Vue sidebar",

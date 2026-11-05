@@ -89,7 +89,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       htmlAttrs: { lang: 'en' },
-      title: 'Annotation platform',
+      title: 'CurAnno',
     },
   },
   runtimeConfig: {
