@@ -20,7 +20,8 @@ export function createUserManager(options: OidcOptions): UserManager {
     authority: options.issuer,
     client_id: options.clientId,
     response_type: 'code',
-    scope: 'openid profile email',
+    // Zitadel, Okta, Auth0 and Entra ID issue refresh tokens only for offline_access.
+    scope: 'openid profile email offline_access',
     redirect_uri: new URL(CALLBACK_PATH, options.origin).href,
     post_logout_redirect_uri: new URL('/', options.origin).href,
     // Renewal uses the refresh token; there is no hidden-iframe renewal.

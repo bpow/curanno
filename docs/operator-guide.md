@@ -34,7 +34,7 @@ Create a **public** OpenID Connect client (Authorization Code with PKCE, no clie
 - Redirect URIs: `https://annotations.example/sidebar/`, `https://annotations.example/sidebar/popup-callback.html`, `https://annotations.example/sidebar/silent-renew.html`, `https://annotations.example/auth/callback`.
 - Post-logout redirect URIs: `https://annotations.example/sidebar/`, `https://annotations.example/`.
 - Web origins (CORS for the token endpoint): `https://annotations.example`.
-- Refresh tokens enabled for the client, so framed sidebars can renew without third-party cookies (ADR 0019).
+- Refresh tokens enabled for the client, so framed sidebars can renew without third-party cookies (ADR 0019). The sidebar and the site request the `offline_access` scope, which most providers require before they issue a refresh token; the client must be allowed to request it. In Keycloak, `offline_access` issues offline tokens, which outlive the browser session, and users need the realm's `offline_access` role.
 - Access tokens must be JWTs (in Zitadel, the application's auth token type set to JWT). A user's display name comes from the token's `name` claim, then `preferred_username`, and their email from `email`; when the token lacks either, the API asks the provider's userinfo endpoint with the same token, which covers providers such as Zitadel that keep profile claims out of access tokens. Without either source, users appear by their subject identifier until an administrator sets a display name.
 - No `groups` claim is needed: groups are managed entirely through `/x/groups` (ADR 0026). Make the first administrator with SQL (`update users set is_admin = true where ...`) after their first sign-in; they can then administer further ones with `PATCH /x/users/{id}`.
 
