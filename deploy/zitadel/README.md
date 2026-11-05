@@ -50,6 +50,6 @@ kubectl get secret iam-admin-pat -o jsonpath='{.data.pat}' | base64 -d > /tmp/zi
 node deploy/zitadel/provision.ts --issuer https://zitadel.apps.cloudapps.unc.edu \
   --pat-file /tmp/zitadel-admin.pat --origin https://curanno.example
 ```
- Sign in to the console at `/ui/console` as `admin@annotations.<host>` with Zitadel's default initial password `Password1!`, which must be changed on first use.
+ Sign in to the console at `/ui/console` as `admin@curanno.<host>` with Zitadel's default initial password `Password1!`, which must be changed on first use.
 
 Open questions for production: where Postgres runs (an operator such as CloudNativePG, or a managed instance), whether to run more than one replica (Zitadel is stateless apart from Postgres), and SMTP for password resets.

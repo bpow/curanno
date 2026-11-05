@@ -45,8 +45,8 @@ const origins = args.origin ?? DEV_ORIGINS;
 const issuer = args.issuer.replace(/\/$/, '');
 const token = readFileSync(args['pat-file'], 'utf8').trim();
 
-const PROJECT_ID = 'annotations';
-const APPLICATION_ID = 'annotations-web';
+const PROJECT_ID = 'curanno';
+const APPLICATION_ID = 'curanno-web';
 
 /**
  * One Connect-protocol call. A create of something that exists, or an update
@@ -105,13 +105,13 @@ const organizationId = user.details.resourceOwner;
 await call('zitadel.project.v2.ProjectService/CreateProject', {
   organizationId,
   projectId: PROJECT_ID,
-  name: 'Annotations',
+  name: 'CurAnno',
 });
 
 const created = await call('zitadel.application.v2.ApplicationService/CreateApplication', {
   projectId: PROJECT_ID,
   applicationId: APPLICATION_ID,
-  name: 'Annotations (sidebar and management site)',
+  name: 'CurAnno (sidebar and management site)',
   oidcConfiguration,
 });
 if (created['alreadyExists']) {
