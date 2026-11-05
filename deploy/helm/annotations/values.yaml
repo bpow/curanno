@@ -132,10 +132,11 @@ probes:
     periodSeconds: 10
 
 podAnnotations: {}
+# No user or fsGroup: the images run as 1000:0 by default, and OpenShift's
+# restricted SCC substitutes a uid from the namespace's range (gid 0), which
+# a fixed runAsUser would make it refuse.
 podSecurityContext:
   runAsNonRoot: true
-  runAsUser: 1000
-  fsGroup: 1000
 securityContext:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true

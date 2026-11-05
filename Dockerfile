@@ -10,6 +10,10 @@
 # `web` holds the management site's Nitro server. Both read their
 # configuration from environment variables (see .env.example and
 # deploy/helm/annotations/values.yaml); nothing is baked in.
+#
+# Both run as uid 1000 in group 0, and every file belongs to group 0 and is
+# readable by it, so OpenShift can run them as an arbitrary uid from the
+# namespace's range (always with gid 0). Nothing is written at run time.
 
 FROM docker.io/library/node:24-alpine AS build
 RUN npm install --global pnpm@11.9.0
@@ -50,7 +54,7 @@ COPY --from=build /out/migrations ./migrations
 COPY --from=build /out/static ./static
 # Run by the chart's Zitadel provisioning Job (zitadel.provision in its values).
 COPY deploy/zitadel/provision.ts ./zitadel/provision.ts
-USER node
+USER 1000:0
 EXPOSE 3000
 ENV PORT=3000
 ENV STATIC_ROOT=/app/static
@@ -60,7 +64,7 @@ FROM docker.io/library/node:24-alpine AS web
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /src/apps/web/.output ./
-USER node
+USER 1000:0
 EXPOSE 3001
 ENV PORT=3001
 ENV HOST=0.0.0.0
