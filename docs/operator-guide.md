@@ -122,7 +122,7 @@ The ConfigMap `annotations-oidc` is not managed by Helm, so it survives `helm un
 
 - `GET /healthz`: the process answers (liveness). `GET /readyz`: the database answers too (readiness), so a database outage drains pods instead of restarting them.
 - Logs: JSON lines from pino to stdout, one per request with `reqId`, which is also returned as `X-Request-Id` (and taken from the proxy's `X-Request-Id` when present). Set `LOG_LEVEL` (`info` by default). Authorization headers are redacted.
-- Metrics: Prometheus text at `/metrics`: process defaults, `http_request_duration_seconds` by method, route pattern and status, `annotations_event_streams_open`, `annotations_events_delivered_total` by kind. Alert on readiness failures, 5xx rates and a flat `annotations_event_streams_open` during business hours (an ingress cutting streams).
+- Metrics: Prometheus text at `/metrics`: process defaults, `http_request_duration_seconds` by method, route pattern and status, `curanno_event_streams_open`, `curanno_events_delivered_total` by kind. Alert on readiness failures, 5xx rates and a flat `curanno_event_streams_open` during business hours (an ingress cutting streams).
 
 ## 5. Back up and restore
 
@@ -153,7 +153,7 @@ What a restore loses: annotations made after the dump, and nothing else; identit
 1. Read the release notes for migrations and configuration changes. Migrations are plain SQL files applied in order and recorded in `schema_migrations`; they are forward-only.
 2. Back up (section 5).
 3. `helm upgrade` with the new chart version and image tags. The init container applies new migrations before the new API pods start; old pods keep serving until the new ones are ready. A migration that an old pod cannot work with is called out in the release notes with the order to follow (scale down first).
-4. Watch `/readyz`, the 5xx rate and `annotations_event_streams_open` (sidebars reconnect with `Last-Event-ID` and miss nothing).
+4. Watch `/readyz`, the 5xx rate and `curanno_event_streams_open` (sidebars reconnect with `Last-Event-ID` and miss nothing).
 5. To roll back, `helm rollback`; migrations are not rolled back, so only roll back across releases whose notes say the schema is compatible, otherwise restore the backup.
 
 The OpenAPI document and the text model are versioned contracts (CONTRIBUTING.md); a breaking change to either is a new major version and the release notes say so.

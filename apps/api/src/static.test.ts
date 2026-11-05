@@ -68,7 +68,7 @@ describe.skipIf(!databaseUrl)('operational plumbing', () => {
     expect(res.body).toMatch(
       /http_request_duration_seconds_count\{[^}]*route="\/x\/me"[^}]*status="200"/,
     );
-    expect(res.body).toContain('annotations_event_streams_open 0');
+    expect(res.body).toContain('curanno_event_streams_open 0');
     // Route patterns, never identifiers.
     expect(res.body).not.toContain('/x/users/');
   });
