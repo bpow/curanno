@@ -393,7 +393,7 @@ export interface paths {
         post?: never;
         /**
          * Delete a group
-         * @description Group administrators and platform administrators only. ACL rows granted to the group are removed with it. Provider-managed groups cannot be deleted (403).
+         * @description Group administrators and platform administrators only. ACL rows granted to the group are removed with it.
          */
         delete: operations["deleteGroup"];
         options?: never;
@@ -1848,7 +1848,6 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
         };
     };
     searchPrincipals: {
