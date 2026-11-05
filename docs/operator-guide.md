@@ -48,7 +48,7 @@ With Zitadel, `deploy/zitadel/provision.ts` creates this client (and prints its 
 helm upgrade --install annotations deploy/helm/annotations \
   --namespace annotations --create-namespace \
   --set config.publicUrl=https://annotations.example \
-  --set config.oidcIssuer=https://idp.example/realms/annotations \
+  --set config.oidcIssuer=https://idp.example \
   --set config.oidcClientId=annotations-sidebar \
   --set "config.frameAncestors='self' https://*.example.org" \
   --set pdfViewer.host=pdf.annotations.example \

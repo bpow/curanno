@@ -24,7 +24,7 @@ fullnameOverride: ''
 config:
   # Issuer IRI of the OpenID Connect provider; discovery runs at
   # <issuer>/.well-known/openid-configuration (ADR 0005).
-  oidcIssuer: https://idp.example/realms/annotations
+  oidcIssuer: https://idp.example
   # The public client the sidebar and the site authenticate as. Ignored when
   # zitadel.provision is enabled, which creates the client and supplies its id.
   oidcClientId: annotations-sidebar

@@ -5,7 +5,7 @@
  */
 
 /** The issuer seeded users belong to; the load runner mints tokens for it. */
-export const LOAD_ISSUER = 'https://load.test/realms/annotations';
+export const LOAD_ISSUER = 'https://load.test';
 export const LOAD_CLIENT_ID = 'annotations-sidebar';
 
 export const userSubject = (i: number): string => `load-user-${i}`;

@@ -90,7 +90,7 @@ describe.skipIf(!databaseUrl)('operational plumbing', () => {
     // The deployment's configuration wins over the file the build shipped.
     const config = await ctx.app.inject({ method: 'GET', url: '/sidebar/config.json' });
     expect(config.json()).toEqual({
-      oidcIssuer: 'https://idp.test/realms/annotations',
+      oidcIssuer: 'https://idp.test',
       oidcClientId: 'annotations-sidebar',
       apiUrl: '',
       pdfViewerOrigin: 'https://pdf.annotations.test',

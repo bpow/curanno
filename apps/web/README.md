@@ -24,7 +24,7 @@ In development the dev server proxies `/annotations` and `/x` to the API (`API_P
 
 The site's Content-Security-Policy allows connections, frames and form submissions to paths under `NUXT_PUBLIC_OIDC_ISSUER`. A built site fills the issuer in when its server starts, so one image serves any provider; if the variable is unset there, the policy allows no provider and sign-in is blocked. `apps/web/scripts/check-runtime-csp.mjs` checks a running site, and CI runs it against the image.
 
-The identity provider must list `<site origin>/auth/callback` among the client's redirect URIs and `<site origin>/` among its post-logout redirect URIs; the development realm does for ports 3001 (this site) and 5173/4173 (the sidebar).
+The identity provider must list `<site origin>/auth/callback` among the client's redirect URIs and `<site origin>/` among its post-logout redirect URIs; the compose Zitadel client does for ports 3001 (this site) and 5173/4173 (the sidebar).
 
 ## Pages
 
