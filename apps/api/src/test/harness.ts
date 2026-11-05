@@ -14,7 +14,7 @@ import { createDb, migrate, type Database } from '../db/index.js';
 import type { Kysely } from 'kysely';
 import { buildServer } from '../server.js';
 
-export const ISSUER = 'https://idp.test/realms/annotations';
+export const ISSUER = 'https://idp.test';
 export const CLIENT_ID = 'annotations-sidebar';
 export const PUBLIC_URL = 'https://annotations.test';
 
