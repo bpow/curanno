@@ -84,7 +84,7 @@ Zitadel runs as its own release of the official chart, in the same namespace as 
      --skip-schema-validation -f zitadel-values.yaml
    ```
 
-   `https://zitadel.example/.well-known/openid-configuration` should now answer. The console is at `/ui/console` as `admin@annotations.zitadel.example`, with the initial password `Password1!`, which must be changed on first use.
+   `https://zitadel.example/.well-known/openid-configuration` should now answer. The console is at `/ui/console` as `admin@curanno.zitadel.example`, with the initial password `Password1!`, which must be changed on first use.
 
 4. **The platform.** Install the chart with `zitadel.provision.enabled=true` and no `config.oidcClientId`. Before every install and upgrade, a hook Job registers the client for `config.publicUrl` and writes the client's id to the ConfigMap `curanno-oidc`, which the API and the site read.
 

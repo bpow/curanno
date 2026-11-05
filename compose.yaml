@@ -40,7 +40,7 @@ services:
       ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: annotations
       ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: annotations
       ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: disable
-      ZITADEL_FIRSTINSTANCE_ORG_NAME: annotations-dev
+      ZITADEL_FIRSTINSTANCE_ORG_NAME: curanno-dev
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORDCHANGEREQUIRED: 'false'
       # IAM_OWNER service account; deploy/zitadel/provision.ts uses its token.
       ZITADEL_FIRSTINSTANCE_PATPATH: /zitadel/bootstrap/admin.pat
