@@ -4,7 +4,7 @@
 # empty; the API's migration runner is then run against it to confirm the
 # schema is current before the API is pointed at it.
 #
-#   TARGET_DATABASE_URL=postgres://... scripts/db-restore.sh backups/annotations-2026-10-30.dump
+#   TARGET_DATABASE_URL=postgres://... scripts/db-restore.sh backups/curanno-2026-10-30.dump
 #
 # PG_RESTORE overrides the pg_restore command the same way PG_DUMP does for
 # backups; the dump is read from stdin.
