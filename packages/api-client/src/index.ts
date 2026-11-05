@@ -19,9 +19,6 @@ export interface ApiClientOptions {
 
 export type ApiClient = Client<paths>;
 
-/** The content type the W3C protocol uses for annotations. */
-export const ANNOTATION_CONTENT_TYPE = 'application/ld+json';
-
 export function createApiClient(options: ApiClientOptions): ApiClient {
   const client = createClient<paths>({
     baseUrl: options.baseUrl,
