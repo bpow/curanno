@@ -215,8 +215,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: azure/setup-helm@v4
-      - run: helm lint deploy/helm/annotations --set secrets.databaseUrl=postgres://ci
-      - run: helm template ci deploy/helm/annotations --set secrets.databaseUrl=postgres://ci --set ingress.enabled=true > /dev/null
+      - run: helm lint deploy/helm/annotations --set secrets.databaseUrl=postgres://ci --set config.oidcClientId=ci
+      - run: helm template ci deploy/helm/annotations --set secrets.databaseUrl=postgres://ci --set config.oidcClientId=ci --set ingress.enabled=true > /dev/null
       - run: helm template ci deploy/helm/annotations --set secrets.databaseUrl=postgres://ci --set zitadel.provision.enabled=true > /dev/null
       # The values for the official Zitadel chart (deploy/zitadel/README.md) must render.
       - run: helm repo add zitadel https://charts.zitadel.com
