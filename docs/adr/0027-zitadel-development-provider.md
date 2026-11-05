@@ -14,7 +14,7 @@ Zitadel differs from Keycloak in ways that shape the setup. It has no realm impo
 
 The compose stack and CI run Zitadel v4.20.1 with login UI v2, behind one proxy on `localhost:8080`, with its database in the compose Postgres. Keycloak and its realm file are removed.
 
-`deploy/zitadel/provision.ts` creates the project, one public client for the sidebar and the management site (JWT access tokens, PKCE), and the development users. It is idempotent and works against any instance given a token with the IAM_OWNER role. The compose stack runs it on every `up` and it writes the generated client id to `deploy/zitadel/.bootstrap/oidc.env`; the API, the sidebar's and the site's dev servers and the end-to-end tests fall back to that file after the environment and the repository `.env`.
+`deploy/zitadel/provision.ts` creates the project, one public client for the sidebar and the management site (JWT access tokens, PKCE), and the development users. It is idempotent and works against any instance given a token with the IAM_OWNER role. The compose stack runs it on every `up` and it writes the generated client id to `deploy/zitadel/.bootstrap/oidc.env`; the API, the sidebar's and the site's dev servers and the end-to-end tests fall back to that file after the environment and the repository `.env`. In a cluster the annotations chart can run it as a hook Job (`zitadel.provision`) that keeps the id in a ConfigMap the deployments read.
 
 Tests that need a token without a browser use Zitadel's session API with the login UI's service account, in place of the password grant (`apps/api/src/test/dev-token.ts`).
 

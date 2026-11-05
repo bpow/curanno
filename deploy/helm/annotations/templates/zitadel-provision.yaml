@@ -1,0 +1,111 @@
+{{- if .Values.zitadel.provision.enabled }}
+{{- $name := printf "%s-zitadel-provision" (include "annotations.fullname" .) }}
+{{- $configMap := include "annotations.oidcConfigMap" . }}
+{{- /* Hooks run before the release's own objects exist, so the Job's account and role are hooks too. */}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "annotations.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: '-10'
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "annotations.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: '-10'
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+rules:
+  - apiGroups: ['']
+    resources: [configmaps]
+    resourceNames: [{{ $configMap }}]
+    verbs: [get, create, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "annotations.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: '-10'
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "annotations.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "annotations.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: zitadel-provision
+    spec:
+      serviceAccountName: {{ $name }}
+      restartPolicy: Never
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: provision
+          image: {{ include "annotations.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - node
+            - zitadel/provision.ts
+            - --issuer={{ required "config.oidcIssuer is required" .Values.config.oidcIssuer | trimSuffix "/" }}
+            - --pat-file=/var/run/zitadel/token
+            - --write-configmap={{ $configMap }}
+            {{- range prepend .Values.zitadel.provision.extraOrigins (required "config.publicUrl is required" .Values.config.publicUrl) }}
+            - --origin={{ trimSuffix "/" . }}
+            {{- end }}
+          env:
+            - name: NODE_EXTRA_CA_CERTS
+              value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          volumeMounts:
+            - name: token
+              mountPath: /var/run/zitadel
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+      volumes:
+        - name: token
+          secret:
+            secretName: {{ .Values.zitadel.provision.tokenSecret.name }}
+            items:
+              - key: {{ .Values.zitadel.provision.tokenSecret.key }}
+                path: token
+{{- end }}

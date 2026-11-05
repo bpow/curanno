@@ -25,7 +25,8 @@ config:
   # Issuer IRI of the OpenID Connect provider; discovery runs at
   # <issuer>/.well-known/openid-configuration (ADR 0005).
   oidcIssuer: https://idp.example/realms/annotations
-  # The public client the sidebar and the site authenticate as; tokens with this `azp` are accepted.
+  # The public client the sidebar and the site authenticate as. Ignored when
+  # zitadel.provision is enabled, which creates the client and supplies its id.
   oidcClientId: annotations-sidebar
   # Accepted `aud` claim. Defaults to the client id when empty.
   oidcAudience: ''
@@ -45,6 +46,23 @@ secrets:
   databaseUrl: ''
   existingSecret: ''
   databaseUrlKey: DATABASE_URL
+
+# With Zitadel as the provider (deploy/zitadel/README.md): a hook Job runs
+# deploy/zitadel/provision.ts from the API image before every install and
+# upgrade. It creates or updates the client for config.publicUrl at
+# config.oidcIssuer and writes the generated id to the ConfigMap
+# <fullname>-oidc, which the API and the site read instead of
+# config.oidcClientId. Zitadel must already be running, and the Secret below
+# must hold a token of an account with the IAM_OWNER role (the Zitadel chart
+# stores one as iam-admin-pat).
+zitadel:
+  provision:
+    enabled: false
+    tokenSecret:
+      name: iam-admin-pat
+      key: pat
+    # Origins besides config.publicUrl to register redirect URIs for.
+    extraOrigins: []
 
 # Migrations run from an init container with the same image before each pod
 # starts; the runner takes an advisory lock so replicas starting together are safe.

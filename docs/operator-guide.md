@@ -40,7 +40,7 @@ Create a **public** OpenID Connect client (Authorization Code with PKCE, no clie
 
 The API accepts a token when its issuer matches, its signature verifies against the issuer's JWKS, it is within its validity (30 s tolerance) and either its `aud` is `config.oidcAudience` (default: the client id) or its `azp` is the client id, which is how some providers (Keycloak) mark public-client access tokens; Zitadel puts the client id in `aud`. A token revoked at the provider is honoured for at most 60 s (the API's verification cache) or until it expires.
 
-With Zitadel, `deploy/zitadel/provision.ts` creates this client (and prints its generated id) against any instance; `deploy/zitadel/README.md` covers running Zitadel itself with its official chart.
+With Zitadel, `deploy/zitadel/provision.ts` creates this client (and prints its generated id) against any instance, and the chart can run it as a hook Job that supplies the id itself (`zitadel.provision.enabled`); `deploy/zitadel/README.md` covers both and running Zitadel itself with its official chart.
 
 ## 4. Deploy the chart
 

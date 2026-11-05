@@ -201,7 +201,7 @@ jobs:
       - run: docker build --target web -t annotations-web -f Dockerfile .
       - run: >-
           docker run --rm annotations-api node -e
-          "const fs = require('node:fs'); for (const f of ['openapi.yaml', 'static/sidebar/index.html', 'static/pdf/index.html', 'static/guest.js']) fs.accessSync(f); console.log('api image ok')"
+          "const fs = require('node:fs'); for (const f of ['openapi.yaml', 'static/sidebar/index.html', 'static/pdf/index.html', 'static/guest.js', 'zitadel/provision.ts']) fs.accessSync(f); console.log('api image ok')"
       - run: docker run --rm annotations-web node -e "require('node:fs').accessSync('server/index.mjs'); console.log('web image ok')"
       # The site's CSP names the issuer it is started with, not the one it was built with.
       - run: >-
@@ -217,6 +217,7 @@ jobs:
       - uses: azure/setup-helm@v4
       - run: helm lint deploy/helm/annotations --set secrets.databaseUrl=postgres://ci
       - run: helm template ci deploy/helm/annotations --set secrets.databaseUrl=postgres://ci --set ingress.enabled=true > /dev/null
+      - run: helm template ci deploy/helm/annotations --set secrets.databaseUrl=postgres://ci --set zitadel.provision.enabled=true > /dev/null
       # The values for the official Zitadel chart (deploy/zitadel/README.md) must render.
       - run: helm repo add zitadel https://charts.zitadel.com
       - run: >-

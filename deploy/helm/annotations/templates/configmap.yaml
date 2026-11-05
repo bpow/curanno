@@ -7,7 +7,9 @@ metadata:
 data:
   PORT: '3000'
   OIDC_ISSUER: {{ required "config.oidcIssuer is required" .Values.config.oidcIssuer | quote }}
+  {{- if not .Values.zitadel.provision.enabled }}
   OIDC_CLIENT_ID: {{ required "config.oidcClientId is required" .Values.config.oidcClientId | quote }}
+  {{- end }}
   {{- with .Values.config.oidcAudience }}
   OIDC_AUDIENCE: {{ . | quote }}
   {{- end }}
