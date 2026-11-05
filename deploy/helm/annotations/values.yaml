@@ -25,9 +25,9 @@ config:
   # Issuer IRI of the OpenID Connect provider; discovery runs at
   # <issuer>/.well-known/openid-configuration (ADR 0005).
   oidcIssuer: https://idp.example
-  # The public client the sidebar and the site authenticate as. Ignored when
+  # The public client the sidebar and the site authenticate as. Required unless
   # zitadel.provision is enabled, which creates the client and supplies its id.
-  oidcClientId: annotations-sidebar
+  oidcClientId: ''
   # Accepted `aud` claim. Defaults to the client id when empty.
   oidcAudience: ''
   # Origin under which annotation IRIs are minted: the ingress host, with its scheme.
