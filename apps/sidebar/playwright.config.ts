@@ -22,7 +22,8 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'node --env-file-if-exists=../../.env ../api/dist/index.js',
+      command:
+        'node --env-file-if-exists=../../deploy/zitadel/.bootstrap/oidc.env --env-file-if-exists=../../.env ../api/dist/index.js',
       url: 'http://localhost:3000/readyz',
       reuseExistingServer: true,
       timeout: 30_000,

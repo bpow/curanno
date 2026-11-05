@@ -20,7 +20,7 @@ Inside a page, the guest loads the sidebar in its iframe and the sidebar talks t
 
 The app lives under `/sidebar/`, the path the API serves it from in a deployment (ADR 0021), so development URLs are the deployed ones. The dev server proxies `/annotations` and `/x` to the API, so the sidebar talks to its own origin as the OpenAPI document assumes.
 
-In a deployment, configuration is read at run time from `config.json` next to the app, which the API generates from its environment. The dev server has no `config.json`, so these build-time values apply (set them in `.env.local`), all optional. `VITE_OIDC_ISSUER` and `VITE_OIDC_CLIENT_ID` fall back to `OIDC_ISSUER` and `OIDC_CLIENT_ID` from the environment or the repository `.env`, which `deploy/zitadel/provision.ts` writes:
+In a deployment, configuration is read at run time from `config.json` next to the app, which the API generates from its environment. The dev server has no `config.json`, so these build-time values apply (set them in `.env.local`), all optional. `VITE_OIDC_ISSUER` and `VITE_OIDC_CLIENT_ID` fall back to `OIDC_ISSUER` and `OIDC_CLIENT_ID` from the environment, the repository `.env` or `deploy/zitadel/.bootstrap/oidc.env`, which the compose stack's provisioner writes:
 
 | Variable                 | Default                                            | Meaning                                                      |
 | ------------------------ | -------------------------------------------------- | ------------------------------------------------------------ |

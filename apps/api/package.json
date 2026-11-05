@@ -18,7 +18,7 @@
     "migrations"
   ],
   "scripts": {
-    "dev": "tsc -b && node --watch --env-file-if-exists=../../.env dist/index.js",
+    "dev": "tsc -b && node --watch --env-file-if-exists=../../deploy/zitadel/.bootstrap/oidc.env --env-file-if-exists=../../.env dist/index.js",
     "start": "node dist/index.js",
     "spike:glue": "node --experimental-strip-types spike/glue.ts",
     "spike:manual": "node --experimental-strip-types spike/manual.ts",

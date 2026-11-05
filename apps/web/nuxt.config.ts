@@ -16,21 +16,25 @@ const dev = process.env['NODE_ENV'] !== 'production';
 
 /**
  * In development the issuer and the client default to OIDC_ISSUER and
- * OIDC_CLIENT_ID, from the environment or the repository .env that
- * `deploy/zitadel/provision.ts` writes, so the API and the site name the
- * same client. Only those two are read: the rest of that file configures
- * the API.
+ * OIDC_CLIENT_ID, from the environment, the repository .env or
+ * deploy/zitadel/.bootstrap/oidc.env (written by the compose stack's
+ * provisioner), so the API and the site name the same client. Only those two
+ * are read: the rest of .env configures the API.
  */
+function envFile(path: string): Record<string, string | undefined> {
+  try {
+    return parseEnv(readFileSync(new URL(path, import.meta.url), 'utf8'));
+  } catch {
+    return {};
+  }
+}
 function repositoryEnv(): Record<string, string | undefined> {
   if (!dev) return {};
-  try {
-    return {
-      ...parseEnv(readFileSync(new URL('../../.env', import.meta.url), 'utf8')),
-      ...process.env,
-    };
-  } catch {
-    return process.env;
-  }
+  return {
+    ...envFile('../../deploy/zitadel/.bootstrap/oidc.env'),
+    ...envFile('../../.env'),
+    ...process.env,
+  };
 }
 const repoEnv = repositoryEnv();
 const oidcDefaults = {

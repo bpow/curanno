@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { parseEnv } from 'node:util';
 import vue from '@vitejs/plugin-vue';
 import { defineConfig, loadEnv } from 'vite';
 
@@ -10,13 +12,27 @@ import { defineConfig, loadEnv } from 'vite';
  * `/sidebar/`, where the API serves it in production (ADR 0021), so the
  * development URLs are the deployed ones. See README.md.
  *
- * VITE_OIDC_* fall back to the repository .env's OIDC_ISSUER and
- * OIDC_CLIENT_ID, which `deploy/zitadel/provision.ts` writes, so the API
- * and the sidebar name the same client.
+ * VITE_OIDC_* fall back to OIDC_ISSUER and OIDC_CLIENT_ID from the
+ * repository .env, then from deploy/zitadel/.bootstrap/oidc.env, which the
+ * compose stack's provisioner writes, so the API and the sidebar name the
+ * same client.
  */
+function provisionedEnv(): Record<string, string | undefined> {
+  try {
+    return parseEnv(
+      readFileSync(new URL('../../deploy/zitadel/.bootstrap/oidc.env', import.meta.url), 'utf8'),
+    );
+  } catch {
+    return {};
+  }
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, fileURLToPath(new URL('.', import.meta.url)), 'VITE_');
-  const repo = loadEnv(mode, fileURLToPath(new URL('../..', import.meta.url)), 'OIDC_');
+  const repo = {
+    ...provisionedEnv(),
+    ...loadEnv(mode, fileURLToPath(new URL('../..', import.meta.url)), 'OIDC_'),
+  };
   for (const [name, fallback] of [
     ['VITE_OIDC_ISSUER', repo['OIDC_ISSUER']],
     ['VITE_OIDC_CLIENT_ID', repo['OIDC_CLIENT_ID']],
