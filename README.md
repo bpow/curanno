@@ -50,7 +50,7 @@ Other scripts:
 | `pnpm --filter @curanno/pdf-viewer dev`     | Runs the PDF viewer on port 5174 (`apps/pdf-viewer/README.md`)        |
 | `pnpm --filter @curanno/extension build`    | Builds the unpacked extension into `apps/extension/dist` (`apps/extension/README.md`) |
 | `pnpm --filter @curanno/extension test:browser` | Playwright test of the built extension in Chromium against the fake sidebar |
-| `pnpm --filter @curanno/web dev`            | Runs the management site on port 3001, proxying the API (`apps/web/README.md`) |
+| `pnpm --filter @curanno/web dev`            | Runs the management site on port 3001, proxying the API and the sidebar (`apps/web/README.md`) |
 | `pnpm --filter @curanno/web e2e`            | Playwright test of the management site against Zitadel and the API    |
 | `pnpm openapi:lint`                       | Lints `apps/api/openapi.yaml` with Redocly                             |
 | `pnpm api-client:generate`                | Regenerates `packages/api-client/src/schema.ts` from the OpenAPI document |
@@ -77,13 +77,13 @@ Release 1.0: Phases 0 to 6 of the [project plan](docs/web-annotation-plan.md) ar
 - **Assurance**: the contract test over every operation, the multi-principal ACL suite, the event-stream tests, the backup and restore test, a live OIDC test against Zitadel, the text-model fixtures through the guest, the anchoring corpus gate, the bookmarklet suite (HTML, PDF, frames, hostile page, accessibility), the sidebar and site Playwright suites, both images and the chart, all in CI. The [security review](docs/security-review.md) records the findings and their fixes.
 - **Documentation**: [user guide](docs/user-guide.md), [operator guide](docs/operator-guide.md), [accessibility](docs/accessibility.md), the specifications and the ADRs.
 
-To try the bookmarklet locally: start the compose stack, migrate and run the API (above), then
+To try the bookmarklet locally, run each of these in its own terminal:
 
 ```bash
-pnpm --filter @curanno/sidebar dev
-pnpm --filter @curanno/guest dev -- --sidebar-origin http://localhost:5173
+just dev
+just guest
 ```
 
-Open <http://127.0.0.1:5180/> (or a corpus page under `/cases/`), press "Load the guest" or drag the printed bookmarklet to the bookmarks bar, and log in as `alice` in the popup. For a PDF, `pnpm --filter @curanno/pdf-viewer dev` and open <http://localhost:5174/pdf/>. The local sidebar is plain http on `localhost`, so browsers embed it only from http pages on this machine (an https page blocks it as mixed content, and Chromium's local-network-access check stops pages elsewhere); other host origins also need `VITE_FRAME_ANCESTORS` to list them (`apps/sidebar/README.md`). A deployed sidebar on https has neither limit.
+Open <http://127.0.0.1:5180/> (or a corpus page under `/cases/`), press "Load the guest" or drag the printed bookmarklet to the bookmarks bar, and log in as `alice` in the popup. For a PDF, open <http://localhost:5174/pdf/>. The local sidebar is plain http on `localhost`, so browsers embed it only from http pages on this machine (an https page blocks it as mixed content, and Chromium's local-network-access check stops pages elsewhere); other host origins also need `VITE_FRAME_ANCESTORS` to list them (`apps/sidebar/README.md`). A deployed sidebar on https has neither limit.
 
 Open after 1.0: a manual screen-reader pass per [accessibility.md](docs/accessibility.md), a load test of the ACL-filtered search at representative volumes, and deployment to a real cluster (the chart is lint- and template-checked and the images run; no cluster was available during development).

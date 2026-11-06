@@ -14,7 +14,7 @@ migrate: up
 build:
     pnpm build
 
-# API :3000, sidebar :5173, PDF viewer :5174, management site :3001
+# Site, sidebar and API on :3001 (as one origin, like production); PDF viewer on :5174
 dev: migrate build
     pnpm -r --parallel \
       --filter @curanno/api \
@@ -25,4 +25,4 @@ dev: migrate build
 
 # Sample host page and bookmarklet on :5180, against the local sidebar
 guest:
-    pnpm --filter @curanno/guest dev -- --sidebar-origin http://localhost:5173
+    pnpm --filter @curanno/guest dev -- --sidebar-origin http://localhost:3001
