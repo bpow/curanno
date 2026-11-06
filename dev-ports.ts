@@ -45,5 +45,6 @@ if (import.meta.main) {
     console.error(`usage: node dev-ports.ts ${Object.keys(DEFAULTS).join('|')}`);
     process.exit(2);
   }
-  console.log(devPort(name as DevPortName));
+  // Not console.log: under FORCE_COLOR (Playwright's web servers) it colors numbers.
+  process.stdout.write(`${devPort(name as DevPortName)}\n`);
 }
