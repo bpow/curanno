@@ -11,15 +11,15 @@
 import { readFileSync } from 'node:fs';
 import { parseEnv } from 'node:util';
 
-const apiProxyTarget = process.env['API_PROXY_TARGET'] ?? 'http://localhost:3000';
 const dev = process.env['NODE_ENV'] !== 'production';
 
 /**
  * In development the issuer and the client default to OIDC_ISSUER and
  * OIDC_CLIENT_ID, from the environment, the repository .env or
  * deploy/zitadel/.bootstrap/oidc.env (written by the compose stack's
- * provisioner), so the API and the site name the same client. Only those two
- * are read: the rest of .env configures the API.
+ * provisioner), so the API and the site name the same client, and the proxy
+ * follows the API's PORT. Only those are read: the rest of .env configures
+ * the API.
  */
 function envFile(path: string): Record<string, string | undefined> {
   try {
@@ -41,6 +41,8 @@ const oidcDefaults = {
   issuer: repoEnv['OIDC_ISSUER'] ?? 'http://localhost:8080',
   clientId: repoEnv['OIDC_CLIENT_ID'] ?? '',
 };
+const apiProxyTarget =
+  process.env['API_PROXY_TARGET'] ?? `http://localhost:${repoEnv['PORT'] ?? 3000}`;
 
 /**
  * Sent with every page by Nitro. Scripts come from the site itself, plus

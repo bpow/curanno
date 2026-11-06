@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { parseEnv } from 'node:util';
 import { defineConfig } from '@playwright/test';
 
 /**
@@ -7,6 +9,16 @@ import { defineConfig } from '@playwright/test';
  * run `pnpm build` and `pnpm --filter @curanno/api migrate` first.
  */
 const ci = !!process.env['CI'];
+
+/** The port the API is started on: the environment wins over .env, as with node --env-file. */
+function apiPort(): string {
+  if (process.env['PORT']) return process.env['PORT'];
+  try {
+    return parseEnv(readFileSync(new URL('../../.env', import.meta.url), 'utf8'))['PORT'] ?? '3000';
+  } catch {
+    return '3000';
+  }
+}
 
 export default defineConfig({
   testDir: 'e2e',
@@ -22,7 +34,7 @@ export default defineConfig({
     {
       command:
         'node --env-file-if-exists=../../deploy/zitadel/.bootstrap/oidc.env --env-file-if-exists=../../.env ../api/dist/index.js',
-      url: 'http://localhost:3000/readyz',
+      url: `http://localhost:${apiPort()}/readyz`,
       reuseExistingServer: true,
       timeout: 30_000,
     },
