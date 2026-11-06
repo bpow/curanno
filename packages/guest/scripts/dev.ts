@@ -13,14 +13,15 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { bookmarkletUrl, validateSidebar } from '@curanno/guest';
+import { devPort } from '../../../dev-ports.ts';
 import { BUILD_DIR, watchGuest } from './bundle.ts';
 import { serve } from './serve.ts';
 
 const PACKAGE_DIR = path.resolve(import.meta.dirname, '..');
 const DEV_DIR = path.join(PACKAGE_DIR, 'dev');
 const CORPUS_DIR = path.join(PACKAGE_DIR, 'corpus');
-const HOST_PORT = 5180;
-const GUEST_PORT = 5181;
+const HOST_PORT = devPort('GUEST_PORT');
+const GUEST_PORT = devPort('GUEST_BUNDLE_PORT');
 
 function option(args: string[], name: string): string | undefined {
   const index = args.indexOf(name);

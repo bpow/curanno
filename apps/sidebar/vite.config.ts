@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { parseEnv } from 'node:util';
 import vue from '@vitejs/plugin-vue';
 import { defineConfig, loadEnv } from 'vite';
+import { devPort } from '../../dev-ports.ts';
 
 /**
  * In development the API is proxied under the sidebar's own origin, which is
@@ -15,7 +16,7 @@ import { defineConfig, loadEnv } from 'vite';
  * VITE_OIDC_* fall back to OIDC_ISSUER and OIDC_CLIENT_ID from the
  * repository .env, then from deploy/zitadel/.bootstrap/oidc.env, which the
  * compose stack's provisioner writes, so the API and the sidebar name the
- * same client. The proxy follows the API's PORT from the same .env.
+ * same client. The ports come from dev-ports.ts.
  */
 function provisionedEnv(): Record<string, string | undefined> {
   try {
@@ -31,15 +32,16 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, fileURLToPath(new URL('.', import.meta.url)), 'VITE_');
   const repo = {
     ...provisionedEnv(),
-    ...loadEnv(mode, fileURLToPath(new URL('../..', import.meta.url)), ['OIDC_', 'PORT']),
+    ...loadEnv(mode, fileURLToPath(new URL('../..', import.meta.url)), 'OIDC_'),
   };
   for (const [name, fallback] of [
     ['VITE_OIDC_ISSUER', repo['OIDC_ISSUER']],
     ['VITE_OIDC_CLIENT_ID', repo['OIDC_CLIENT_ID']],
+    ['VITE_PDF_VIEWER_ORIGIN', `http://localhost:${devPort('PDF_VIEWER_PORT')}`],
   ] as const) {
     if (!env[name] && fallback) process.env[name] = fallback;
   }
-  const apiTarget = env['VITE_API_PROXY_TARGET'] || `http://localhost:${repo['PORT'] || 3000}`;
+  const apiTarget = env['VITE_API_PROXY_TARGET'] || `http://localhost:${devPort('PORT')}`;
   const frameAncestors =
     env['VITE_FRAME_ANCESTORS'] || "'self' http://localhost:* http://127.0.0.1:*";
   const headers = { 'Content-Security-Policy': `frame-ancestors ${frameAncestors}` };
@@ -49,7 +51,7 @@ export default defineConfig(({ mode }) => {
   return {
     base: '/sidebar/',
     plugins: [vue()],
-    server: { port: 5173, strictPort: true, headers, proxy },
+    server: { port: devPort('SIDEBAR_PORT'), strictPort: true, headers, proxy },
     preview: { port: 4173, strictPort: true, headers, proxy },
     build: {
       rollupOptions: {
