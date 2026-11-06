@@ -5,16 +5,29 @@
  * annotation as it arrives and goes. Uses the development guest (no page)
  * and the compose Zitadel users; every run annotates a fresh document URI.
  */
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const DOCUMENT = `https://example.test/e2e/${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+/**
+ * Zitadel's login form is server-rendered, so a fill that lands before React
+ * hydrates is wiped when it does, leaving Continue disabled. Fill again until
+ * the form has accepted the value.
+ */
+async function fillUntilAccepted(field: Locator, value: string): Promise<void> {
+  const next = field.page().getByRole('button', { name: 'Continue' });
+  await expect(async () => {
+    await field.fill(value);
+    await expect(next).toBeEnabled({ timeout: 1000 });
+  }).toPass();
+}
 
 async function login(page: Page, user: 'alice' | 'bob'): Promise<void> {
   await page.goto(`/sidebar/?uri=${encodeURIComponent(DOCUMENT)}`);
   await page.getByRole('button', { name: 'Log in' }).click();
-  await page.getByLabel('Loginname').fill(user);
+  await fillUntilAccepted(page.getByLabel('Loginname'), user);
   await page.getByRole('button', { name: 'Continue' }).click();
-  await page.getByLabel('Password', { exact: true }).fill(user);
+  await fillUntilAccepted(page.getByLabel('Password', { exact: true }), user);
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
   await expect(page).toHaveURL(
