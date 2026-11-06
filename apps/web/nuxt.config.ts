@@ -4,9 +4,10 @@
  * user's own token. Nothing runs in Nuxt's server layer; a lint rule in the
  * root ESLint config fails on any file under apps/web/server.
  *
- * In development the API is proxied under the site's own origin, which is
- * how production serves the two as well (the OpenAPI document's server URL
- * is `/`). The proxy is a dev-server setting, not an application route.
+ * In development the API and the sidebar's dev server are proxied under the
+ * site's own origin, which is how production serves the three as well (the
+ * OpenAPI document's server URL is `/`; ADR 0021). The proxy is a dev-server
+ * setting, not an application route.
  */
 import { readFileSync } from 'node:fs';
 import { parseEnv } from 'node:util';
@@ -43,6 +44,7 @@ const oidcDefaults = {
 };
 const apiProxyTarget =
   process.env['API_PROXY_TARGET'] ?? `http://localhost:${repoEnv['PORT'] ?? 3000}`;
+const sidebarProxyTarget = process.env['SIDEBAR_PROXY_TARGET'] ?? 'http://localhost:5173';
 
 /**
  * Sent with every page by Nitro. Scripts come from the site itself, plus
@@ -117,6 +119,7 @@ export default defineNuxtConfig({
     devProxy: {
       '/annotations': `${apiProxyTarget}/annotations`,
       '/x': `${apiProxyTarget}/x`,
+      '/sidebar/': { target: `${sidebarProxyTarget}/sidebar/`, ws: true },
     },
   },
 });

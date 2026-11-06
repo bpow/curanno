@@ -31,7 +31,7 @@ pnpm --filter @curanno/extension build
 
 writes the unpacked extension to `apps/extension/dist`. In Chrome open `chrome://extensions`, turn on Developer mode, choose **Load unpacked** and pick that folder. `pnpm --filter @curanno/extension dev` rebuilds on change; press the reload button on the extension's card afterwards.
 
-The defaults point at the development stack: the sidebar from `pnpm --filter @curanno/sidebar dev` at `http://localhost:5173/sidebar/` and the viewer from `pnpm --filter @curanno/pdf-viewer dev` at `http://localhost:5174/pdf/`. The development sidebar's `frame-ancestors` allows only `localhost` and `127.0.0.1` pages; set `VITE_FRAME_ANCESTORS` to annotate others.
+The defaults point at the development stack: the sidebar from `just dev` at `http://localhost:3001/sidebar/` and the viewer from `pnpm --filter @curanno/pdf-viewer dev` at `http://localhost:5174/pdf/`. The development sidebar's `frame-ancestors` allows only `localhost` and `127.0.0.1` pages; set `VITE_FRAME_ANCESTORS` to annotate others.
 
 For a deployment, set the sidebar URL to `https://<host>/sidebar/` and the viewer URL to `https://<pdf host>/pdf/`. The sidebar is framed by whatever page is open, so `FRAME_ANCESTORS` has to allow those pages: `https:` for extension users on any site.
 

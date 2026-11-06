@@ -18,7 +18,7 @@ export interface Settings {
 
 /** The development stack's addresses (README.md). */
 export const DEFAULT_SETTINGS: Settings = {
-  sidebarUrl: 'http://localhost:5173/sidebar/',
+  sidebarUrl: 'http://localhost:3001/sidebar/',
   apiUrl: '',
   pdfViewerUrl: 'http://localhost:5174/pdf/',
   publicCounts: false,

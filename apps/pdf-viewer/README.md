@@ -8,7 +8,7 @@ The page that shows a PDF so that it can be annotated ([ADR 0021](../../docs/adr
 pnpm --filter @curanno/pdf-viewer dev
 ```
 
-serves the viewer at <http://localhost:5174/pdf/>; open `?file=<absolute URL of a PDF>` or use the form to pick a file. The sidebar comes from `public/config.json` (the sidebar dev server on port 5173 by default). A deployment serves the viewer from the API image on its own host name and generates `config.json` from the API's environment.
+serves the viewer at <http://localhost:5174/pdf/>; open `?file=<absolute URL of a PDF>` or use the form to pick a file. The sidebar comes from `public/config.json` (`http://localhost:3001/sidebar/` by default, where `just dev` serves it). A deployment serves the viewer from the API image on its own host name and generates `config.json` from the API's environment.
 
 The file's host must allow cross-origin reads (the viewer fetches the PDF from the browser). Where it does not, download the file and open it from your computer: the annotations follow the file's fingerprint ([document identity, section 7](../../docs/document-identity.md)).
 

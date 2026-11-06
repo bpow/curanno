@@ -12,7 +12,7 @@ pnpm --filter @curanno/web dev
 
 The site is at <http://localhost:3001>. Sign in as `alice` / `alice` or `bob` / `bob`. Neither is a platform administrator; to see the Users page, make one an administrator with the API (`PATCH /x/users/{id}` with `{"isAdmin": true}` from an administrator, or `update users set is_admin = true` in Postgres for the first one).
 
-In development the dev server proxies `/annotations` and `/x` to the API (`API_PROXY_TARGET`, default `http://localhost:$PORT`, with `PORT` from the repository `.env`, else 3000), so the site and the API share an origin, which is how production serves them too. The proxy is a dev-server setting in `nuxt.config.ts`, not an application route.
+In development the dev server proxies `/annotations` and `/x` to the API (`API_PROXY_TARGET`, default `http://localhost:$PORT`, with `PORT` from the repository `.env`, else 3000) and `/sidebar/` to the sidebar's dev server (`SIDEBAR_PROXY_TARGET`, default `http://localhost:5173`), so the site, the sidebar and the API share an origin, which is how production serves them too. The proxy is a dev-server setting in `nuxt.config.ts`, not an application route.
 
 | Setting                      | Default                                       | Meaning                                    |
 | ---------------------------- | --------------------------------------------- | ------------------------------------------ |

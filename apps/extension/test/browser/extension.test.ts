@@ -337,7 +337,7 @@ describe('the options page', () => {
   it('refuses unusable values and saves good ones', async () => {
     await configure({});
     const p = await open(`chrome-extension://${extensionId}/options.html`);
-    await expect.poll(() => p.inputValue('#sidebarUrl')).toBe('http://localhost:5173/sidebar/');
+    await expect.poll(() => p.inputValue('#sidebarUrl')).toBe('http://localhost:3001/sidebar/');
     await p.fill('#sidebarUrl', 'javascript:alert(1)');
     await p.click('button[type=submit]');
     await expect.poll(() => p.textContent('#sidebarUrl-error')).toMatch(/http/);
