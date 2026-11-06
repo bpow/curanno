@@ -28,7 +28,7 @@ services:
     command: start-from-init --masterkey MasterkeyNeedsToHave32Characters
     environment:
       ZITADEL_EXTERNALDOMAIN: localhost
-      ZITADEL_EXTERNALPORT: 8080
+      ZITADEL_EXTERNALPORT: ${ZITADEL_PORT:-8080}
       ZITADEL_EXTERNALSECURE: 'false'
       ZITADEL_TLS_ENABLED: 'false'
       ZITADEL_DATABASE_POSTGRES_HOST: postgres
@@ -53,9 +53,9 @@ services:
       ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_NAME: Login client
       ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_PAT_EXPIRATIONDATE: '2099-01-01T00:00:00Z'
       ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: 'true'
-      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI: http://localhost:8080/ui/v2/login/
-      ZITADEL_OIDC_DEFAULTLOGINURLV2: http://localhost:8080/ui/v2/login/login?authRequest=
-      ZITADEL_OIDC_DEFAULTLOGOUTURLV2: http://localhost:8080/ui/v2/login/logout?post_logout_redirect=
+      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI: http://localhost:${ZITADEL_PORT:-8080}/ui/v2/login/
+      ZITADEL_OIDC_DEFAULTLOGINURLV2: http://localhost:${ZITADEL_PORT:-8080}/ui/v2/login/login?authRequest=
+      ZITADEL_OIDC_DEFAULTLOGOUTURLV2: http://localhost:${ZITADEL_PORT:-8080}/ui/v2/login/logout?post_logout_redirect=
       # The development users' passwords are their usernames.
       ZITADEL_DEFAULTINSTANCE_PASSWORDCOMPLEXITYPOLICY_MINLENGTH: 1
       ZITADEL_DEFAULTINSTANCE_PASSWORDCOMPLEXITYPOLICY_HASLOWERCASE: 'false'
@@ -100,8 +100,10 @@ services:
   # them in a deployment (deploy/zitadel/values.yaml).
   zitadel-proxy:
     image: docker.io/library/caddy:2.10-alpine
+    environment:
+      ZITADEL_PORT: ${ZITADEL_PORT:-8080}
     ports:
-      - '8080:8080'
+      - '${ZITADEL_PORT:-8080}:${ZITADEL_PORT:-8080}'
     volumes:
       - ./deploy/zitadel/Caddyfile:/etc/caddy/Caddyfile:ro,Z
     depends_on:
@@ -115,7 +117,7 @@ services:
           '-q',
           '-O',
           '/dev/null',
-          'http://localhost:8080/.well-known/openid-configuration',
+          'http://localhost:${ZITADEL_PORT:-8080}/.well-known/openid-configuration',
         ]
       interval: 5s
       timeout: 5s
@@ -123,7 +125,7 @@ services:
 
   # Idempotent, so it runs on every `up`. It shares the proxy's network
   # namespace because Zitadel picks the instance by host: the issuer must be
-  # reached as localhost:8080 here too. It stays up, healthy once done,
+  # reached as localhost:$ZITADEL_PORT here too. It stays up, healthy once done,
   # because `up --wait` fails on a container that exits.
   zitadel-provision:
     image: docker.io/library/node:24-alpine
@@ -133,7 +135,7 @@ services:
     command:
       - sh
       - -c
-      - node provision.ts --dev-users --write-env .bootstrap/oidc.env && touch /tmp/done && exec sleep infinity
+      - node provision.ts --issuer http://localhost:${ZITADEL_PORT:-8080} --dev-users --write-env .bootstrap/oidc.env && touch /tmp/done && exec sleep infinity
     volumes:
       - ./deploy/zitadel:/provision:Z
     depends_on:

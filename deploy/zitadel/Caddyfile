@@ -3,7 +3,7 @@
 	auto_https off
 }
 
-:8080 {
+:{$ZITADEL_PORT:8080} {
 	handle /ui/v2/login* {
 		reverse_proxy zitadel-login:3000
 	}
