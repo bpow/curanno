@@ -12,7 +12,7 @@ services:
       POSTGRES_PASSWORD: curanno
       POSTGRES_DB: curanno
     ports:
-      - '${POSTGRES_PORT:-5432}:5432'
+      - '${PGPORT:-5432}:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
