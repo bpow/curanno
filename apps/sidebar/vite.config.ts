@@ -15,7 +15,7 @@ import { defineConfig, loadEnv } from 'vite';
  * VITE_OIDC_* fall back to OIDC_ISSUER and OIDC_CLIENT_ID from the
  * repository .env, then from deploy/zitadel/.bootstrap/oidc.env, which the
  * compose stack's provisioner writes, so the API and the sidebar name the
- * same client.
+ * same client. The proxy follows the API's PORT from the same .env.
  */
 function provisionedEnv(): Record<string, string | undefined> {
   try {
@@ -31,7 +31,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, fileURLToPath(new URL('.', import.meta.url)), 'VITE_');
   const repo = {
     ...provisionedEnv(),
-    ...loadEnv(mode, fileURLToPath(new URL('../..', import.meta.url)), 'OIDC_'),
+    ...loadEnv(mode, fileURLToPath(new URL('../..', import.meta.url)), ['OIDC_', 'PORT']),
   };
   for (const [name, fallback] of [
     ['VITE_OIDC_ISSUER', repo['OIDC_ISSUER']],
@@ -39,7 +39,7 @@ export default defineConfig(({ mode }) => {
   ] as const) {
     if (!env[name] && fallback) process.env[name] = fallback;
   }
-  const apiTarget = env['VITE_API_PROXY_TARGET'] || 'http://localhost:3000';
+  const apiTarget = env['VITE_API_PROXY_TARGET'] || `http://localhost:${repo['PORT'] || 3000}`;
   const frameAncestors =
     env['VITE_FRAME_ANCESTORS'] || "'self' http://localhost:* http://127.0.0.1:*";
   const headers = { 'Content-Security-Policy': `frame-ancestors ${frameAncestors}` };

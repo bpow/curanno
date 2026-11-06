@@ -12,7 +12,7 @@ pnpm --filter @curanno/web dev
 
 The site is at <http://localhost:3001>. Sign in as `alice` / `alice` or `bob` / `bob`. Neither is a platform administrator; to see the Users page, make one an administrator with the API (`PATCH /x/users/{id}` with `{"isAdmin": true}` from an administrator, or `update users set is_admin = true` in Postgres for the first one).
 
-In development the dev server proxies `/annotations` and `/x` to the API (`API_PROXY_TARGET`, default `http://localhost:3000`), so the site and the API share an origin, which is how production serves them too. The proxy is a dev-server setting in `nuxt.config.ts`, not an application route.
+In development the dev server proxies `/annotations` and `/x` to the API (`API_PROXY_TARGET`, default `http://localhost:$PORT`, with `PORT` from the repository `.env`, else 3000), so the site and the API share an origin, which is how production serves them too. The proxy is a dev-server setting in `nuxt.config.ts`, not an application route.
 
 | Setting                      | Default                                       | Meaning                                    |
 | ---------------------------- | --------------------------------------------- | ------------------------------------------ |
@@ -20,7 +20,7 @@ In development the dev server proxies `/annotations` and `/x` to the API (`API_P
 | `NUXT_PUBLIC_OIDC_ISSUER`    | in development `OIDC_ISSUER`, else `http://localhost:8080` | OpenID Connect issuer, without a trailing slash; required for a built site |
 | `NUXT_PUBLIC_OIDC_CLIENT_ID` | in development `OIDC_CLIENT_ID`                | Public client the site signs in as; required for a built site |
 | `NUXT_PUBLIC_PDF_VIEWER_URL` | `http://localhost:5174/pdf/`                  | The PDF viewer page, linked from the landing page and built into the bookmarklet |
-| `API_PROXY_TARGET`           | `http://localhost:3000`                       | Where the dev server proxies the API to    |
+| `API_PROXY_TARGET`           | `http://localhost:$PORT` (`.env`, else 3000) | Where the dev server proxies the API to    |
 
 The site's Content-Security-Policy allows connections, frames and form submissions to paths under `NUXT_PUBLIC_OIDC_ISSUER`. A built site fills the issuer in when its server starts, so one image serves any provider; if the variable is unset there, the policy allows no provider and sign-in is blocked. `apps/web/scripts/check-runtime-csp.mjs` checks a running site, and CI runs it against the image.
 

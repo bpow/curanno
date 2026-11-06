@@ -28,7 +28,7 @@ In a deployment, configuration is read at run time from `config.json` next to th
 | `VITE_OIDC_CLIENT_ID`    | `OIDC_CLIENT_ID`                                   | Public client (Authorization Code with PKCE)                 |
 | `VITE_API_URL`           | empty (same origin)                                | API origin, when it is not served under the sidebar's origin |
 | `VITE_PDF_VIEWER_ORIGIN` | `http://localhost:5174`                            | The PDF viewer's origin (`pdfViewerOrigin`)                  |
-| `VITE_API_PROXY_TARGET`  | `http://localhost:3000`                            | Where the dev and preview servers proxy the API to           |
+| `VITE_API_PROXY_TARGET`  | `http://localhost:$PORT` (`.env`, else 3000)      | Where the dev and preview servers proxy the API to           |
 | `VITE_FRAME_ANCESTORS`   | `'self' http://localhost:* http://127.0.0.1:*`     | `frame-ancestors` sent by the dev and preview servers        |
 
 ## Login and isolation
