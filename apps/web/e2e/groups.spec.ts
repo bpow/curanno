@@ -33,10 +33,19 @@ test('alice creates a group and adds bob', async ({ page, request }) => {
 
   // The groups page needs a user: the guard sends alice to the provider.
   await page.goto('/groups');
-  await page.getByLabel('Loginname').fill('alice');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await page.getByLabel('Password', { exact: true }).fill('alice');
-  await page.getByRole('button', { name: 'Continue' }).click();
+  // Zitadel's form is server-rendered: a fill before hydration is wiped, so
+  // fill again until Continue is enabled.
+  const next = page.getByRole('button', { name: 'Continue' });
+  for (const [field, value] of [
+    [page.getByLabel('Loginname'), 'alice'],
+    [page.getByLabel('Password', { exact: true }), 'alice'],
+  ] as const) {
+    await expect(async () => {
+      await field.fill(value);
+      await expect(next).toBeEnabled({ timeout: 1000 });
+    }).toPass();
+    await next.click();
+  }
   await expect(page).toHaveURL(/\/groups$/);
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
   await expectNoViolations(page, 'the groups page');
