@@ -14,7 +14,8 @@ migrate: up
 build:
     pnpm build
 
-# Site, sidebar and API on :3001 (as one origin, like production); PDF viewer on :5174
+# Site, sidebar and API on one origin (WEB_PORT, default 3001), like production;
+# PDF viewer on PDF_VIEWER_PORT (5174). Ports: .env.example
 dev: migrate build
     pnpm -r --parallel \
       --filter @curanno/api \
@@ -23,6 +24,6 @@ dev: migrate build
       --filter @curanno/web \
       dev
 
-# Sample host page and bookmarklet on :5180, against the local sidebar
+# Sample host page and bookmarklet on GUEST_PORT (5180), against the local sidebar
 guest:
-    pnpm --filter @curanno/guest dev -- --sidebar-origin http://localhost:3001
+    pnpm --filter @curanno/guest dev -- --sidebar-origin http://localhost:`node dev-ports.ts WEB_PORT`

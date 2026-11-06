@@ -33,7 +33,7 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        projectService: { allowDefaultProject: ['vitest.config.ts'] },
+        projectService: { allowDefaultProject: ['vitest.config.ts', 'dev-ports.ts'] },
         tsconfigRootDir: import.meta.dirname,
         extraFileExtensions: ['.vue'],
       },

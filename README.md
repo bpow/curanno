@@ -44,13 +44,13 @@ Other scripts:
 | ----------------------------------------- | ---------------------------------------------------------------------- |
 | `pnpm --filter @curanno/api migrate`        | Applies `apps/api/migrations/*.sql` to `DATABASE_URL`                  |
 | `pnpm --filter @curanno/api dev`            | Builds and runs the API, restarting on changes to the build output     |
-| `pnpm --filter @curanno/sidebar dev`        | Runs the sidebar on port 5173, proxying the API (`apps/sidebar/README.md`) |
+| `pnpm --filter @curanno/sidebar dev`        | Runs the sidebar on port 5173 (`SIDEBAR_PORT`), proxying the API (`apps/sidebar/README.md`) |
 | `pnpm --filter @curanno/sidebar e2e`        | Playwright test of the sidebar against Zitadel and the API            |
 | `pnpm --filter @curanno/sidebar e2e:guest`  | Playwright test of the bookmarklet, guest, sidebar and PDF viewer on corpus pages, API stubbed |
-| `pnpm --filter @curanno/pdf-viewer dev`     | Runs the PDF viewer on port 5174 (`apps/pdf-viewer/README.md`)        |
+| `pnpm --filter @curanno/pdf-viewer dev`     | Runs the PDF viewer on port 5174 (`PDF_VIEWER_PORT`) (`apps/pdf-viewer/README.md`)        |
 | `pnpm --filter @curanno/extension build`    | Builds the unpacked extension into `apps/extension/dist` (`apps/extension/README.md`) |
 | `pnpm --filter @curanno/extension test:browser` | Playwright test of the built extension in Chromium against the fake sidebar |
-| `pnpm --filter @curanno/web dev`            | Runs the management site on port 3001, proxying the API and the sidebar (`apps/web/README.md`) |
+| `pnpm --filter @curanno/web dev`            | Runs the management site on port 3001 (`WEB_PORT`), proxying the API and the sidebar (`apps/web/README.md`) |
 | `pnpm --filter @curanno/web e2e`            | Playwright test of the management site against Zitadel and the API    |
 | `pnpm openapi:lint`                       | Lints `apps/api/openapi.yaml` with Redocly                             |
 | `pnpm api-client:generate`                | Regenerates `packages/api-client/src/schema.ts` from the OpenAPI document |
@@ -63,6 +63,8 @@ Other scripts:
 | `pnpm load:run -- [--out results.json]`   | Runs the load test against that database and explains the search queries |
 | `podman build -t curanno-api -f Dockerfile .` | Builds the API image                                           |
 | `helm lint deploy/helm/curanno --set config.oidcClientId=dev` | Validates the Helm chart (see `deploy/helm/curanno/values.yaml`)   |
+
+Each development port can be moved through an environment variable or `.env` (`PORT`, `WEB_PORT`, `SIDEBAR_PORT`, `PDF_VIEWER_PORT`, `GUEST_PORT`, `GUEST_BUNDLE_PORT`, `PGPORT`, `ZITADEL_PORT`; see `.env.example`).
 
 The compose stack provides Postgres on port 5432 and Zitadel on port 8080 (issuer `http://localhost:8080`, its login UI under `/ui/v2/login`), keeping its own `zitadel` database in the same Postgres. Its `zitadel-provision` service runs `deploy/zitadel/provision.ts --dev-users` on every `up`: it creates the client and the users `alice` and `bob`, both with their username as password, and writes the generated client id to `deploy/zitadel/.bootstrap/oidc.env`. The API, the sidebar's and the site's dev servers and the end-to-end tests fall back to that file when `OIDC_ISSUER` and `OIDC_CLIENT_ID` are not set in the environment or `.env`. The Zitadel console is at <http://localhost:8080/ui/console> as `zitadel-admin@curanno-dev.localhost` / `Password1!`. All of this is for local development only; see [deploy/zitadel/README.md](deploy/zitadel/README.md).
 

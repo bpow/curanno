@@ -29,6 +29,7 @@ COPY apps/web/package.json apps/web/
 RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY packages packages
 COPY apps apps
+COPY dev-ports.ts ./
 # The libraries, then each client; the sidebar and viewer read config.json at
 # run time, so their builds carry only development defaults.
 RUN pnpm exec tsc -b tsconfig.json \

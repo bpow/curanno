@@ -32,14 +32,17 @@ const { values: args } = parseArgs({
   },
 });
 
+// The dev servers' ports, as compose passes them from the environment or .env
+// (dev-ports.ts has the same defaults); 4173 is the sidebar's preview
+// server in the bookmarklet suite.
+const port = (name: string, fallback: number): string => process.env[name] || String(fallback);
 const DEV_ORIGINS = [
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'http://localhost:4173',
-  'http://127.0.0.1:4173',
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://127.0.0.1:3001',
+  ...['localhost', '127.0.0.1'].flatMap((host) => [
+    `http://${host}:${port('SIDEBAR_PORT', 5173)}`,
+    `http://${host}:4173`,
+    `http://${host}:${port('WEB_PORT', 3001)}`,
+  ]),
+  `http://localhost:${port('PORT', 3000)}`,
 ];
 const origins = args.origin ?? DEV_ORIGINS;
 const issuer = args.issuer.replace(/\/$/, '');

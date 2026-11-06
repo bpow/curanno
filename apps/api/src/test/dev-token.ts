@@ -17,9 +17,6 @@ import { createHash, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { parseEnv } from 'node:util';
 
-// Registered for the client by provision.ts; the browser never visits it here.
-const REDIRECT_URI = 'http://localhost:5173/sidebar/';
-
 const repo = (path: string): URL => new URL(`../../../../${path}`, import.meta.url);
 
 function envFile(path: string): Record<string, string | undefined> {
@@ -59,11 +56,13 @@ export async function devAccessToken(
   const issuer = oidc.issuer ?? env['OIDC_ISSUER'] ?? 'http://localhost:8080';
   const clientId = oidc.clientId ?? env['OIDC_CLIENT_ID'];
   if (!clientId) throw new Error('OIDC_CLIENT_ID is not set: run deploy/zitadel/provision.ts');
+  // Registered for the client by provision.ts; the browser never visits it here.
+  const redirectUri = `http://localhost:${env['WEB_PORT'] || 3001}/sidebar/`;
   const verifier = randomBytes(32).toString('base64url');
   const authorize = new URL(`${issuer}/oauth/v2/authorize`);
   authorize.search = new URLSearchParams({
     client_id: clientId,
-    redirect_uri: REDIRECT_URI,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: 'openid profile email',
     code_challenge: createHash('sha256').update(verifier).digest('base64url'),
@@ -91,7 +90,7 @@ export async function devAccessToken(
       grant_type: 'authorization_code',
       client_id: clientId,
       code,
-      redirect_uri: REDIRECT_URI,
+      redirect_uri: redirectUri,
       code_verifier: verifier,
     }),
   });

@@ -1,6 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { parseEnv } from 'node:util';
 import { defineConfig } from '@playwright/test';
+import { devPort } from '../../dev-ports.ts';
 
 /**
  * End-to-end test against the real stack: the compose Postgres and
@@ -10,16 +9,6 @@ import { defineConfig } from '@playwright/test';
  */
 const ci = !!process.env['CI'];
 
-/** The port the API is started on: the environment wins over .env, as with node --env-file. */
-function apiPort(): string {
-  if (process.env['PORT']) return process.env['PORT'];
-  try {
-    return parseEnv(readFileSync(new URL('../../.env', import.meta.url), 'utf8'))['PORT'] ?? '3000';
-  } catch {
-    return '3000';
-  }
-}
-
 export default defineConfig({
   testDir: 'e2e',
   timeout: 90_000,
@@ -27,20 +16,20 @@ export default defineConfig({
   retries: ci ? 1 : 0,
   reporter: ci ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
-    baseURL: 'http://localhost:3001',
+    baseURL: `http://localhost:${devPort('WEB_PORT')}`,
     trace: 'retain-on-failure',
   },
   webServer: [
     {
       command:
         'node --env-file-if-exists=../../deploy/zitadel/.bootstrap/oidc.env --env-file-if-exists=../../.env ../api/dist/index.js',
-      url: `http://localhost:${apiPort()}/readyz`,
+      url: `http://localhost:${devPort('PORT')}/readyz`,
       reuseExistingServer: true,
       timeout: 30_000,
     },
     {
       command: 'pnpm dev',
-      url: 'http://localhost:3001/',
+      url: `http://localhost:${devPort('WEB_PORT')}/`,
       reuseExistingServer: !ci,
       timeout: 120_000,
     },

@@ -11,6 +11,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { parseEnv } from 'node:util';
+import { devPort } from '../../dev-ports.ts';
 
 const dev = process.env['NODE_ENV'] !== 'production';
 
@@ -18,9 +19,9 @@ const dev = process.env['NODE_ENV'] !== 'production';
  * In development the issuer and the client default to OIDC_ISSUER and
  * OIDC_CLIENT_ID, from the environment, the repository .env or
  * deploy/zitadel/.bootstrap/oidc.env (written by the compose stack's
- * provisioner), so the API and the site name the same client, and the proxy
- * follows the API's PORT. Only those are read: the rest of .env configures
- * the API.
+ * provisioner), so the API and the site name the same client. Only those are
+ * read: the rest of .env configures the API. The ports come from
+ * dev-ports.ts.
  */
 function envFile(path: string): Record<string, string | undefined> {
   try {
@@ -42,9 +43,9 @@ const oidcDefaults = {
   issuer: repoEnv['OIDC_ISSUER'] ?? 'http://localhost:8080',
   clientId: repoEnv['OIDC_CLIENT_ID'] ?? '',
 };
-const apiProxyTarget =
-  process.env['API_PROXY_TARGET'] ?? `http://localhost:${repoEnv['PORT'] ?? 3000}`;
-const sidebarProxyTarget = process.env['SIDEBAR_PROXY_TARGET'] ?? 'http://localhost:5173';
+const apiProxyTarget = process.env['API_PROXY_TARGET'] ?? `http://localhost:${devPort('PORT')}`;
+const sidebarProxyTarget =
+  process.env['SIDEBAR_PROXY_TARGET'] ?? `http://localhost:${devPort('SIDEBAR_PORT')}`;
 
 /**
  * Sent with every page by Nitro. Scripts come from the site itself, plus
@@ -88,7 +89,6 @@ export default defineNuxtConfig({
   // Everything is imported explicitly, so the components can be tested with
   // plain @vue/test-utils and the code reads the same with or without Nuxt.
   imports: { autoImport: false },
-  devServer: { port: 3001 },
   // Every page has a language and a title (axe: html-has-lang, document-title).
   app: {
     head: {
@@ -104,7 +104,7 @@ export default defineNuxtConfig({
       oidcIssuer: oidcDefaults.issuer,
       oidcClientId: oidcDefaults.clientId,
       // The PDF viewer page, for the bookmarklet and the landing page (ADR 0021).
-      pdfViewerUrl: 'http://localhost:5174/pdf/',
+      pdfViewerUrl: `http://localhost:${devPort('PDF_VIEWER_PORT')}/pdf/`,
     },
   },
   // The landing page is public and server-rendered. Every other page needs
