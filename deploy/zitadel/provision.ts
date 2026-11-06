@@ -92,6 +92,11 @@ const oidcConfiguration = {
   developmentMode: origins.some((o) => o.startsWith('http:')),
 };
 
+// Init stores the login base URI, so it would go stale when the issuer moves.
+await call('zitadel.feature.v2.FeatureService/SetInstanceFeatures', {
+  loginV2: { required: true, baseUri: `${issuer}/ui/v2/login/` },
+});
+
 const me = (await (
   await fetch(`${issuer}/oidc/v1/userinfo`, {
     headers: { authorization: `Bearer ${token}` },
