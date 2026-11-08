@@ -52,6 +52,34 @@ export interface IdentitiesTable {
   last_login_at: OptionalTimestamp;
 }
 
+/** oidc-provider's adapter store (ADR 0028). */
+export interface OidcStoreTable {
+  id: string;
+  type: string;
+  payload: JSONColumnType<Record<string, unknown>>;
+  grant_id: string | null;
+  uid: string | null;
+  user_code: string | null;
+  expires_at: OptionalTimestamp;
+}
+
+export interface SigningKeysTable {
+  kid: string;
+  algorithm: string;
+  public_jwk: JSONColumnType<Record<string, unknown>>;
+  private_jwk_encrypted: string;
+  created_at: Timestamp;
+  retired_at: OptionalTimestamp;
+}
+
+export interface CredentialsTable {
+  principal_id: string;
+  login: string;
+  password_hash: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
 export interface GroupsTable {
   principal_id: string;
   name: string;
@@ -166,6 +194,9 @@ export interface Database {
   principals: PrincipalsTable;
   users: UsersTable;
   identities: IdentitiesTable;
+  oidc_store: OidcStoreTable;
+  signing_keys: SigningKeysTable;
+  credentials: CredentialsTable;
   groups: GroupsTable;
   group_memberships: GroupMembershipsTable;
   documents: DocumentsTable;

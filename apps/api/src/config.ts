@@ -2,8 +2,22 @@
  * Server configuration, read entirely from environment variables so that
  * the same image runs everywhere (plan, section 9). `.env.example` lists them.
  */
+/** The client id of the embedded issuer's one client: the sidebar and the site (ADR 0028). */
+export const EMBEDDED_CLIENT_ID = 'curanno';
+
 export interface Config {
   databaseUrl: string;
+  /**
+   * Who issues the tokens (ADR 0028): `external` is an OpenID Connect provider
+   * of the operator's, `embedded` is the issuer in this process.
+   */
+  auth: {
+    mode: 'external' | 'embedded';
+    /** Embedded mode: encrypts the signing keys in the database and keys the cookies; at least 32 characters. */
+    secret: string | undefined;
+    /** Embedded mode: origins besides `publicUrl` where the clients run, for the client's redirect URIs. */
+    extraOrigins: string[];
+  };
   oidc: {
     /** Issuer IRI; discovery happens at `<issuer>/.well-known/openid-configuration`. */
     issuer: string;
@@ -29,29 +43,55 @@ export interface Config {
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const port = Number(env['PORT'] ?? 3000);
   if (!Number.isInteger(port) || port <= 0) throw new Error('PORT must be a positive integer');
-  const clientId = required(env, 'OIDC_CLIENT_ID');
+  const mode = authMode(env['AUTH_MODE']);
+  const publicUrl = (env['PUBLIC_URL'] || `http://localhost:${port}`).replace(/\/$/, '');
+  const embedded = mode === 'embedded';
+  // The embedded issuer has one client, fixed: a leftover OIDC_CLIENT_ID (from the compose
+  // provisioner's file, say) must not rename it.
+  const clientId = embedded ? EMBEDDED_CLIENT_ID : required(env, 'OIDC_CLIENT_ID');
+  const secret = env['AUTH_SECRET'] || undefined;
+  if (embedded && (!secret || secret.length < 32)) {
+    throw new Error('AUTH_SECRET must be set to at least 32 characters when AUTH_MODE=embedded');
+  }
   return {
     databaseUrl: required(env, 'DATABASE_URL'),
+    auth: {
+      mode,
+      secret,
+      extraOrigins: (env['AUTH_EXTRA_ORIGINS'] || '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((o) => origin(o, 'AUTH_EXTRA_ORIGINS')),
+    },
     oidc: {
-      issuer: required(env, 'OIDC_ISSUER').replace(/\/$/, ''),
+      // The embedded issuer is this server, on the origin the browser sees.
+      issuer: (embedded ? publicUrl : required(env, 'OIDC_ISSUER')).replace(/\/$/, ''),
       clientId,
-      audience: env['OIDC_AUDIENCE'] || clientId,
+      audience: env['OIDC_AUDIENCE'] || (embedded ? publicUrl : clientId),
     },
     port,
-    publicUrl: (env['PUBLIC_URL'] || `http://localhost:${port}`).replace(/\/$/, ''),
+    publicUrl,
     logLevel: env['LOG_LEVEL'] || 'info',
     staticRoot: env['STATIC_ROOT'] || undefined,
     frameAncestors: (env['FRAME_ANCESTORS'] || "'self'").split(/\s+/).filter(Boolean),
-    pdfViewerOrigin: env['PDF_VIEWER_ORIGIN'] ? origin(env['PDF_VIEWER_ORIGIN']) : undefined,
+    pdfViewerOrigin: env['PDF_VIEWER_ORIGIN']
+      ? origin(env['PDF_VIEWER_ORIGIN'], 'PDF_VIEWER_ORIGIN')
+      : undefined,
     metricsEnabled: env['METRICS_ENABLED'] !== 'false',
   };
 }
 
-function origin(value: string): string {
+function authMode(value: string | undefined): 'external' | 'embedded' {
+  if (!value || value === 'external') return 'external';
+  if (value === 'embedded') return 'embedded';
+  throw new Error(`AUTH_MODE must be "external" or "embedded", not "${value}"`);
+}
+
+function origin(value: string, name: string): string {
   try {
     return new URL(value).origin;
   } catch {
-    throw new Error(`PDF_VIEWER_ORIGIN is not a URL: ${value}`);
+    throw new Error(`${name} is not a URL: ${value}`);
   }
 }
 
