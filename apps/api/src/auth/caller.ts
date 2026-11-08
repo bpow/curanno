@@ -95,34 +95,49 @@ export async function refreshCaller(
   };
 }
 
-async function upsertUser(
-  trx: Kysely<Database>,
-  claims: TokenClaims,
-): Promise<{ principal_id: string; display_name: string | null; is_admin: boolean }> {
-  const existing = await trx
-    .selectFrom('users')
-    .select(['principal_id', 'display_name', 'is_admin'])
+type UserRow = { principal_id: string; display_name: string | null; is_admin: boolean };
+
+/**
+ * The user an identity belongs to. A user the previous release created has
+ * no identity row yet, only the issuer and subject on `users`; it is adopted
+ * here (ADR 0028, migration 0012).
+ */
+async function findUserId(trx: Kysely<Database>, claims: TokenClaims): Promise<string | undefined> {
+  const identity = await trx
+    .selectFrom('identities')
+    .select('principal_id')
     .where('issuer', '=', claims.issuer)
     .where('subject', '=', claims.subject)
     .executeTakeFirst();
-  if (existing) {
-    const updated = await trx
-      .updateTable('users')
-      .set({
-        display_name: claims.name ?? existing.display_name,
-        email: claims.email ?? null,
-        last_login_at: sql`now()`,
-      })
-      .where('principal_id', '=', existing.principal_id)
-      .returning(['principal_id', 'display_name', 'is_admin'])
-      .executeTakeFirstOrThrow();
-    return updated;
-  }
+  if (identity) return identity.principal_id;
+  const legacy = await trx
+    .selectFrom('users')
+    .select('principal_id')
+    .where('issuer', '=', claims.issuer)
+    .where('subject', '=', claims.subject)
+    .executeTakeFirst();
+  if (!legacy) return undefined;
+  await trx
+    .insertInto('identities')
+    .values({
+      issuer: claims.issuer,
+      subject: claims.subject,
+      principal_id: legacy.principal_id,
+    })
+    .onConflict((oc) => oc.columns(['issuer', 'subject']).doNothing())
+    .execute();
+  return legacy.principal_id;
+}
+
+async function upsertUser(trx: Kysely<Database>, claims: TokenClaims): Promise<UserRow> {
+  const existingId = await findUserId(trx, claims);
+  if (existingId) return touchUser(trx, existingId, claims);
   const principal = await trx
     .insertInto('principals')
     .values({ kind: 'user' })
     .returning('id')
     .executeTakeFirstOrThrow();
+  // issuer and subject stay on `users` for pods of the previous release.
   const inserted = await trx
     .insertInto('users')
     .values({
@@ -136,13 +151,44 @@ async function upsertUser(
     .onConflict((oc) => oc.columns(['issuer', 'subject']).doNothing())
     .returning(['principal_id', 'display_name', 'is_admin'])
     .executeTakeFirst();
-  if (inserted) return inserted;
+  if (inserted) {
+    await trx
+      .insertInto('identities')
+      .values({
+        issuer: claims.issuer,
+        subject: claims.subject,
+        principal_id: inserted.principal_id,
+        last_login_at: sql`now()`,
+      })
+      .execute();
+    return inserted;
+  }
   // Lost a race with a concurrent first login: drop the spare principal and use theirs.
   await trx.deleteFrom('principals').where('id', '=', principal.id).execute();
-  return trx
-    .selectFrom('users')
-    .select(['principal_id', 'display_name', 'is_admin'])
+  const winner = await findUserId(trx, claims);
+  if (!winner) throw new Error('user vanished after a concurrent first login');
+  return touchUser(trx, winner, claims);
+}
+
+async function touchUser(
+  trx: Kysely<Database>,
+  principalId: string,
+  claims: TokenClaims,
+): Promise<UserRow> {
+  await trx
+    .updateTable('identities')
+    .set({ last_login_at: sql`now()` })
     .where('issuer', '=', claims.issuer)
     .where('subject', '=', claims.subject)
+    .execute();
+  return trx
+    .updateTable('users')
+    .set({
+      display_name: sql`coalesce(${claims.name ?? null}::text, display_name)`,
+      email: claims.email ?? null,
+      last_login_at: sql`now()`,
+    })
+    .where('principal_id', '=', principalId)
+    .returning(['principal_id', 'display_name', 'is_admin'])
     .executeTakeFirstOrThrow();
 }

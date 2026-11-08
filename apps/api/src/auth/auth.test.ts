@@ -41,6 +41,60 @@ describe.skipIf(!databaseUrl)('authentication', () => {
     expect(users.map((u) => u.subject)).toEqual(['alice']);
   });
 
+  it('records an identity for each user and finds it on the next sign-in', async () => {
+    const me = await ctx.as(alice, { method: 'GET', url: '/x/me' });
+    const identities = await ctx.db
+      .selectFrom('identities')
+      .select(['issuer', 'subject', 'principal_id'])
+      .where('subject', '=', alice.sub)
+      .execute();
+    expect(identities).toEqual([
+      { issuer: ISSUER, subject: alice.sub, principal_id: me.json<{ id: string }>().id },
+    ]);
+  });
+
+  it('adopts a user that only has the issuer and subject on users, as the previous release left it', async () => {
+    const principal = await ctx.db
+      .insertInto('principals')
+      .values({ kind: 'user' })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+    await ctx.db
+      .insertInto('users')
+      .values({
+        principal_id: principal.id,
+        issuer: ISSUER,
+        subject: 'legacy',
+        display_name: 'Old',
+      })
+      .execute();
+    const res = await ctx.as({ sub: 'legacy', name: 'Old' }, { method: 'GET', url: '/x/me' });
+    expect(res.json<{ id: string; displayName: string }>()).toMatchObject({
+      id: principal.id,
+      displayName: 'Old',
+    });
+    const adopted = await ctx.db
+      .selectFrom('identities')
+      .select('principal_id')
+      .where('subject', '=', 'legacy')
+      .executeTakeFirstOrThrow();
+    expect(adopted.principal_id).toBe(principal.id);
+  });
+
+  it('recognises a second identity of the same user without creating another user', async () => {
+    const first = await ctx.as(bob, { method: 'GET', url: '/x/me' });
+    const bobId = first.json<{ id: string }>().id;
+    await ctx.db
+      .insertInto('identities')
+      .values({ issuer: ISSUER, subject: 'bob-new-subject', principal_id: bobId })
+      .execute();
+    const second = await ctx.as(
+      { ...bob, sub: 'bob-new-subject' },
+      { method: 'GET', url: '/x/me' },
+    );
+    expect(second.json<{ id: string }>().id).toBe(bobId);
+  });
+
   it('shows a user their own email and memberships, and other users neither', async () => {
     const created = await ctx.as(alice, {
       method: 'POST',

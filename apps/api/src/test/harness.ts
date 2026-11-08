@@ -172,7 +172,7 @@ export async function createGroup(
   await ctx.db.insertInto('groups').values({ principal_id: principal.id, name }).execute();
   for (const member of members) {
     const user = await ctx.db
-      .selectFrom('users')
+      .selectFrom('identities')
       .select('principal_id')
       .where('issuer', '=', ISSUER)
       .where('subject', '=', member.sub)

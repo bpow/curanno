@@ -3,6 +3,9 @@
  * Needs a Postgres reachable through DATABASE_URL (the compose stack, or
  * the service container in CI); skipped otherwise.
  */
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDb, listMigrations, migrate, PUBLIC_PRINCIPAL_ID } from './index.js';
@@ -150,6 +153,44 @@ describe.skipIf(!adminUrl)('migrations', () => {
       }
     } finally {
       await db.destroy();
+    }
+  });
+
+  it('give every existing user an identity from its issuer and subject (0012)', async () => {
+    const name = `${dbName}_b`;
+    await admin.query(`create database ${name}`);
+    const oldDir = mkdtempSync(path.join(tmpdir(), 'migrations-'));
+    try {
+      for (const m of listMigrations().filter((m) => m.name < '0012')) {
+        writeFileSync(path.join(oldDir, m.name), m.sql);
+      }
+      const url = withDatabase(adminUrl ?? '', name);
+      await migrate(`${url}`, `${oldDir}/`);
+      const client = new pg.Client({ connectionString: url });
+      await client.connect();
+      try {
+        const principal = await client.query<{ id: string }>(
+          `insert into principals (kind) values ('user') returning id`,
+        );
+        const id = principal.rows[0]?.id;
+        await client.query(
+          `insert into users (principal_id, issuer, subject) values ($1, 'https://idp.example', 'alice')`,
+          [id],
+        );
+        const result = await migrate(url);
+        expect(result.applied).toContain('0012_identities.sql');
+        const identities = await client.query(
+          'select issuer, subject, principal_id from identities',
+        );
+        expect(identities.rows).toEqual([
+          { issuer: 'https://idp.example', subject: 'alice', principal_id: id },
+        ]);
+      } finally {
+        await client.end();
+      }
+    } finally {
+      rmSync(oldDir, { recursive: true, force: true });
+      await dropDatabase(admin, name);
     }
   });
 });

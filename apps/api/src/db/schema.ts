@@ -43,6 +43,15 @@ export interface UsersTable {
   last_login_at: OptionalTimestamp;
 }
 
+/** A way of signing in that belongs to a user: one issuer's subject (ADR 0028). */
+export interface IdentitiesTable {
+  issuer: string;
+  subject: string;
+  principal_id: string;
+  created_at: Timestamp;
+  last_login_at: OptionalTimestamp;
+}
+
 export interface GroupsTable {
   principal_id: string;
   name: string;
@@ -156,6 +165,7 @@ export interface SchemaMigrationsTable {
 export interface Database {
   principals: PrincipalsTable;
   users: UsersTable;
+  identities: IdentitiesTable;
   groups: GroupsTable;
   group_memberships: GroupMembershipsTable;
   documents: DocumentsTable;
