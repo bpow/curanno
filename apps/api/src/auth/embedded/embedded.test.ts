@@ -18,7 +18,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { EMBEDDED_CLIENT_ID, type Config } from '../../config.js';
 import { buildServer } from '../../server.js';
 import { createTestContext, databaseUrl, type TestContext } from '../../test/harness.js';
-import { AccountError, createPasswordUser } from './accounts.js';
+import { AccountError, createPasswordUser, setPassword, verifyLogin } from './accounts.js';
 import { loadSigningKeys, retireOldKeys, rotateSigningKey } from './keys.js';
 import { checkPassword, hashPassword } from './password.js';
 import { createEmbeddedIssuer, type EmbeddedIssuer } from './provider.js';
@@ -485,6 +485,21 @@ describe.skipIf(!databaseUrl)('signing keys and accounts', () => {
       previousKid,
       oldKid,
     ]);
+  });
+
+  it('changes a password, and the old one stops working', async () => {
+    await createPasswordUser(ctx.db, 'https://x.test', {
+      login: 'pw@example.org',
+      password: PASSWORD,
+    });
+    expect(await verifyLogin(ctx.db, 'pw@example.org', PASSWORD)).toBeTruthy();
+    expect(await setPassword(ctx.db, 'PW@example.org', 'another long password')).toBe(true);
+    expect(await verifyLogin(ctx.db, 'pw@example.org', PASSWORD)).toBeUndefined();
+    expect(await verifyLogin(ctx.db, 'pw@example.org', 'another long password')).toBeTruthy();
+    expect(await setPassword(ctx.db, 'nobody@example.org', 'another long password')).toBe(false);
+    await expect(setPassword(ctx.db, 'pw@example.org', 'short')).rejects.toBeInstanceOf(
+      AccountError,
+    );
   });
 
   it('refuses a duplicate login, a short password and an empty login', async () => {

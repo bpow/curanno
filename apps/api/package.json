@@ -22,6 +22,7 @@
     "start": "node dist/index.js",
     "spike:glue": "node --experimental-strip-types spike/glue.ts",
     "spike:manual": "node --experimental-strip-types spike/manual.ts",
+    "account": "tsc -b && node --env-file-if-exists=../../.env dist/auth/embedded/cli.js",
     "migrate": "node --env-file-if-exists=../../.env --experimental-strip-types src/db/migrate.ts",
     "load:seed": "node --env-file-if-exists=../../.env --experimental-strip-types scripts/load-seed.ts",
     "load:run": "tsc -b && node --env-file-if-exists=../../.env --experimental-strip-types scripts/load-run.ts"

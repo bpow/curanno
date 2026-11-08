@@ -99,3 +99,20 @@ export async function loadProfile(
   if (!row) return undefined;
   return { name: row.display_name ?? undefined, email: row.email ?? undefined };
 }
+
+/** Replaces a user's password. Returns false when no user has that login. */
+export async function setPassword(
+  db: Kysely<Database>,
+  login: string,
+  password: string,
+): Promise<boolean> {
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    throw new AccountError(`The password must have at least ${MIN_PASSWORD_LENGTH} characters`);
+  }
+  const result = await db
+    .updateTable('credentials')
+    .set({ password_hash: await hashPassword(password), updated_at: sql`now()` })
+    .where(sql`lower(login)`, '=', login.trim().toLowerCase())
+    .executeTakeFirst();
+  return result.numUpdatedRows > 0n;
+}
