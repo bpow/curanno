@@ -56,7 +56,7 @@ export interface IdentitiesTable {
 export interface OidcStoreTable {
   id: string;
   type: string;
-  payload: JSONColumnType<Record<string, unknown>>;
+  payload: JSONColumnType<Record<string, unknown>, string>;
   grant_id: string | null;
   uid: string | null;
   user_code: string | null;
@@ -66,7 +66,7 @@ export interface OidcStoreTable {
 export interface SigningKeysTable {
   kid: string;
   algorithm: string;
-  public_jwk: JSONColumnType<Record<string, unknown>>;
+  public_jwk: JSONColumnType<Record<string, unknown>, string>;
   private_jwk_encrypted: string;
   created_at: Timestamp;
   retired_at: OptionalTimestamp;

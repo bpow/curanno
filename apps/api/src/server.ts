@@ -17,6 +17,7 @@ import { TEXT_MODEL_VERSION } from '@curanno/model';
 import { createCoercingAjv, createStrictAjv } from './ajv.js';
 import { AnnotationStore } from './annotations/store.js';
 import { installAuth, securityHandlers } from './auth/plugin.js';
+import type { EmbeddedIssuer } from './auth/embedded/index.js';
 import type { TokenVerifier } from './auth/verifier.js';
 import type { Config } from './config.js';
 import type { Database } from './db/index.js';
@@ -34,6 +35,8 @@ export interface ServerOptions {
   config: Config;
   db: Kysely<Database>;
   verifyToken: TokenVerifier;
+  /** The issuer to serve when `config.auth.mode` is `embedded` (ADR 0028); its routes mount here. */
+  embedded?: EmbeddedIssuer;
   logger?: FastifyServerOptions['logger'];
   /** Interval between keepalive comments on event streams; 30 s per the API document. */
   keepaliveMs?: number;
@@ -110,6 +113,7 @@ export async function buildServer(options: ServerOptions): Promise<FastifyInstan
   });
   installOptions(app);
   if (config.staticRoot) await installStatic(app, { root: config.staticRoot, config });
+  if (options.embedded) await options.embedded.register(app);
 
   app.get('/healthz', () => ({ status: 'ok', textModelVersion: TEXT_MODEL_VERSION }));
   app.get('/readyz', async (request, reply) => {
@@ -127,6 +131,7 @@ export async function buildServer(options: ServerOptions): Promise<FastifyInstan
     await bridge.start();
   });
   app.addHook('onClose', async () => {
+    options.embedded?.close();
     await bridge.stop();
   });
 
