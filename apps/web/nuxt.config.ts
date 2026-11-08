@@ -32,17 +32,26 @@ function envFile(path: string): Record<string, string | undefined> {
 }
 function repositoryEnv(): Record<string, string | undefined> {
   if (!dev) return {};
-  return {
-    ...envFile('../../deploy/zitadel/.bootstrap/oidc.env'),
-    ...envFile('../../.env'),
-    ...process.env,
-  };
+  const own = { ...envFile('../../.env'), ...process.env };
+  // The compose provisioner's file names a Zitadel client; the embedded issuer has its own (ADR 0028).
+  if (own['AUTH_MODE'] === 'embedded') return own;
+  return { ...envFile('../../deploy/zitadel/.bootstrap/oidc.env'), ...own };
 }
 const repoEnv = repositoryEnv();
-const oidcDefaults = {
-  issuer: repoEnv['OIDC_ISSUER'] ?? 'http://localhost:8080',
-  clientId: repoEnv['OIDC_CLIENT_ID'] ?? '',
-};
+// With the embedded issuer (ADR 0028) the issuer is the origin the site is served from.
+const embedded = repoEnv['AUTH_MODE'] === 'embedded';
+const oidcDefaults = embedded
+  ? {
+      issuer: (repoEnv['PUBLIC_URL'] ?? `http://localhost:${devPort('WEB_PORT')}`).replace(
+        /\/$/,
+        '',
+      ),
+      clientId: 'curanno',
+    }
+  : {
+      issuer: repoEnv['OIDC_ISSUER'] ?? 'http://localhost:8080',
+      clientId: repoEnv['OIDC_CLIENT_ID'] ?? '',
+    };
 const apiProxyTarget = process.env['API_PROXY_TARGET'] ?? `http://localhost:${devPort('PORT')}`;
 const sidebarProxyTarget =
   process.env['SIDEBAR_PROXY_TARGET'] ?? `http://localhost:${devPort('SIDEBAR_PORT')}`;
@@ -119,6 +128,9 @@ export default defineNuxtConfig({
     devProxy: {
       '/annotations': `${apiProxyTarget}/annotations`,
       '/x': `${apiProxyTarget}/x`,
+      // The embedded issuer (ADR 0028); nothing answers these when the provider is external.
+      '/oidc': `${apiProxyTarget}/oidc`,
+      '/.well-known/openid-configuration': `${apiProxyTarget}/.well-known/openid-configuration`,
       '/sidebar/': { target: `${sidebarProxyTarget}/sidebar/`, ws: true },
     },
   },

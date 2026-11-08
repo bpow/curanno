@@ -12,7 +12,8 @@ export default defineNuxtPlugin((nuxtApp) => {
   const { public: config } = useRuntimeConfig();
   const auth = createAuthStore(
     createUserManager({
-      issuer: config.oidcIssuer,
+      // Empty means the issuer is this site's own origin (the embedded issuer, ADR 0028).
+      issuer: config.oidcIssuer || window.location.origin,
       clientId: config.oidcClientId,
       origin: window.location.origin,
     }),

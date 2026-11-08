@@ -30,13 +30,23 @@ function provisionedEnv(): Record<string, string | undefined> {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, fileURLToPath(new URL('.', import.meta.url)), 'VITE_');
-  const repo = {
-    ...provisionedEnv(),
-    ...loadEnv(mode, fileURLToPath(new URL('../..', import.meta.url)), 'OIDC_'),
-  };
+  const own = loadEnv(mode, fileURLToPath(new URL('../..', import.meta.url)), [
+    'OIDC_',
+    'AUTH_MODE',
+    'PUBLIC_URL',
+  ]);
+  // With the embedded issuer (ADR 0028) the issuer is the site's origin, which proxies /oidc to the
+  // API, and the client is the issuer's own: the compose provisioner's file does not apply.
+  const embedded = own['AUTH_MODE'] === 'embedded';
+  const repo = embedded ? own : { ...provisionedEnv(), ...own };
   for (const [name, fallback] of [
-    ['VITE_OIDC_ISSUER', repo['OIDC_ISSUER']],
-    ['VITE_OIDC_CLIENT_ID', repo['OIDC_CLIENT_ID']],
+    [
+      'VITE_OIDC_ISSUER',
+      embedded
+        ? (repo['PUBLIC_URL'] ?? `http://localhost:${devPort('WEB_PORT')}`).replace(/\/$/, '')
+        : repo['OIDC_ISSUER'],
+    ],
+    ['VITE_OIDC_CLIENT_ID', embedded ? 'curanno' : repo['OIDC_CLIENT_ID']],
     ['VITE_PDF_VIEWER_ORIGIN', `http://localhost:${devPort('PDF_VIEWER_PORT')}`],
   ] as const) {
     if (!env[name] && fallback) process.env[name] = fallback;

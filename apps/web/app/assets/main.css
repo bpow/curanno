@@ -242,3 +242,32 @@ blockquote {
   border-left: 3px solid var(--border);
   color: var(--muted);
 }
+
+/* The sign-in pages of the embedded issuer (ADR 0028): one card, no navigation. */
+.account {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.account-card {
+  width: min(24rem, 100%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  background: #fff;
+}
+
+.account-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.account-card .actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
