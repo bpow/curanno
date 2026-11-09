@@ -30,6 +30,16 @@ export const ANONYMOUS: AnonymousCaller = {
   principalIds: [PUBLIC_PRINCIPAL_ID],
 };
 
+export interface ResolveOptions {
+  /**
+   * Whether the token's name and email replace the stored ones at each
+   * request. They do for an external issuer, which owns the profile. The
+   * embedded issuer's tokens are made from the stored profile, so a token
+   * issued before an edit would undo it.
+   */
+  profileFromToken?: boolean;
+}
+
 /**
  * Map a validated token to a user, creating the user on first sight. Group
  * membership is managed entirely through our own group API (ADR 0010); the
@@ -38,9 +48,10 @@ export const ANONYMOUS: AnonymousCaller = {
 export async function resolveCaller(
   db: Kysely<Database>,
   claims: TokenClaims,
+  options: ResolveOptions = {},
 ): Promise<UserCaller> {
   return db.transaction().execute(async (trx) => {
-    const user = await upsertUser(trx, claims);
+    const user = await upsertUser(trx, claims, options.profileFromToken ?? true);
     const groups = await trx
       .selectFrom('group_memberships')
       .select('group_id')
@@ -129,9 +140,13 @@ async function findUserId(trx: Kysely<Database>, claims: TokenClaims): Promise<s
   return legacy.principal_id;
 }
 
-async function upsertUser(trx: Kysely<Database>, claims: TokenClaims): Promise<UserRow> {
+async function upsertUser(
+  trx: Kysely<Database>,
+  claims: TokenClaims,
+  profileFromToken: boolean,
+): Promise<UserRow> {
   const existingId = await findUserId(trx, claims);
-  if (existingId) return touchUser(trx, existingId, claims);
+  if (existingId) return touchUser(trx, existingId, claims, profileFromToken);
   const principal = await trx
     .insertInto('principals')
     .values({ kind: 'user' })
@@ -167,13 +182,14 @@ async function upsertUser(trx: Kysely<Database>, claims: TokenClaims): Promise<U
   await trx.deleteFrom('principals').where('id', '=', principal.id).execute();
   const winner = await findUserId(trx, claims);
   if (!winner) throw new Error('user vanished after a concurrent first login');
-  return touchUser(trx, winner, claims);
+  return touchUser(trx, winner, claims, profileFromToken);
 }
 
 async function touchUser(
   trx: Kysely<Database>,
   principalId: string,
   claims: TokenClaims,
+  profileFromToken: boolean,
 ): Promise<UserRow> {
   await trx
     .updateTable('identities')
@@ -184,8 +200,12 @@ async function touchUser(
   return trx
     .updateTable('users')
     .set({
-      display_name: sql`coalesce(${claims.name ?? null}::text, display_name)`,
-      email: claims.email ?? null,
+      ...(profileFromToken
+        ? {
+            display_name: sql`coalesce(${claims.name ?? null}::text, display_name)`,
+            email: claims.email ?? null,
+          }
+        : {}),
       last_login_at: sql`now()`,
     })
     .where('principal_id', '=', principalId)

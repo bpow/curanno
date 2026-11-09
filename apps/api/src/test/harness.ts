@@ -99,7 +99,14 @@ export async function createTestContext(options: TestContextOptions = {}): Promi
   const jwk = { ...(await exportJWK(publicKey)), kid: 'test', alg: 'ES256' };
   const config: Config = {
     databaseUrl: testUrl,
-    auth: { mode: 'external', secret: undefined, extraOrigins: [] },
+    auth: {
+      mode: 'external',
+      secret: undefined,
+      extraOrigins: [],
+      smtpUrl: undefined,
+      mailFrom: undefined,
+      bootstrapAdminEmail: undefined,
+    },
     oidc: { issuer: ISSUER, clientId: CLIENT_ID, audience: CLIENT_ID },
     port: 0,
     publicUrl: PUBLIC_URL,

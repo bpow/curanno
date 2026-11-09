@@ -19,7 +19,14 @@ const port = Number(process.env['PORT'] ?? 0);
 
 const config: Config = {
   databaseUrl,
-  auth: { mode: 'external', secret: undefined, extraOrigins: [] },
+  auth: {
+    mode: 'external',
+    secret: undefined,
+    extraOrigins: [],
+    smtpUrl: undefined,
+    mailFrom: undefined,
+    bootstrapAdminEmail: undefined,
+  },
   oidc: {
     issuer: LOAD_ISSUER,
     clientId: LOAD_CLIENT_ID,

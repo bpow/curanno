@@ -22,6 +22,8 @@ declare module 'fastify' {
 export interface AuthOptions {
   db: Kysely<Database>;
   verifyToken: TokenVerifier;
+  /** Whether tokens carry the authoritative name and email (see `resolveCaller`). Default true. */
+  profileFromToken?: boolean;
   /** Longest time a resolved token is reused without touching the database. */
   cacheMs?: number;
 }
@@ -50,7 +52,9 @@ export function installAuth(app: FastifyInstance, options: AuthOptions): void {
       return;
     }
     const claims = await options.verifyToken(token);
-    const caller = await resolveCaller(options.db, claims);
+    const caller = await resolveCaller(options.db, claims, {
+      profileFromToken: options.profileFromToken ?? true,
+    });
     const tokenExpiry = claims.expiresAt === undefined ? Infinity : claims.expiresAt * 1000;
     cache.set(token, { caller, expiresAt: Math.min(now + cacheMs, tokenExpiry) });
     if (cache.size > MAX_CACHED) {

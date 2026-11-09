@@ -2,6 +2,7 @@ import { createEmbeddedIssuer } from './auth/embedded/index.js';
 import { createTokenVerifier } from './auth/verifier.js';
 import { loadConfig } from './config.js';
 import { createDb } from './db/index.js';
+import { logUrl } from './log-url.js';
 import { buildServer } from './server.js';
 
 const config = loadConfig();
@@ -18,6 +19,14 @@ const app = await buildServer({
   logger: {
     level: config.logLevel,
     redact: { paths: ['req.headers.authorization', 'req.headers.cookie'], censor: '[redacted]' },
+    serializers: {
+      req: (req: { method: string; url: string; host: string; ip: string }) => ({
+        method: req.method,
+        url: logUrl(req.url),
+        host: req.host,
+        remoteAddress: req.ip,
+      }),
+    },
   },
 });
 

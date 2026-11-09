@@ -17,6 +17,12 @@ export interface Config {
     secret: string | undefined;
     /** Embedded mode: origins besides `publicUrl` where the clients run, for the client's redirect URIs. */
     extraOrigins: string[];
+    /** Embedded mode: where account mail (invitations, resets) is sent through, e.g. `smtps://user:pass@host`; unset sends none. */
+    smtpUrl: string | undefined;
+    /** Embedded mode: the From address of account mail. */
+    mailFrom: string | undefined;
+    /** Embedded mode: while no administrator exists, this address is invited to become one. */
+    bootstrapAdminEmail: string | undefined;
   };
   oidc: {
     /** Issuer IRI; discovery happens at `<issuer>/.well-known/openid-configuration`. */
@@ -53,6 +59,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (embedded && (!secret || secret.length < 32)) {
     throw new Error('AUTH_SECRET must be set to at least 32 characters when AUTH_MODE=embedded');
   }
+  const smtpUrl = env['SMTP_URL'] || undefined;
+  const mailFrom = env['MAIL_FROM'] || undefined;
+  if (smtpUrl && !mailFrom) throw new Error('MAIL_FROM must be set when SMTP_URL is');
   return {
     databaseUrl: required(env, 'DATABASE_URL'),
     auth: {
@@ -62,6 +71,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         .split(/\s+/)
         .filter(Boolean)
         .map((o) => origin(o, 'AUTH_EXTRA_ORIGINS')),
+      smtpUrl,
+      mailFrom,
+      bootstrapAdminEmail: env['BOOTSTRAP_ADMIN_EMAIL']?.trim().toLowerCase() || undefined,
     },
     oidc: {
       // The embedded issuer is this server, on the origin the browser sees.

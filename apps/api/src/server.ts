@@ -89,6 +89,7 @@ export async function buildServer(options: ServerOptions): Promise<FastifyInstan
   installAuth(app, {
     db,
     verifyToken: options.verifyToken,
+    profileFromToken: config.auth.mode !== 'embedded',
     ...(options.authCacheMs !== undefined ? { cacheMs: options.authCacheMs } : {}),
   });
   installResponseValidation(app, strict);
