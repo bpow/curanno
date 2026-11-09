@@ -1,6 +1,6 @@
 # Zitadel
 
-Zitadel is the OpenID Connect provider for development and CI, and the likely one for production (ADR 0027). The API itself works with any provider (ADR 0005).
+Zitadel is the OpenID Connect provider for development and CI, and the likely one for production (ADR 0027). The API itself works with any provider (ADR 0005). This is **external mode**, the default; with `AUTH_MODE=embedded` the API is its own issuer and none of this is used (ADR 0028, operator guide section 3a).
 
 | File            | Role                                                                                       |
 | --------------- | ------------------------------------------------------------------------------------------ |

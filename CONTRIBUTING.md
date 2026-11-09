@@ -10,7 +10,7 @@ podman compose up -d --wait
 pnpm test
 ```
 
-`podman compose up` starts Postgres and a Zitadel instance and provisions its development client and users (`deploy/zitadel/provision.ts`). `pnpm test` runs every package's tests; `pnpm lint` and `pnpm typecheck` run the checks CI runs.
+`podman compose up` starts Postgres and a Zitadel instance and provisions its development client and users (`deploy/zitadel/provision.ts`). `pnpm test` runs every package's tests. To work without Zitadel, set `AUTH_MODE=embedded` as `.env.example` describes (Postgres is enough) and create a user with `pnpm --filter @curanno/api account create`; the browser tests run in that mode with `E2E_AUTH=embedded`. `pnpm lint` and `pnpm typecheck` run the checks CI runs.
 
 ## Branches and commits
 

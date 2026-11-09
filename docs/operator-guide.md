@@ -9,7 +9,7 @@ Deploying, configuring, backing up and upgrading the platform. The system is two
 | API | `curanno-api` (Dockerfile target `api`) | The W3C protocol and `/x/` extensions; the sidebar at `/sidebar/`, the guest bundle at `/guest.js`, the JSON-LD context at `/x/context.jsonld`; the PDF viewer at `/pdf/` on its own host; `/healthz`, `/readyz`, `/metrics` |
 | Management site | `curanno-web` (target `web`) | The landing page (with the bookmarklet) and the administration pages, under the same host as the API |
 | Postgres 17 | yours | Everything stateful |
-| OpenID Connect provider | yours | Sign-in for the sidebar and the site (ADR 0005, 0019) |
+| OpenID Connect provider | yours, or the API itself (section 3a) | Sign-in for the sidebar and the site (ADR 0005, 0019, 0028) |
 
 Both images read their configuration from environment variables; nothing is baked in (ADR 0021). The sidebar and the viewer fetch `config.json` from the API at start, generated from the API's environment.
 
@@ -44,7 +44,52 @@ The API accepts a token when its issuer matches, its signature verifies against 
 
 With Zitadel, `deploy/zitadel/provision.ts` creates this client (and prints its generated id) against any instance, and the chart can run it as a hook Job that supplies the id itself (`zitadel.provision.enabled`); [Deploying with Zitadel](#deploying-with-zitadel) walks through running Zitadel and the chart together, and `deploy/zitadel/README.md` has the details.
 
+## 3a. Or let the API be the identity provider (embedded mode)
+
+With `auth.mode: embedded` (`AUTH_MODE=embedded`, [ADR 0028](adr/0028-embedded-issuer.md)) the API is its own OpenID Connect issuer on `PUBLIC_URL`, with password accounts, optional sign-in through Google, GitHub or any OpenID Connect provider, and sign-up that an administrator approves. Nothing else is needed but Postgres: no Zitadel, no client to register, no provisioning Job. It suits small and trial installations; an institution with its own directory, multi-factor sign-in or single sign-on should keep an external provider (section 3). **There is no second factor in embedded mode.** Passwords are stored as argon2id hashes, sign-in attempts are throttled, and responses do not reveal whether an account exists, but a password is all that stands between an attacker and an account.
+
+**Minimum values.**
+
+```yaml
+auth:
+  mode: embedded
+  bootstrapAdminEmail: you@example.org   # invited to become the first administrator
+secrets:
+  databaseUrl: postgres://...
+  authSecret: <openssl rand -base64 48>
+config:
+  publicUrl: https://curanno.example      # must be https outside a trial
+```
+
+`secrets.authSecret` (or `AUTH_SECRET` in an existing Secret) seals the issuer's signing keys in the database and keys its cookies. It must be at least 32 characters and **identical on every replica and across upgrades**. Keep it with your other secrets and out of database backups: a dump alone then cannot mint tokens. If it is lost or changed the API cannot read its signing keys and will not start; recover by deleting the rows of `signing_keys` and starting again, which signs everyone out.
+
+**Routing.** The ingress sends `/oidc`, `/idp` and `/.well-known/openid-configuration` to the API (the chart's does when `ingress.enabled`); everything else of the site stays with the site. Use https: the issuer's cookies are `Secure` when `publicUrl` is https, and passwords would otherwise cross the network in the clear. The chart warns when it is not. The browser origin of the issuer is `publicUrl`; the sidebar on another origin (a different host name for the same install, a development server) must be listed in `auth.extraOrigins`.
+
+**The first administrator.** With `auth.bootstrapAdminEmail` set, an invitation to that address is created while no administrator exists: mailed if mail is configured, otherwise written to the API log (`kubectl logs deploy/<release> | grep invite`). Or create one directly: `kubectl exec deploy/<release> -- sh -c 'ACCOUNT_PASSWORD=... node dist/auth/embedded/cli.js create --login you@example.org --name "You" --admin'`. The same program has `set-password`, `invite --email x [--admin]` (prints a one-use link, valid for a week) and `rotate-key`.
+
+**Who may sign up (`auth.signup`).**
+
+| Value | Meaning |
+| --- | --- |
+| `approval` (default) | Anyone may apply at `/account/signup`. They can sign in and read what is public, but cannot write until an administrator approves them on the **Applications** page; both outcomes are mailed (when mail is set up). |
+| `open` | Anyone may create an account and use it at once. Expect abuse; the sign-up limits and the queue cap are your only defences. |
+| `closed` | No sign-up page; people join by invitation. |
+
+Invitations work under every policy. Under `approval`, `auth.autoApproveDomains` approves an applicant at once when they verify an address in one of those domains. A pending applicant is also told so in the site. `auth.maxPending` pauses sign-up while that many applications wait; rejected applicants are deleted after 30 days and unverified, undecided ones after 14. Sign-up from one address is limited to five an hour and sign-in guesses to ten per login and forty per address in fifteen minutes (the counts are in Postgres, so replicas share them; the address comes from the proxy's `X-Forwarded-For`, so make sure your ingress sets it and strips a client's own). A known login can be locked for fifteen minutes by someone failing on purpose; that is the price of the limit.
+
+**Mail.** Set `auth.mail.from` and `secrets.smtpUrl` (`smtps://user:pass@host`) for invitations, resets, address verification and the notices to administrators and applicants. Without them nothing is sent: administrators hand out `account invite` links, "forgot your password" is not offered (an administrator runs `set-password`), and an address cannot be verified, so only addresses vouched for by an invitation or a provider count as verified. Account links carry a secret in the query string; the API's request log redacts it, but your ingress's access log may not, so redact `token=` there as well.
+
+**Sign in with another service.** Set `auth.providers.google.clientId` and `secrets.upstream.googleClientSecret` (likewise `github`, and `oidc` with an `issuer` and a `name` for the button). Register `<publicUrl>/idp/upstream/<google|github|oidc>/callback` as the redirect URI at the provider. A person signing in this way follows the sign-up policy. If the provider vouches for an address that already has an account, nothing is joined until the account's owner signs in to it with its password (an account with no password must be joined from its own account page). `auth.autolink` lists providers whose verified address may join an account without that step; leave it empty unless the provider verifies addresses and you trust it to. People connect and disconnect providers on their account page (**/me**), which asks for their password again; the last way to sign in cannot be removed.
+
+**Disabling and merging.** An administrator disables a user with `PATCH /x/users/{id}` (`{"status": "disabled"}`, on the users page's API); their sessions and refresh tokens end at once, and an access token already issued works for up to an hour. If someone ends up with two accounts, `kubectl exec deploy/<release> -- node dist/accounts/merge-cli.js --survivor <id|login|email> --loser <id|login|email> [--yes]` (from a source tree, `pnpm --filter @curanno/api account:merge` with the same arguments) folds one into the other; it describes what it would do without `--yes`, and the merge cannot be undone.
+
+**Signing keys.** They are created on first start and shared by replicas. `rotate-key` adds a new one; restart every API replica so it signs with it. Old keys remain available for at least two days after the latest rotation, then are retired. Complete the rolling restart within that window, leaving at least an hour for the last tokens signed with the old key to expire. Further rotations restart the overlap period.
+
+**Upgrading from external mode** is not supported in place: tokens, subjects and clients differ. Run embedded mode as a separate install.
+
 ## 4. Deploy the chart
+
+Embedded mode needs the values of section 3a; the rest of this section applies to both.
 
 ```bash
 helm upgrade --install curanno deploy/helm/curanno \

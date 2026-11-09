@@ -67,6 +67,16 @@ Replies are annotations of their own: your reply to someone's annotation is visi
 
 A person must have signed in once before they can be found in the sharing search.
 
+## Your account (when the platform has its own sign-in)
+
+If your administrator runs the platform's own sign-in rather than your organisation's, you may meet these:
+
+- **Invitation.** The link you were sent asks for your name and a password (at least ten characters); the address it was sent to is your login. It works once.
+- **Creating an account.** On the sign-in page choose **Create an account**. Depending on the installation you can use it at once, or it waits for an administrator to approve it; until then you can read what is public, a note says so, and you are mailed when it is decided. Verifying your address (the link in the mail) can speed that up.
+- **Forgot your password.** Choose it on the sign-in page and follow the mailed link, valid for an hour. Changing your password this way signs you out everywhere.
+- **Your account page** (your name at the top of the management site) changes your password, adds and verifies email addresses, and connects or disconnects Google, GitHub or the organisation's sign-in. You are asked for your password again to do so, and you cannot remove the last way to sign in. If you sign in with Google and an account with that address already exists, you are asked to sign in to that account first so that nothing is joined by accident.
+- If you ended up with two accounts, ask an administrator to merge them.
+
 ## 5. Groups
 
 Groups let you share with a team in one step. Two kinds exist:
