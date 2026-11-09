@@ -83,6 +83,9 @@ importers:
       oidc-provider:
         specifier: 9.13.3
         version: 9.13.3(supports-color@10.2.2)
+      openid-client:
+        specifier: ^6.8.9
+        version: 6.8.9
       pg:
         specifier: ^8.23.1
         version: 8.23.1
@@ -2943,6 +2946,9 @@ packages:
   jose@6.2.13:
     resolution: {integrity: sha512-7TIg10ZE1x82YediN+lcrPNvGMKge9yFHQD+Qho/b8y2adfugU3AsvvHfxV0fzyFllT6l9xCjf4RWY9g/Z9PJQ==}
 
+  jose@6.2.15:
+    resolution: {integrity: sha512-qdF6ewcZARtef63fJ9AKKZPgxw+t7USH6HLXYcD4CrdmSvDp79rpJSPFEKc90QBeGS63u1KQtN2MZQHC0yDIzA==}
+
   js-beautify@2.0.3:
     resolution: {integrity: sha512-cyFbh3tkPhknnTD/0bLf0T0yy2ZIbqL05mttzbt4y1Zfr7NxqXQZ62dkBLKs3oHH/lpjmDRAnciJiSUyOy8XwQ==}
     engines: {node: '>=14'}
@@ -3365,6 +3371,9 @@ packages:
       '@types/node':
         optional: true
 
+  oauth4webapi@3.8.8:
+    resolution: {integrity: sha512-8N28E+a/oxfXWBgOMt+ZP/JUf/XR+IFbvkAEPP3gznXOMv9BpAAwiIj0TFNz3tGTPc0ZQ8zmWBNgN1nAys0gng==}
+
   object-identity@0.2.3:
     resolution: {integrity: sha512-2J8Joz2Tf7aaylhqFvIUJHNgpuGR38Hh75Voq9GzTbStBxJUaOtN0K1aOd3cV5qp+ij1pMqRbPrGCGMOyX303w==}
 
@@ -3424,6 +3433,9 @@ packages:
     hasBin: true
     peerDependencies:
       typescript: ^5.x
+
+  openid-client@6.8.9:
+    resolution: {integrity: sha512-6mXMRNJxDOf6BflEWLXul1UwzLFz++9Ofz1PYwPwwsJsyXBsbfkO+Jo255SW1qnFNLYz4EJWHz42X4OJJrya/g==}
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -7594,6 +7606,8 @@ snapshots:
 
   jose@6.2.13: {}
 
+  jose@6.2.15: {}
+
   js-beautify@2.0.3:
     dependencies:
       config-chain: 1.1.13
@@ -8199,6 +8213,8 @@ snapshots:
       - xml2js
       - yaml
 
+  oauth4webapi@3.8.8: {}
+
   object-identity@0.2.3: {}
 
   obug@2.2.1: {}
@@ -8263,6 +8279,11 @@ snapshots:
       supports-color: 10.2.2
       typescript: 6.0.3
       yargs-parser: 21.1.1
+
+  openid-client@6.8.9:
+    dependencies:
+      jose: 6.2.15
+      oauth4webapi: 3.8.8
 
   optionator@0.9.4:
     dependencies:
