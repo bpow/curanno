@@ -16,7 +16,7 @@ async function submit(): Promise<void> {
   if (busy.value) return;
   busy.value = true;
   error.value = undefined;
-  const answer = await call('/auth/reset/request', { body: { email: email.value } });
+  const answer = await call('/idp/reset/request', { body: { email: email.value } });
   busy.value = false;
   if (answer.ok) sent.value = true;
   else error.value = answer.message;

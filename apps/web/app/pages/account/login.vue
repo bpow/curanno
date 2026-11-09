@@ -55,14 +55,14 @@ onMounted(async () => {
     mail?: boolean;
     signup?: string;
     providers?: { id: string; label: string }[];
-  }>('/auth/options');
+  }>('/idp/options');
   canReset.value = options.ok && options.body.mail === true;
   canSignUp.value =
     options.ok && options.body.signup !== undefined && options.body.signup !== 'closed';
   providers.value = options.ok ? (options.body.providers ?? []) : [];
   if (link.value && uid.value) {
     const pending = await call<{ label: string; email: string }>(
-      `/auth/upstream/pending/${link.value}?uid=${uid.value}`,
+      `/idp/upstream/pending/${link.value}?uid=${uid.value}`,
     );
     if (pending.ok) {
       pendingLabel.value = pending.body.label;

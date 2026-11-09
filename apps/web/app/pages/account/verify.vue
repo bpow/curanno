@@ -15,7 +15,7 @@ const email = ref('');
 
 onMounted(async () => {
   if (!token) return;
-  const answer = await call<{ email: string }>('/auth/email/verify', { body: { token } });
+  const answer = await call<{ email: string }>('/idp/email/verify', { body: { token } });
   if (answer.ok) {
     email.value = answer.body.email;
     state.value = 'done';

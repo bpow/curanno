@@ -1,5 +1,5 @@
 /**
- * Account routes of the embedded issuer, plain Fastify routes under `/auth/`
+ * Account routes of the embedded issuer, plain Fastify routes under `/idp/`
  * beside the API (ADR 0028): accepting an invitation, resetting a forgotten
  * password, verifying an address, and, for a signed-in user, the account page's
  * password and addresses. What an unauthenticated caller can learn is limited
@@ -76,7 +76,7 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     reply.header('cache-control', 'no-store');
   }
 
-  app.get('/auth/options', (_request, reply) => {
+  app.get('/idp/options', (_request, reply) => {
     reply.header('cache-control', 'no-store');
     return {
       mail: mailer !== undefined,
@@ -85,7 +85,7 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     };
   });
 
-  app.post('/auth/signup', async (request, reply) => {
+  app.post('/idp/signup', async (request, reply) => {
     guard(request, reply);
     if (signup === 'closed') throw forbidden('Accounts are created by invitation here.');
     const email = emailField(request.body);
@@ -152,7 +152,7 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     return reply.code(202).send({ status });
   });
 
-  app.post('/auth/invite/peek', async (request, reply) => {
+  app.post('/idp/invite/peek', async (request, reply) => {
     guard(request, reply);
     const key = address(request);
     await throttle.check([LIMITS.tokenPerAddress, key]);
@@ -164,7 +164,7 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     return { email: found.email };
   });
 
-  app.post('/auth/invite/accept', async (request, reply) => {
+  app.post('/idp/invite/accept', async (request, reply) => {
     guard(request, reply);
     const token = field(request.body, 'token', 200);
     const password = field(request.body, 'password', MAX_PASSWORD_LENGTH);
@@ -186,7 +186,7 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     return reply.code(201).send({});
   });
 
-  app.post('/auth/reset/request', async (request, reply) => {
+  app.post('/idp/reset/request', async (request, reply) => {
     guard(request, reply);
     const email = emailField(request.body);
     const byAddress = address(request);
@@ -218,7 +218,7 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     return accepted();
   });
 
-  app.post('/auth/reset/complete', async (request, reply) => {
+  app.post('/idp/reset/complete', async (request, reply) => {
     guard(request, reply);
     const token = field(request.body, 'token', 200);
     const password = field(request.body, 'password', MAX_PASSWORD_LENGTH);
@@ -237,7 +237,7 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     return {};
   });
 
-  app.post('/auth/email/verify', async (request, reply) => {
+  app.post('/idp/email/verify', async (request, reply) => {
     guard(request, reply);
     const used = await useToken(request, 'verify', field(request.body, 'token', 200));
     const principalId = used.principalId;
@@ -270,7 +270,7 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
   });
 
   // The account page: the signed-in user's own sign-in name, password and addresses.
-  app.get('/auth/account', async (request, reply) => {
+  app.get('/idp/account', async (request, reply) => {
     reply.header('cache-control', 'no-store');
     const { userId } = requireUser(request);
     const login = await loadLogin(db, userId);
@@ -283,7 +283,7 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     };
   });
 
-  app.post('/auth/password', async (request, reply) => {
+  app.post('/idp/password', async (request, reply) => {
     guard(request, reply);
     const { userId } = requireUser(request);
     const current = field(request.body, 'current', MAX_PASSWORD_LENGTH);
@@ -304,7 +304,7 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     return {};
   });
 
-  app.post('/auth/emails', async (request, reply) => {
+  app.post('/idp/emails', async (request, reply) => {
     guard(request, reply);
     const { userId } = requireUser(request);
     if (!mailer)
@@ -328,7 +328,7 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     return reply.code(202).send({});
   });
 
-  app.post('/auth/emails/primary', async (request, reply) => {
+  app.post('/idp/emails/primary', async (request, reply) => {
     guard(request, reply);
     const { userId } = requireUser(request);
     const email = emailField(request.body);
@@ -338,7 +338,7 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     return {};
   });
 
-  app.post('/auth/emails/remove', async (request, reply) => {
+  app.post('/idp/emails/remove', async (request, reply) => {
     guard(request, reply);
     const { userId } = requireUser(request);
     const email = emailField(request.body);

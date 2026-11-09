@@ -79,7 +79,7 @@ export class Upstream {
   }
 
   redirectUri(provider: string): string {
-    return `${this.options.origin}/auth/upstream/${provider}/callback`;
+    return `${this.options.origin}/idp/upstream/${provider}/callback`;
   }
 
   /** The address to send the browser to, having recorded the attempt against `binding`. */

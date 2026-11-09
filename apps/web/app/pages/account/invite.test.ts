@@ -35,7 +35,7 @@ describe('the invitation page', () => {
   it('shows the invited address and creates the account with the chosen password', async () => {
     fetchMock.mockImplementation((url) =>
       Promise.resolve(
-        url === '/auth/invite/peek' ? reply(200, { email: 'new@example.org' }) : reply(201),
+        url === '/idp/invite/peek' ? reply(200, { email: 'new@example.org' }) : reply(201),
       ),
     );
     const wrapper = mountInvite();
@@ -45,7 +45,7 @@ describe('the invitation page', () => {
     await wrapper.find('input[name=password]').setValue('a long enough password');
     await wrapper.find('form').trigger('submit');
     await flushPromises();
-    const accept = fetchMock.mock.calls.find(([url]) => url === '/auth/invite/accept');
+    const accept = fetchMock.mock.calls.find(([url]) => url === '/idp/invite/accept');
     expect(JSON.parse(accept?.[1].body as string)).toEqual({
       token: TOKEN,
       password: 'a long enough password',
@@ -57,7 +57,7 @@ describe('the invitation page', () => {
   it('shows the reason the server gives when the password is refused', async () => {
     fetchMock.mockImplementation((url) =>
       Promise.resolve(
-        url === '/auth/invite/peek'
+        url === '/idp/invite/peek'
           ? reply(200, { email: 'new@example.org' })
           : reply(400, { detail: 'The password must have at least 10 characters' }),
       ),

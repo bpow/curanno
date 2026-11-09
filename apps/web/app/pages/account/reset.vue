@@ -19,7 +19,7 @@ async function submit(): Promise<void> {
   if (!token || busy.value) return;
   busy.value = true;
   error.value = undefined;
-  const answer = await call('/auth/reset/complete', { body: { token, password: password.value } });
+  const answer = await call('/idp/reset/complete', { body: { token, password: password.value } });
   busy.value = false;
   if (answer.ok) done.value = true;
   else error.value = answer.message;

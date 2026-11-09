@@ -1,5 +1,5 @@
 /**
- * Calls to the account routes of the embedded issuer (`/auth/…`, ADR 0028).
+ * Calls to the account routes of the embedded issuer (`/idp/…`, ADR 0028).
  * They answer with problem details on failure; the page shows the detail,
  * which the server words for a person.
  */

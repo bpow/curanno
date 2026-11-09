@@ -57,7 +57,7 @@ export function registerUpstreamRoutes(app: FastifyInstance, options: UpstreamRo
     return reply.redirect(url);
   });
 
-  app.get('/auth/upstream/:providerId/callback', async (request, reply) => {
+  app.get('/idp/upstream/:providerId/callback', async (request, reply) => {
     const providerId = chosen(request);
     const callback = new URL(request.raw.url ?? '', origin);
     const result = await upstream.callback(
@@ -103,7 +103,7 @@ export function registerUpstreamRoutes(app: FastifyInstance, options: UpstreamRo
     return reply.redirect(redirectTo);
   });
 
-  app.get('/auth/upstream/pending/:id', async (request, reply) => {
+  app.get('/idp/upstream/pending/:id', async (request, reply) => {
     reply.header('cache-control', 'no-store');
     const { id } = request.params as { id: string };
     const uid = (request.query as { uid?: string }).uid;
@@ -143,7 +143,7 @@ export function registerUpstreamRoutes(app: FastifyInstance, options: UpstreamRo
     }
   }
 
-  app.post('/auth/links/:providerId/start', async (request, reply) => {
+  app.post('/idp/links/:providerId/start', async (request, reply) => {
     requireSameOrigin(request, origin);
     reply.header('cache-control', 'no-store');
     const providerId = chosen(request);
@@ -159,7 +159,7 @@ export function registerUpstreamRoutes(app: FastifyInstance, options: UpstreamRo
     return { url };
   });
 
-  app.post('/auth/links/:providerId/unlink', async (request, reply) => {
+  app.post('/idp/links/:providerId/unlink', async (request, reply) => {
     requireSameOrigin(request, origin);
     reply.header('cache-control', 'no-store');
     const { providerId } = request.params as { providerId: string };

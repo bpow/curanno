@@ -20,7 +20,7 @@ const done = ref(false);
 
 onMounted(async () => {
   if (!token) return;
-  const answer = await call<{ email: string }>('/auth/invite/peek', { body: { token } });
+  const answer = await call<{ email: string }>('/idp/invite/peek', { body: { token } });
   if (answer.ok) email.value = answer.body.email;
   else invalid.value = true;
 });
@@ -29,7 +29,7 @@ async function submit(): Promise<void> {
   if (!token || busy.value) return;
   busy.value = true;
   error.value = undefined;
-  const answer = await call('/auth/invite/accept', {
+  const answer = await call('/idp/invite/accept', {
     body: { token, password: password.value, displayName: displayName.value },
   });
   busy.value = false;

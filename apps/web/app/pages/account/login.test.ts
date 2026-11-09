@@ -163,9 +163,9 @@ describe('the sign-in page of the embedded issuer', () => {
   it('says what a pending link would connect, hides the providers, and sends the link with the password', async () => {
     fetchMock.mockImplementation((url) =>
       Promise.resolve(
-        url.startsWith('/auth/upstream/pending/')
+        url.startsWith('/idp/upstream/pending/')
           ? reply(200, { label: 'Google', email: 'owner@example.org' })
-          : url === '/auth/options'
+          : url === '/idp/options'
             ? reply(200, { providers: [{ id: 'google', label: 'Google' }] })
             : reply(200, { redirectTo: `${window.location.origin}/oidc/auth/${UID}` }),
       ),

@@ -130,6 +130,8 @@ export default defineNuxtConfig({
       '/x': `${apiProxyTarget}/x`,
       // The embedded issuer (ADR 0028); nothing answers these when the provider is external.
       '/oidc': `${apiProxyTarget}/oidc`,
+      // Its account routes: sign-up, invitations, resets, linking (the site's own /auth/callback is a page).
+      '/idp': `${apiProxyTarget}/idp`,
       '/.well-known/openid-configuration': `${apiProxyTarget}/.well-known/openid-configuration`,
       '/sidebar/': { target: `${sidebarProxyTarget}/sidebar/`, ws: true },
     },

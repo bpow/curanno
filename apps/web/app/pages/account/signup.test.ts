@@ -27,7 +27,7 @@ describe('the sign-up page', () => {
   function server(signup: string, answer: Response | undefined = undefined) {
     fetchMock.mockImplementation((url) =>
       Promise.resolve(
-        url === '/auth/options' ? reply(200, { signup, mail: true }) : (answer ?? reply(202)),
+        url === '/idp/options' ? reply(200, { signup, mail: true }) : (answer ?? reply(202)),
       ),
     );
   }
@@ -51,7 +51,7 @@ describe('the sign-up page', () => {
     await wrapper.find('textarea[name=note]').setValue('Reviewing the corpus');
     await wrapper.find('form').trigger('submit');
     await flushPromises();
-    const sent = fetchMock.mock.calls.find(([url]) => url === '/auth/signup');
+    const sent = fetchMock.mock.calls.find(([url]) => url === '/idp/signup');
     expect(JSON.parse(sent?.[1]?.body as string)).toEqual({
       email: 'ann@example.org',
       password: 'a long enough password',

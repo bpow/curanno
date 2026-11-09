@@ -18,7 +18,7 @@ const error = ref<string>();
 const outcome = ref<'pending' | 'active'>();
 
 onMounted(async () => {
-  const options = await call<{ signup?: 'closed' | 'approval' | 'open' }>('/auth/options');
+  const options = await call<{ signup?: 'closed' | 'approval' | 'open' }>('/idp/options');
   policy.value = options.ok ? (options.body.signup ?? 'closed') : 'closed';
 });
 
@@ -26,7 +26,7 @@ async function submit(): Promise<void> {
   if (busy.value) return;
   busy.value = true;
   error.value = undefined;
-  const answer = await call<{ status: 'pending' | 'active' }>('/auth/signup', {
+  const answer = await call<{ status: 'pending' | 'active' }>('/idp/signup', {
     body: {
       email: email.value,
       password: password.value,

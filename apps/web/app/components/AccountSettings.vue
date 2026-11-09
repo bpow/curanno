@@ -35,7 +35,7 @@ const say = (text: string, error = false): void => {
 };
 
 async function load(): Promise<void> {
-  const answer = await call<Account>('/auth/account', { token: auth.token() });
+  const answer = await call<Account>('/idp/account', { token: auth.token() });
   if (answer.ok) account.value = answer.body;
 }
 onMounted(async () => {
@@ -47,7 +47,7 @@ onMounted(async () => {
 
 async function connect(id: string): Promise<void> {
   busy.value = true;
-  const answer = await call<{ url: string }>(`/auth/links/${id}/start`, {
+  const answer = await call<{ url: string }>(`/idp/links/${id}/start`, {
     body: { password: linkPassword.value },
     token: auth.token(),
   });
@@ -61,7 +61,7 @@ async function connect(id: string): Promise<void> {
 
 async function disconnect(id: string): Promise<void> {
   if (
-    await act(`/auth/links/${id}/unlink`, { password: linkPassword.value }, 'Account disconnected.')
+    await act(`/idp/links/${id}/unlink`, { password: linkPassword.value }, 'Account disconnected.')
   ) {
     linkPassword.value = '';
   }
@@ -82,7 +82,7 @@ async function act(path: string, body: object, success: string): Promise<boolean
 
 async function changePassword(): Promise<void> {
   if (
-    await act('/auth/password', { current: current.value, next: next.value }, 'Password changed.')
+    await act('/idp/password', { current: current.value, next: next.value }, 'Password changed.')
   ) {
     current.value = '';
     next.value = '';
@@ -92,7 +92,7 @@ async function changePassword(): Promise<void> {
 async function addEmail(): Promise<void> {
   if (
     await act(
-      '/auth/emails',
+      '/idp/emails',
       { email: newEmail.value },
       'If that address is free, a message with a link to verify it is on its way.',
     )
@@ -190,7 +190,7 @@ async function addEmail(): Promise<void> {
           type="button"
           class="link"
           :disabled="busy"
-          @click="act('/auth/emails/primary', { email: e.email }, 'Primary address changed.')"
+          @click="act('/idp/emails/primary', { email: e.email }, 'Primary address changed.')"
         >
           Make primary
         </button>
@@ -199,7 +199,7 @@ async function addEmail(): Promise<void> {
           type="button"
           class="link"
           :disabled="busy"
-          @click="act('/auth/emails/remove', { email: e.email }, 'Address removed.')"
+          @click="act('/idp/emails/remove', { email: e.email }, 'Address removed.')"
         >
           Remove
         </button>

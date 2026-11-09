@@ -101,17 +101,17 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
       const link = await createInvite(ctx.db, ORIGIN, { email: 'newcomer@example.org' });
       expect(link).toMatch(/^http:\/\/localhost:3999\/account\/invite\?token=/);
       const token = tokenOf(link);
-      const peek = await post('/auth/invite/peek', { token });
+      const peek = await post('/idp/invite/peek', { token });
       expect(peek.json()).toEqual({ email: 'newcomer@example.org' });
 
-      const short = await post('/auth/invite/accept', {
+      const short = await post('/idp/invite/accept', {
         token,
         password: 'short',
         displayName: 'N',
       });
       expect(short.statusCode).toBe(400);
       // A bad password does not use the link up.
-      const accepted = await post('/auth/invite/accept', {
+      const accepted = await post('/idp/invite/accept', {
         token,
         password: PASSWORD,
         displayName: 'New Comer',
@@ -137,18 +137,18 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
       expect(emails.verified_at).not.toBeNull();
       expect(emails.is_primary).toBe(true);
 
-      const again = await post('/auth/invite/accept', {
+      const again = await post('/idp/invite/accept', {
         token,
         password: PASSWORD,
         displayName: 'x',
       });
       expect(again.statusCode).toBe(400);
-      expect((await post('/auth/invite/peek', { token })).statusCode).toBe(400);
+      expect((await post('/idp/invite/peek', { token })).statusCode).toBe(400);
     });
 
     it('can make the new user an administrator, and refuses an address that has an account', async () => {
       const link = await createInvite(ctx.db, ORIGIN, { email: 'boss@example.org', isAdmin: true });
-      await post('/auth/invite/accept', {
+      await post('/idp/invite/accept', {
         token: tokenOf(link),
         password: PASSWORD,
         displayName: 'Boss',
@@ -172,10 +172,10 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
         .where('email', '=', 'late@example.org')
         .execute();
       expect(
-        (await post('/auth/invite/accept', { token, password: PASSWORD, displayName: '' }))
+        (await post('/idp/invite/accept', { token, password: PASSWORD, displayName: '' }))
           .statusCode,
       ).toBe(400);
-      expect((await post('/auth/reset/complete', { token, password: PASSWORD })).statusCode).toBe(
+      expect((await post('/idp/reset/complete', { token, password: PASSWORD })).statusCode).toBe(
         400,
       );
     });
@@ -183,7 +183,7 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
     it('rejects a request from another site', async () => {
       const res = await app.inject({
         method: 'POST',
-        url: '/auth/invite/peek',
+        url: '/idp/invite/peek',
         payload: { token: 'x' },
         headers: { origin: 'https://evil.example', 'sec-fetch-site': 'cross-site' },
       });
@@ -205,13 +205,13 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
     it('answers the same for an address with an account and one without, and mails only the first', async () => {
       sent.length = 0;
       const known = await post(
-        '/auth/reset/request',
+        '/idp/reset/request',
         { email: 'Forgetful@example.org' },
         undefined,
         '10.1.0.1',
       );
       const unknown = await post(
-        '/auth/reset/request',
+        '/idp/reset/request',
         { email: 'nobody@example.org' },
         undefined,
         '10.1.0.2',
@@ -224,7 +224,7 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
 
     it('sets the new password once and ends the sessions of the old one', async () => {
       sent.length = 0;
-      await post('/auth/reset/request', { email: 'forgetful@example.org' }, undefined, '10.1.0.3');
+      await post('/idp/reset/request', { email: 'forgetful@example.org' }, undefined, '10.1.0.3');
       const token = tokenOf(linkIn(sent[0]));
       await ctx.db
         .insertInto('oidc_store')
@@ -235,11 +235,11 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
         })
         .execute();
       // Too short: refused without using the link.
-      expect((await post('/auth/reset/complete', { token, password: 'short' })).statusCode).toBe(
+      expect((await post('/idp/reset/complete', { token, password: 'short' })).statusCode).toBe(
         400,
       );
       expect(
-        (await post('/auth/reset/complete', { token, password: 'a brand new passphrase' }))
+        (await post('/idp/reset/complete', { token, password: 'a brand new passphrase' }))
           .statusCode,
       ).toBe(200);
       expect(await verifyLogin(ctx.db, 'forgetful@example.org', PASSWORD)).toBeUndefined();
@@ -253,7 +253,7 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
         .execute();
       expect(left).toEqual([]);
       expect(
-        (await post('/auth/reset/complete', { token, password: 'another passphrase here' }))
+        (await post('/idp/reset/complete', { token, password: 'another passphrase here' }))
           .statusCode,
       ).toBe(400);
     });
@@ -267,7 +267,7 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
       sent.length = 0;
       for (let i = 0; i < LIMITS.resetPerEmail.max + 2; i++) {
         const res = await post(
-          '/auth/reset/request',
+          '/idp/reset/request',
           { email: 'limited@example.org' },
           undefined,
           `10.2.0.${i + 1}`,
@@ -291,29 +291,29 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
     });
 
     it('requires a signed-in user', async () => {
-      expect((await app.inject({ method: 'GET', url: '/auth/account' })).statusCode).toBe(401);
-      expect((await post('/auth/password', { current: 'a', next: 'b' })).statusCode).toBe(401);
+      expect((await app.inject({ method: 'GET', url: '/idp/account' })).statusCode).toBe(401);
+      expect((await post('/idp/password', { current: 'a', next: 'b' })).statusCode).toBe(401);
     });
 
     it('changes the password only when the current one is given, and throttles wrong guesses', async () => {
       const wrong = await post(
-        '/auth/password',
+        '/idp/password',
         { current: 'not it', next: 'whatever long enough' },
         bearer,
       );
       expect(wrong.statusCode).toBe(400);
       const ok = await post(
-        '/auth/password',
+        '/idp/password',
         { current: PASSWORD, next: 'a second passphrase!' },
         bearer,
       );
       expect(ok.statusCode).toBe(200);
       expect(await verifyLogin(ctx.db, 'pat', 'a second passphrase!')).toBe(principalId);
       for (let i = 0; i < LIMITS.passwordPerUser.max; i++) {
-        await post('/auth/password', { current: 'guess', next: 'whatever long enough' }, bearer);
+        await post('/idp/password', { current: 'guess', next: 'whatever long enough' }, bearer);
       }
       const locked = await post(
-        '/auth/password',
+        '/idp/password',
         { current: 'a second passphrase!', next: 'yet another one!!' },
         bearer,
       );
@@ -323,13 +323,13 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
 
     it('adds an address, verifies it by link, and makes the first verified one primary', async () => {
       sent.length = 0;
-      expect((await post('/auth/emails', { email: 'pat@example.org' }, bearer)).statusCode).toBe(
+      expect((await post('/idp/emails', { email: 'pat@example.org' }, bearer)).statusCode).toBe(
         202,
       );
       let account = (
         await app.inject({
           method: 'GET',
-          url: '/auth/account',
+          url: '/idp/account',
           headers: { authorization: `Bearer ${bearer}` },
         })
       ).json<{
@@ -342,11 +342,11 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
       ]);
 
       const token = tokenOf(linkIn(sent[0]));
-      expect((await post('/auth/email/verify', { token })).statusCode).toBe(200);
+      expect((await post('/idp/email/verify', { token })).statusCode).toBe(200);
       account = (
         await app.inject({
           method: 'GET',
-          url: '/auth/account',
+          url: '/idp/account',
           headers: { authorization: `Bearer ${bearer}` },
         })
       ).json();
@@ -357,27 +357,27 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
         .where('principal_id', '=', principalId)
         .executeTakeFirstOrThrow();
       expect(user.email).toBe('pat@example.org');
-      expect((await post('/auth/email/verify', { token })).statusCode).toBe(400);
+      expect((await post('/idp/email/verify', { token })).statusCode).toBe(400);
     });
 
     it('does not tell whether another account already has the address, and sends it nothing', async () => {
       sent.length = 0;
-      const res = await post('/auth/emails', { email: 'boss@example.org' }, bearer);
+      const res = await post('/idp/emails', { email: 'boss@example.org' }, bearer);
       expect(res.statusCode).toBe(202);
       expect(sent).toEqual([]);
     });
 
     it('refuses to remove the primary address, and removes another', async () => {
       sent.length = 0;
-      await post('/auth/emails', { email: 'pat2@example.org' }, bearer);
+      await post('/idp/emails', { email: 'pat2@example.org' }, bearer);
       expect(
-        (await post('/auth/emails/remove', { email: 'pat@example.org' }, bearer)).statusCode,
+        (await post('/idp/emails/remove', { email: 'pat@example.org' }, bearer)).statusCode,
       ).toBe(404);
       expect(
-        (await post('/auth/emails/primary', { email: 'pat2@example.org' }, bearer)).statusCode,
+        (await post('/idp/emails/primary', { email: 'pat2@example.org' }, bearer)).statusCode,
       ).toBe(404);
       expect(
-        (await post('/auth/emails/remove', { email: 'pat2@example.org' }, bearer)).statusCode,
+        (await post('/idp/emails/remove', { email: 'pat2@example.org' }, bearer)).statusCode,
       ).toBe(200);
     });
   });
@@ -396,7 +396,7 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
 
     const signup = (email: string, extra: object = {}, ip = '10.4.0.1') =>
       post(
-        '/auth/signup',
+        '/idp/signup',
         { email, password: PASSWORD, displayName: 'Applicant', note: 'Please', ...extra },
         undefined,
         ip,
@@ -447,7 +447,7 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
       expect(read.statusCode).toBe(200);
       const users = await app.inject({ method: 'GET', url: '/x/users', headers: bearer });
       expect(users.statusCode).toBe(403);
-      const account = await app.inject({ method: 'GET', url: '/auth/account', headers: bearer });
+      const account = await app.inject({ method: 'GET', url: '/idp/account', headers: bearer });
       expect(account.statusCode).toBe(403);
     });
 
@@ -485,7 +485,7 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
       const id = (await verifyLogin(ctx.db, 'colleague@trusted.example', PASSWORD)) as string;
       expect((await meAs(id)).json<{ status: string }>().status).toBe('pending');
       expect(
-        (await post('/auth/email/verify', { token: tokenOf(linkIn(verification)) })).statusCode,
+        (await post('/idp/email/verify', { token: tokenOf(linkIn(verification)) })).statusCode,
       ).toBe(200);
       expect((await meAs(id)).json<{ status: string }>().status).toBe('active');
       const application = await ctx.db
@@ -526,7 +526,7 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
       expect(
         (
           await post(
-            '/auth/signup',
+            '/idp/signup',
             { email: 'not-an-email', password: PASSWORD, displayName: 'x' },
             undefined,
             '10.4.0.6',

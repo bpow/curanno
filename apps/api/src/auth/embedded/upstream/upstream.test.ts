@@ -543,16 +543,14 @@ describe.skipIf(!databaseUrl)('upstream sign-in and linking', () => {
       expect(await principalOf('oidc', 'g-owner')).toBeUndefined();
 
       // The page can ask what is being connected, from this browser only.
-      const info = await browser.request(`/auth/upstream/pending/${link}?uid=${uid}`);
+      const info = await browser.request(`/idp/upstream/pending/${link}?uid=${uid}`);
       expect(await info.json()).toEqual({
         provider: 'oidc',
         label: 'Campus',
         email: 'owner@example.org',
       });
       const stranger = new Browser(base);
-      expect((await stranger.request(`/auth/upstream/pending/${link}?uid=${uid}`)).status).toBe(
-        404,
-      );
+      expect((await stranger.request(`/idp/upstream/pending/${link}?uid=${uid}`)).status).toBe(404);
 
       // The wrong password attaches nothing and does not spend the request.
       const wrong = await browser.postJson(`/oidc/interaction/${uid}/login`, {
@@ -606,7 +604,7 @@ describe.skipIf(!databaseUrl)('upstream sign-in and linking', () => {
       expect(ok.status).toBe(200);
       expect(await principalOf('oidc', 'g-owner')).toBeUndefined();
       expect(otherId).not.toBe(ownerId);
-      const spent = await browser.request(`/auth/upstream/pending/${link}?uid=${uid}`);
+      const spent = await browser.request(`/idp/upstream/pending/${link}?uid=${uid}`);
       expect(spent.status).toBe(404);
     });
 
@@ -682,7 +680,7 @@ describe.skipIf(!databaseUrl)('upstream sign-in and linking', () => {
 
       // Never started here.
       const forged = await new Browser(base).request(
-        `/auth/upstream/oidc/callback?code=x&state=${randomBytes(8).toString('hex')}`,
+        `/idp/upstream/oidc/callback?code=x&state=${randomBytes(8).toString('hex')}`,
       );
       expect(forged.headers.get('location')).toMatch(/error=expired/);
     });
@@ -767,7 +765,7 @@ describe.skipIf(!databaseUrl)('upstream sign-in and linking', () => {
       password: string | undefined = PASSWORD,
     ) {
       const started = await post(
-        '/auth/links/oidc/start',
+        '/idp/links/oidc/start',
         password === undefined ? {} : { password },
         token,
       );
@@ -790,9 +788,9 @@ describe.skipIf(!databaseUrl)('upstream sign-in and linking', () => {
 
     it('asks for the password again before connecting, then attaches the identity', async () => {
       expect(
-        (await post('/auth/links/oidc/start', { password: 'wrong wrong wrong' })).statusCode,
+        (await post('/idp/links/oidc/start', { password: 'wrong wrong wrong' })).statusCode,
       ).toBe(400);
-      expect((await post('/auth/links/oidc/start', {})).statusCode).toBe(400);
+      expect((await post('/idp/links/oidc/start', {})).statusCode).toBe(400);
       const { location } = await connect({
         sub: 'g-join',
         email: 'joiner@elsewhere.example',
@@ -802,7 +800,7 @@ describe.skipIf(!databaseUrl)('upstream sign-in and linking', () => {
       expect(await principalOf('oidc', 'g-join')).toBe(userId);
       const account = await app.inject({
         method: 'GET',
-        url: '/auth/account',
+        url: '/idp/account',
         headers: { authorization: `Bearer ${bearer}` },
       });
       expect(
@@ -853,7 +851,7 @@ describe.skipIf(!databaseUrl)('upstream sign-in and linking', () => {
     });
 
     it('cannot be completed from a browser that did not start it', async () => {
-      const started = await post('/auth/links/oidc/start', { password: PASSWORD });
+      const started = await post('/idp/links/oidc/start', { password: PASSWORD });
       const to = new URL(started.json<{ url: string }>().url);
       const code = idp.approve({ sub: 'g-fixation' }, to.searchParams.get('nonce') ?? '', 'cid');
       const other = new Browser(base);
@@ -866,11 +864,11 @@ describe.skipIf(!databaseUrl)('upstream sign-in and linking', () => {
 
     it('unlinks with the password, and never removes the last way in', async () => {
       expect(
-        (await post('/auth/links/oidc/unlink', { password: 'wrong wrong wrong' })).statusCode,
+        (await post('/idp/links/oidc/unlink', { password: 'wrong wrong wrong' })).statusCode,
       ).toBe(400);
-      expect((await post('/auth/links/oidc/unlink', { password: PASSWORD })).statusCode).toBe(200);
+      expect((await post('/idp/links/oidc/unlink', { password: PASSWORD })).statusCode).toBe(200);
       expect(await principalOf('oidc', 'g-join')).toBeUndefined();
-      expect((await post('/auth/links/oidc/unlink', { password: PASSWORD })).statusCode).toBe(404);
+      expect((await post('/idp/links/oidc/unlink', { password: PASSWORD })).statusCode).toBe(404);
 
       // A person with only a provider cannot unlink it; with a recent sign-in they can connect another.
       const pl = (await principalOf('oidc', 'g-pl')) as string;
@@ -880,19 +878,19 @@ describe.skipIf(!databaseUrl)('upstream sign-in and linking', () => {
         .where('principal_id', '=', pl)
         .execute();
       const stale = await sign(pl, 3600_000 * 0.5);
-      expect((await post('/auth/links/oidc/start', {}, stale)).statusCode).toBe(403);
-      const only = await post('/auth/links/oidc/unlink', {}, await sign(pl));
+      expect((await post('/idp/links/oidc/start', {}, stale)).statusCode).toBe(403);
+      const only = await post('/idp/links/oidc/unlink', {}, await sign(pl));
       expect(only.statusCode).toBe(409);
       const fresh = await connect({ sub: 'g-pl-2' }, await sign(pl), undefined);
       expect(fresh.location).toBe('/me?linked=1');
       // Two identities at one provider are still one way in, as far as removing that provider goes.
-      expect((await post('/auth/links/oidc/unlink', {}, await sign(pl))).statusCode).toBe(409);
+      expect((await post('/idp/links/oidc/unlink', {}, await sign(pl))).statusCode).toBe(409);
       expect(await principalOf('oidc', 'g-pl')).toBe(pl);
     });
 
     it('does not let a pending user change how the account is signed in to', async () => {
       const waiting = (await principalOf('oidc', 'g-1')) as string;
-      expect((await post('/auth/links/oidc/start', {}, await sign(waiting))).statusCode).toBe(403);
+      expect((await post('/idp/links/oidc/start', {}, await sign(waiting))).statusCode).toBe(403);
     });
   });
 
