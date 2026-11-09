@@ -771,7 +771,7 @@ paths:
       operationId: updateUser
       tags: [users]
       summary: Update a user
-      description: Administrators only.
+      description: Administrators only. An administrator cannot disable themselves (409).
       requestBody:
         required: true
         content:
@@ -791,8 +791,95 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '404':
           $ref: '#/components/responses/NotFound'
+  /x/applications:
+    get:
+      operationId: listApplications
+      tags: [users]
+      summary: List applications to join
+      description: >-
+        People who signed up and wait for a decision (embedded sign-in with approval, ADR 0028).
+        Administrators only.
+      parameters:
+        - name: decision
+          in: query
+          description: Only applications in this state; `pending` are those without a decision.
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        '200':
+          description: Applications, oldest first
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /x/applications/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getApplication
+      tags: [users]
+      summary: Retrieve an application
+      description: Administrators only.
+      responses:
+        '200':
+          description: The application
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: decideApplication
+      tags: [users]
+      summary: Approve or reject an application
+      description: >-
+        Administrators only. Approving makes the applicant an active user; rejecting keeps them
+        out. A decision is final: deciding twice is a conflict (an approved user can still be
+        disabled through `updateUser`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationDecision'
+      responses:
+        '200':
+          description: The decided application
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /x/principals:
     get:
       operationId: searchPrincipals
@@ -1442,6 +1529,12 @@ components:
           type: string
         isAdmin:
           type: boolean
+        status:
+          description: >-
+            Only an `active` user acts as themself. Others (waiting for approval, rejected,
+            disabled) read as the public and can retrieve only their own record.
+          type: string
+          enum: [pending, active, rejected, disabled]
         created:
           type: string
           format: date-time
@@ -1456,6 +1549,64 @@ components:
           type: string
         isAdmin:
           type: boolean
+        status:
+          description: Disabling ends the user's sessions; enabling restores them.
+          type: string
+          enum: [active, disabled]
+    Application:
+      type: object
+      required: [id, userId, created, decision]
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        email:
+          type: string
+        emailVerified:
+          type: boolean
+        note:
+          description: What the applicant said about why they want to join.
+          type: string
+        created:
+          type: string
+          format: date-time
+        decision:
+          type: string
+          enum: [pending, approved, rejected]
+        decided:
+          type: string
+          format: date-time
+        decidedBy:
+          type: string
+          format: uuid
+        decisionNote:
+          type: string
+    ApplicationList:
+      type: object
+      required: [total, items]
+      properties:
+        total:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Application'
+    ApplicationDecision:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [approved, rejected]
+        note:
+          description: Sent to the applicant with the decision.
+          type: string
+          maxLength: 2000
     UserList:
       type: object
       required: [total, items]
