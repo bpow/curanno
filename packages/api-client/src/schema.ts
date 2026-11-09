@@ -329,9 +329,55 @@ export interface paths {
         head?: never;
         /**
          * Update a user
-         * @description Administrators only.
+         * @description Administrators only. An administrator cannot disable themselves (409).
          */
         patch: operations["updateUser"];
+        trace?: never;
+    };
+    "/x/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List applications to join
+         * @description People who signed up and wait for a decision (embedded sign-in with approval, ADR 0028). Administrators only.
+         */
+        get: operations["listApplications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/x/applications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Retrieve an application
+         * @description Administrators only.
+         */
+        get: operations["getApplication"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Approve or reject an application
+         * @description Administrators only. Approving makes the applicant an active user; rejecting keeps them out. A decision is final: deciding twice is a conflict (an approved user can still be disabled through `updateUser`).
+         */
+        patch: operations["decideApplication"];
         trace?: never;
     };
     "/x/principals": {
@@ -634,6 +680,11 @@ export interface components {
             displayName?: string;
             email?: string;
             isAdmin: boolean;
+            /**
+             * @description Only an `active` user acts as themself. Others (waiting for approval, rejected, disabled) read as the public and can retrieve only their own record.
+             * @enum {string}
+             */
+            status?: "pending" | "active" | "rejected" | "disabled";
             /** Format: date-time */
             created: string;
             groups?: components["schemas"]["GroupRef"][];
@@ -643,6 +694,47 @@ export interface components {
         UserPatch: {
             displayName?: string;
             isAdmin?: boolean;
+            /**
+             * @description Disabling ends the user's sessions; enabling restores them.
+             * @enum {string}
+             */
+            status?: "active" | "disabled";
+        } & {
+            [key: string]: unknown;
+        };
+        Application: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            userId: string;
+            displayName?: string;
+            email?: string;
+            emailVerified?: boolean;
+            /** @description What the applicant said about why they want to join. */
+            note?: string;
+            /** Format: date-time */
+            created: string;
+            /** @enum {string} */
+            decision: "pending" | "approved" | "rejected";
+            /** Format: date-time */
+            decided?: string;
+            /** Format: uuid */
+            decidedBy?: string;
+            decisionNote?: string;
+        } & {
+            [key: string]: unknown;
+        };
+        ApplicationList: {
+            total: number;
+            items: components["schemas"]["Application"][];
+        } & {
+            [key: string]: unknown;
+        };
+        ApplicationDecision: {
+            /** @enum {string} */
+            decision: "approved" | "rejected";
+            /** @description Sent to the applicant with the decision. */
+            note?: string;
         } & {
             [key: string]: unknown;
         };
@@ -1120,6 +1212,9 @@ export type GroupRef = components['schemas']['GroupRef'];
 export type UserRef = components['schemas']['UserRef'];
 export type User = components['schemas']['User'];
 export type UserPatch = components['schemas']['UserPatch'];
+export type Application = components['schemas']['Application'];
+export type ApplicationList = components['schemas']['ApplicationList'];
+export type ApplicationDecision = components['schemas']['ApplicationDecision'];
 export type UserList = components['schemas']['UserList'];
 export type GroupInput = components['schemas']['GroupInput'];
 export type Group = components['schemas']['Group'];
@@ -1848,6 +1943,90 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listApplications: {
+        parameters: {
+            query?: {
+                /** @description Only applications in this state; `pending` are those without a decision. */
+                decision?: "pending" | "approved" | "rejected";
+                limit?: components["parameters"]["limit"];
+                offset?: components["parameters"]["offset"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Applications, oldest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The application */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Application"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    decideApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationDecision"];
+            };
+        };
+        responses: {
+            /** @description The decided application */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Application"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     searchPrincipals: {
