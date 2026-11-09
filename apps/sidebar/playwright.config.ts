@@ -8,6 +8,8 @@ import { devPort } from '../../dev-ports.ts';
  * run `pnpm build` and `pnpm --filter @curanno/api migrate` first.
  */
 const ci = !!process.env['CI'];
+// With the embedded issuer (ADR 0028) the issuer, and its sign-in page, are served from the site's origin.
+const embedded = process.env['E2E_AUTH'] === 'embedded';
 
 export default defineConfig({
   testDir: 'e2e',
@@ -35,5 +37,15 @@ export default defineConfig({
       reuseExistingServer: !ci,
       timeout: 60_000,
     },
+    ...(embedded
+      ? [
+          {
+            command: 'pnpm --filter @curanno/web dev',
+            url: `http://localhost:${devPort('WEB_PORT')}/`,
+            reuseExistingServer: !ci,
+            timeout: 120_000,
+          },
+        ]
+      : []),
   ],
 });

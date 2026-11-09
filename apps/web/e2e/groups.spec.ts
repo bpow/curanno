@@ -6,7 +6,7 @@
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { devAccessToken } from '../../api/src/test/dev-token.ts';
+import { accessToken, embedded, passwordFor } from '../../api/src/test/e2e-auth.ts';
 
 /** Fails on any WCAG 2.1 A/AA or best-practice rule axe reports (docs/accessibility.md). */
 async function expectNoViolations(page: Page, label: string): Promise<void> {
@@ -26,25 +26,33 @@ test('the landing and sign-in pages have no axe violations', async ({ page }) =>
 });
 
 test('alice creates a group and adds bob', async ({ page, request }) => {
-  const bobToken = await devAccessToken('bob');
+  const bobToken = await accessToken('bob');
   const bobMe = await request.get('/x/me', { headers: { authorization: `Bearer ${bobToken}` } });
   expect(bobMe.ok()).toBe(true);
   const bobId = ((await bobMe.json()) as { id: string }).id;
 
   // The groups page needs a user: the guard sends alice to the provider.
   await page.goto('/groups');
-  // Zitadel's form is server-rendered: a fill before hydration is wiped, so
-  // fill again until Continue is enabled.
-  const next = page.getByRole('button', { name: 'Continue' });
-  for (const [field, value] of [
-    [page.getByLabel('Loginname'), 'alice'],
-    [page.getByLabel('Password', { exact: true }), 'alice'],
-  ] as const) {
-    await expect(async () => {
-      await field.fill(value);
-      await expect(next).toBeEnabled({ timeout: 1000 });
-    }).toPass();
-    await next.click();
+  if (embedded) {
+    // The site's own sign-in page (ADR 0028).
+    await page.getByLabel('Email or user name').fill('alice');
+    await page.getByLabel('Password').fill(passwordFor('alice'));
+    await expectNoViolations(page, 'the sign-in page');
+    await page.getByRole('button', { name: 'Sign in' }).click();
+  } else {
+    // Zitadel's form is server-rendered: a fill before hydration is wiped, so
+    // fill again until Continue is enabled.
+    const next = page.getByRole('button', { name: 'Continue' });
+    for (const [field, value] of [
+      [page.getByLabel('Loginname'), 'alice'],
+      [page.getByLabel('Password', { exact: true }), 'alice'],
+    ] as const) {
+      await expect(async () => {
+        await field.fill(value);
+        await expect(next).toBeEnabled({ timeout: 1000 });
+      }).toPass();
+      await next.click();
+    }
   }
   await expect(page).toHaveURL(/\/groups$/);
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
@@ -66,7 +74,7 @@ test('alice creates a group and adds bob', async ({ page, request }) => {
     .click();
   await expect(page.getByRole('row', { name: /Bob Reviewer/ })).toBeVisible();
 
-  const aliceToken = await devAccessToken('alice');
+  const aliceToken = await accessToken('alice');
   const headers = { authorization: `Bearer ${aliceToken}` };
   const members = await request.get(`/x/groups/${groupId}/members`, { headers });
   expect(members.ok()).toBe(true);

@@ -3,9 +3,10 @@
  * shares with him, then follows her edit and deletion live over the event
  * stream, and his guest is asked to anchor and then to unanchor the
  * annotation as it arrives and goes. Uses the development guest (no page)
- * and the compose Zitadel users; every run annotates a fresh document URI.
+ * and the compose Zitadel users (or, with E2E_AUTH=embedded, the embedded issuer's); every run annotates a fresh document URI.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { embedded, passwordFor } from '../../api/src/test/e2e-auth.ts';
 
 const DOCUMENT = `https://example.test/e2e/${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -25,10 +26,17 @@ async function fillUntilAccepted(field: Locator, value: string): Promise<void> {
 async function login(page: Page, user: 'alice' | 'bob'): Promise<void> {
   await page.goto(`/sidebar/?uri=${encodeURIComponent(DOCUMENT)}`);
   await page.getByRole('button', { name: 'Log in' }).click();
-  await fillUntilAccepted(page.getByLabel('Loginname'), user);
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await fillUntilAccepted(page.getByLabel('Password', { exact: true }), user);
-  await page.getByRole('button', { name: 'Continue' }).click();
+  if (embedded) {
+    // The site's own sign-in page (ADR 0028).
+    await page.getByLabel('Email or user name').fill(user);
+    await page.getByLabel('Password').fill(passwordFor(user));
+    await page.getByRole('button', { name: 'Sign in' }).click();
+  } else {
+    await fillUntilAccepted(page.getByLabel('Loginname'), user);
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await fillUntilAccepted(page.getByLabel('Password', { exact: true }), user);
+    await page.getByRole('button', { name: 'Continue' }).click();
+  }
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
   await expect(page).toHaveURL(
     new RegExp(`uri=${encodeURIComponent(DOCUMENT).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
