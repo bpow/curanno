@@ -80,6 +80,37 @@ export interface CredentialsTable {
   updated_at: Timestamp;
 }
 
+export interface UserEmailsTable {
+  principal_id: string;
+  email: string;
+  verified_at: OptionalTimestamp;
+  is_primary: Generated<boolean>;
+  created_at: Timestamp;
+}
+
+export type AccountTokenPurpose = 'invite' | 'reset' | 'verify';
+
+export interface AccountTokensTable {
+  token_hash: string;
+  purpose: AccountTokenPurpose;
+  principal_id: string | null;
+  email: string;
+  is_admin: Generated<boolean>;
+  created_by: string | null;
+  created_at: Timestamp;
+  expires_at: Timestamp;
+  used_at: OptionalTimestamp;
+}
+
+export interface AuthEventsTable {
+  id: Generated<number>;
+  at: Timestamp;
+  kind: string;
+  principal_id: string | null;
+  key: string | null;
+  detail: string | null;
+}
+
 export interface GroupsTable {
   principal_id: string;
   name: string;
@@ -197,6 +228,9 @@ export interface Database {
   oidc_store: OidcStoreTable;
   signing_keys: SigningKeysTable;
   credentials: CredentialsTable;
+  user_emails: UserEmailsTable;
+  account_tokens: AccountTokensTable;
+  auth_events: AuthEventsTable;
   groups: GroupsTable;
   group_memberships: GroupMembershipsTable;
   documents: DocumentsTable;
