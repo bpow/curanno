@@ -118,6 +118,8 @@ describe.skipIf(!databaseUrl)('embedded issuer', () => {
         signup: 'approval',
         autoApproveDomains: [],
         maxPending: 200,
+        providers: [],
+        autolink: [],
         bootstrapAdminEmail: undefined,
       },
       oidc: { issuer: base, clientId: EMBEDDED_CLIENT_ID, audience: base },

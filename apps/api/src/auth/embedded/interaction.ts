@@ -8,6 +8,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { Kysely } from 'kysely';
 import type Provider from 'oidc-provider';
+import { readCookie } from './cookies.js';
+import type { Upstream } from './upstream/service.js';
 import type { Database } from '../../db/schema.js';
 import { badRequest, Problem } from '../../problems.js';
 import { verifyLogin } from './accounts.js';
@@ -22,23 +24,33 @@ export interface InteractionOptions {
   provider: Provider;
   db: Kysely<Database>;
   throttle: Throttle;
+  upstream: Upstream;
+  /** The name of the cookie that ties a trip to an upstream provider to its browser. */
+  bindingCookie: string;
   /** The issuer's origin; a browser posting from anywhere else is refused. */
   origin: string;
 }
 
-export function registerInteractionRoutes(app: FastifyInstance, options: InteractionOptions): void {
-  const { provider, db, origin, throttle } = options;
-
-  async function details(request: FastifyRequest, reply: FastifyReply) {
-    const { uid } = request.params as { uid: string };
-    try {
-      const found = await provider.interactionDetails(request.raw, reply.raw);
-      if (found.uid === uid) return found;
-    } catch {
-      // Falls through: no such interaction, or its cookie is missing or has expired.
-    }
-    throw badRequest('This sign-in has expired or was not started in this browser. Start again.');
+/** The interaction the request's cookie belongs to, when it is the one named in the path. */
+export async function interactionFor(
+  provider: Provider,
+  request: FastifyRequest,
+  reply: FastifyReply,
+) {
+  const { uid } = request.params as { uid: string };
+  try {
+    const found = await provider.interactionDetails(request.raw, reply.raw);
+    if (found.uid === uid) return found;
+  } catch {
+    // Falls through: no such interaction, or its cookie is missing or has expired.
   }
+  throw badRequest('This sign-in has expired or was not started in this browser. Start again.');
+}
+
+export function registerInteractionRoutes(app: FastifyInstance, options: InteractionOptions): void {
+  const { provider, db, origin, throttle, upstream, bindingCookie } = options;
+  const details = (request: FastifyRequest, reply: FastifyReply) =>
+    interactionFor(provider, request, reply);
 
   const sameOrigin = (request: FastifyRequest): void => requireSameOrigin(request, origin);
 
@@ -74,6 +86,12 @@ export function registerInteractionRoutes(app: FastifyInstance, options: Interac
       throw new Problem(401, 'Unauthorized', 'The login or the password is not right');
     }
     await throttle.note('login', accountId);
+    // Signing in to the account an upstream identity was waiting to join is the proof it asked for.
+    const link = (request.body as { link?: unknown }).link;
+    const binding = readCookie(request, bindingCookie);
+    if (typeof link === 'string' && binding) {
+      await upstream.completePendingLink(link, found.uid, binding, accountId);
+    }
     const redirectTo = await provider.interactionResult(
       request.raw,
       reply.raw,

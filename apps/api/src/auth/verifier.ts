@@ -21,6 +21,8 @@ export interface TokenClaims {
   email: string | undefined;
   /** Seconds since the epoch, when present. */
   expiresAt: number | undefined;
+  /** When the token was issued, in seconds since the epoch, when present. */
+  issuedAt?: number | undefined;
 }
 
 export type TokenVerifier = (token: string) => Promise<TokenClaims>;
@@ -112,7 +114,14 @@ export function createTokenVerifier(options: VerifierOptions): TokenVerifier {
       name ??= nameClaim(info);
       email ??= stringClaim(info['email']);
     }
-    return { issuer: options.issuer, subject: payload.sub, name, email, expiresAt: payload.exp };
+    return {
+      issuer: options.issuer,
+      subject: payload.sub,
+      name,
+      email,
+      expiresAt: payload.exp,
+      issuedAt: payload.iat,
+    };
   };
 }
 

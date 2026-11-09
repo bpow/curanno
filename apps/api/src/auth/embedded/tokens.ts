@@ -15,7 +15,8 @@ export const TTL_MS: Record<AccountTokenPurpose, number> = {
   verify: 2 * 24 * 3600_000,
 };
 
-const hash = (token: string): string => createHash('sha256').update(token).digest('hex');
+export const hashToken = (token: string): string =>
+  createHash('sha256').update(token).digest('hex');
 
 export interface NewToken {
   purpose: AccountTokenPurpose;
@@ -31,7 +32,7 @@ export async function createToken(db: Kysely<Database>, input: NewToken): Promis
   await db
     .insertInto('account_tokens')
     .values({
-      token_hash: hash(token),
+      token_hash: hashToken(token),
       purpose: input.purpose,
       email: input.email,
       principal_id: input.principalId ?? null,
@@ -58,7 +59,7 @@ export async function consumeToken(
   const row = await db
     .updateTable('account_tokens')
     .set({ used_at: sql`now()` })
-    .where('token_hash', '=', hash(token))
+    .where('token_hash', '=', hashToken(token))
     .where('purpose', '=', purpose)
     .where('used_at', 'is', null)
     .where('expires_at', '>', sql<Date>`now()`)
@@ -76,7 +77,7 @@ export async function peekToken(
   return db
     .selectFrom('account_tokens')
     .select('email')
-    .where('token_hash', '=', hash(token))
+    .where('token_hash', '=', hashToken(token))
     .where('purpose', '=', purpose)
     .where('used_at', 'is', null)
     .where('expires_at', '>', sql<Date>`now()`)

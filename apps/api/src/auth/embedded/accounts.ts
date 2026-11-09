@@ -4,7 +4,13 @@
  * does not change when sign-in methods are added or removed (ADR 0028).
  */
 import { sql, type Kysely, type Transaction } from 'kysely';
-import type { Database, UserStatus } from '../../db/schema.js';
+import type { Database } from '../../db/schema.js';
+import {
+  applicationQueueFull,
+  insertAccount,
+  recordApplication,
+  type NewAccount,
+} from './registration.js';
 import { consumeToken } from './tokens.js';
 import {
   checkPassword,
@@ -13,17 +19,10 @@ import {
   MIN_PASSWORD_LENGTH,
 } from './password.js';
 
-export interface NewPasswordUser {
+export interface NewPasswordUser extends NewAccount {
   /** An email address or a user name; what they type to sign in. */
   login: string;
   password: string;
-  displayName?: string | undefined;
-  email?: string | undefined;
-  /** Whether someone has vouched that the user owns `email`: the operator, or a followed link. */
-  emailVerified?: boolean | undefined;
-  isAdmin?: boolean | undefined;
-  /** `active` unless the user must wait for approval. */
-  status?: UserStatus | undefined;
 }
 
 export class AccountError extends Error {}
@@ -70,44 +69,12 @@ export async function insertPasswordUser(
       .executeTakeFirst();
     if (owned) throw new AccountError('That email address belongs to another user');
   }
-  const principal = await trx
-    .insertInto('principals')
-    .values({ kind: 'user' })
-    .returning('id')
-    .executeTakeFirstOrThrow();
-  // issuer and subject stay on `users` for pods of the previous release (migration 0012).
-  await trx
-    .insertInto('users')
-    .values({
-      principal_id: principal.id,
-      issuer,
-      subject: principal.id,
-      display_name: input.displayName ?? null,
-      email: email ?? null,
-      is_admin: input.isAdmin ?? false,
-      status: input.status ?? 'active',
-    })
-    .execute();
-  await trx
-    .insertInto('identities')
-    .values({ issuer, subject: principal.id, principal_id: principal.id })
-    .execute();
+  const principalId = await insertAccount(trx, issuer, { ...input, email });
   await trx
     .insertInto('credentials')
-    .values({ principal_id: principal.id, login, password_hash: passwordHash })
+    .values({ principal_id: principalId, login, password_hash: passwordHash })
     .execute();
-  if (email) {
-    await trx
-      .insertInto('user_emails')
-      .values({
-        principal_id: principal.id,
-        email,
-        verified_at: input.emailVerified ? new Date() : null,
-        is_primary: Boolean(input.emailVerified),
-      })
-      .execute();
-  }
-  return principal.id;
+  return principalId;
 }
 
 /** The principal id when `login` and `password` are right; undefined otherwise, in the same time either way. */
@@ -233,125 +200,6 @@ export async function findByEmail(
   return undefined;
 }
 
-export interface EmailEntry {
-  email: string;
-  verified: boolean;
-  primary: boolean;
-}
-
-export async function listEmails(db: Kysely<Database>, principalId: string): Promise<EmailEntry[]> {
-  const rows = await db
-    .selectFrom('user_emails')
-    .select(['email', 'verified_at', 'is_primary'])
-    .where('principal_id', '=', principalId)
-    .orderBy('created_at')
-    .execute();
-  return rows.map((r) => ({
-    email: r.email,
-    verified: r.verified_at !== null,
-    primary: r.is_primary,
-  }));
-}
-
-/** Records an address, unverified, for the user; false when they already have it. */
-export async function addEmail(
-  db: Kysely<Database>,
-  principalId: string,
-  email: string,
-): Promise<boolean> {
-  const result = await db
-    .insertInto('user_emails')
-    .values({ principal_id: principalId, email: email.trim() })
-    .onConflict((oc) => oc.doNothing())
-    .executeTakeFirst();
-  return (result.numInsertedOrUpdatedRows ?? 0n) > 0n;
-}
-
-/**
- * Marks the address verified, if the link's owner still has it and no other
- * user verified it first. The first verified address becomes the primary.
- */
-export async function verifyEmail(
-  db: Kysely<Database>,
-  principalId: string,
-  email: string,
-): Promise<boolean> {
-  return db.transaction().execute(async (trx) => {
-    const taken = await trx
-      .selectFrom('user_emails')
-      .select('principal_id')
-      .where(sql`lower(email)`, '=', email.toLowerCase())
-      .where('verified_at', 'is not', null)
-      .where('principal_id', '<>', principalId)
-      .executeTakeFirst();
-    if (taken) return false;
-    const updated = await trx
-      .updateTable('user_emails')
-      .set({ verified_at: sql`coalesce(verified_at, now())` })
-      .where('principal_id', '=', principalId)
-      .where(sql`lower(email)`, '=', email.toLowerCase())
-      .executeTakeFirst();
-    if (updated.numUpdatedRows === 0n) return false;
-    const hasPrimary = await trx
-      .selectFrom('user_emails')
-      .select('email')
-      .where('principal_id', '=', principalId)
-      .where('is_primary', '=', true)
-      .executeTakeFirst();
-    if (!hasPrimary) await makePrimary(trx, principalId, email);
-    return true;
-  });
-}
-
-/** Makes a verified address the one the user's tokens carry. */
-export async function makePrimary(
-  trx: Kysely<Database>,
-  principalId: string,
-  email: string,
-): Promise<boolean> {
-  const row = await trx
-    .selectFrom('user_emails')
-    .select('email')
-    .where('principal_id', '=', principalId)
-    .where(sql`lower(email)`, '=', email.toLowerCase())
-    .where('verified_at', 'is not', null)
-    .executeTakeFirst();
-  if (!row) return false;
-  await trx
-    .updateTable('user_emails')
-    .set({ is_primary: false })
-    .where('principal_id', '=', principalId)
-    .where('is_primary', '=', true)
-    .execute();
-  await trx
-    .updateTable('user_emails')
-    .set({ is_primary: true })
-    .where('principal_id', '=', principalId)
-    .where(sql`lower(email)`, '=', email.toLowerCase())
-    .execute();
-  await trx
-    .updateTable('users')
-    .set({ email: row.email })
-    .where('principal_id', '=', principalId)
-    .execute();
-  return true;
-}
-
-/** Removes an address that is not the primary one. */
-export async function removeEmail(
-  db: Kysely<Database>,
-  principalId: string,
-  email: string,
-): Promise<boolean> {
-  const result = await db
-    .deleteFrom('user_emails')
-    .where('principal_id', '=', principalId)
-    .where(sql`lower(email)`, '=', email.toLowerCase())
-    .where('is_primary', '=', false)
-    .executeTakeFirst();
-  return result.numDeletedRows > 0n;
-}
-
 /** The user's sign-in name, for the account page. */
 export async function loadLogin(
   db: Kysely<Database>,
@@ -386,15 +234,8 @@ export async function signUp(
   checkNewPassword(input.password);
   const passwordHash = await hashPassword(input.password);
   return db.transaction().execute(async (trx) => {
-    if (options.approval) {
-      const waiting = await trx
-        .selectFrom('applications')
-        .select((eb) => eb.fn.countAll<string>().as('n'))
-        .where('decision', 'is', null)
-        .executeTakeFirstOrThrow();
-      if (Number(waiting.n) >= options.maxPending) {
-        throw new SignupRefused('Sign-up is paused: too many applications are waiting. Try later.');
-      }
+    if (options.approval && (await applicationQueueFull(trx, options.maxPending))) {
+      throw new SignupRefused('Sign-up is paused: too many applications are waiting. Try later.');
     }
     const principalId = await insertPasswordUser(
       trx,
@@ -403,11 +244,7 @@ export async function signUp(
       passwordHash,
     );
     if (!options.approval) return { principalId };
-    const application = await trx
-      .insertInto('applications')
-      .values({ principal_id: principalId, note: input.note?.trim() || null })
-      .returning('id')
-      .executeTakeFirstOrThrow();
-    return { principalId, applicationId: application.id };
+    const applicationId = await recordApplication(trx, principalId, { note: input.note });
+    return { principalId, applicationId };
   });
 }

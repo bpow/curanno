@@ -34,6 +34,8 @@ export interface UserCaller {
   principalIds: string[];
   /** When the token behind this caller expires, in milliseconds since the epoch; absent when it never does. */
   expiresAt?: number;
+  /** When the token was issued, in milliseconds since the epoch; absent when it does not say. */
+  issuedAt?: number;
 }
 
 export type Caller = AnonymousCaller | UserCaller;
@@ -93,6 +95,7 @@ export async function resolveCaller(
         groups.map((g) => g.group_id),
       ),
       ...(claims.expiresAt !== undefined ? { expiresAt: claims.expiresAt * 1000 } : {}),
+      ...(claims.issuedAt !== undefined ? { issuedAt: claims.issuedAt * 1000 } : {}),
     };
   });
 }

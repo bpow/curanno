@@ -5,6 +5,20 @@
 /** The client id of the embedded issuer's one client: the sidebar and the site (ADR 0028). */
 export const EMBEDDED_CLIENT_ID = 'curanno';
 
+/** An upstream sign-in provider the operator configured (ADR 0028). */
+export interface UpstreamProvider {
+  /** `google`, `github` or `oidc`; part of the callback address. */
+  id: string;
+  label: string;
+  kind: 'oidc' | 'github';
+  clientId: string;
+  clientSecret: string;
+  /** `oidc`: the issuer, whose discovery document names the rest. */
+  issuer?: string;
+  /** Overrides of the provider's endpoints; for tests and GitHub Enterprise. */
+  endpoints?: { authorize?: string; token?: string; api?: string };
+}
+
 export type SignupPolicy = 'closed' | 'approval' | 'open';
 
 export interface Config {
@@ -27,6 +41,10 @@ export interface Config {
     signup: SignupPolicy;
     /** Embedded mode, `approval`: applicants whose verified address is in one of these domains are approved at once. */
     autoApproveDomains: string[];
+    /** Embedded mode: the providers people can sign in with besides a password. */
+    providers: UpstreamProvider[];
+    /** Embedded mode: providers whose verified email may join an existing account without asking for its password. Off by default. */
+    autolink: string[];
     /** Embedded mode: sign-up is refused while this many applications wait. */
     maxPending: number;
     /** Embedded mode: while no administrator exists, this address is invited to become one. */
@@ -84,6 +102,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         .split(/[\s,]+/)
         .map((d) => d.toLowerCase().replace(/^@/, ''))
         .filter(Boolean),
+      providers: upstreamProviders(env),
+      autolink: (env['AUTH_AUTOLINK'] || '').split(/[\s,]+/).filter(Boolean),
       maxPending: positive(env['AUTH_MAX_PENDING'], 200, 'AUTH_MAX_PENDING'),
       smtpUrl,
       mailFrom,
@@ -105,6 +125,42 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       : undefined,
     metricsEnabled: env['METRICS_ENABLED'] !== 'false',
   };
+}
+
+function upstreamProviders(env: NodeJS.ProcessEnv): UpstreamProvider[] {
+  const providers: UpstreamProvider[] = [];
+  const pair = (prefix: string): { clientId: string; clientSecret: string } | undefined => {
+    const clientId = env[`${prefix}_CLIENT_ID`];
+    const clientSecret = env[`${prefix}_CLIENT_SECRET`];
+    if (!clientId && !clientSecret) return undefined;
+    if (!clientId || !clientSecret) {
+      throw new Error(`${prefix}_CLIENT_ID and ${prefix}_CLIENT_SECRET must be set together`);
+    }
+    return { clientId, clientSecret };
+  };
+  const google = pair('UPSTREAM_GOOGLE');
+  if (google) {
+    providers.push({
+      id: 'google',
+      label: 'Google',
+      kind: 'oidc',
+      issuer: 'https://accounts.google.com',
+      ...google,
+    });
+  }
+  const github = pair('UPSTREAM_GITHUB');
+  if (github) providers.push({ id: 'github', label: 'GitHub', kind: 'github', ...github });
+  const generic = pair('UPSTREAM_OIDC');
+  if (generic) {
+    providers.push({
+      id: 'oidc',
+      label: env['UPSTREAM_OIDC_NAME'] || 'Single sign-on',
+      kind: 'oidc',
+      issuer: required(env, 'UPSTREAM_OIDC_ISSUER').replace(/\/$/, ''),
+      ...generic,
+    });
+  }
+  return providers;
 }
 
 function signupPolicy(value: string | undefined): SignupPolicy {

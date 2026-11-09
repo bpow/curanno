@@ -28,6 +28,8 @@ const config: Config = {
     signup: 'approval',
     autoApproveDomains: [],
     maxPending: 200,
+    providers: [],
+    autolink: [],
     bootstrapAdminEmail: undefined,
   },
   oidc: {

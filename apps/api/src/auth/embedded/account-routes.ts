@@ -16,24 +16,22 @@ import { badRequest, conflict, forbidden, notFound, serviceUnavailable } from '.
 import {
   acceptInvite,
   AccountError,
-  addEmail,
   checkCurrentPassword,
   findByEmail,
-  listEmails,
   loadLogin,
-  makePrimary,
-  removeEmail,
   setPasswordFor,
   signUp,
   SignupRefused,
-  verifyEmail,
 } from './accounts.js';
 import { revokeSessions } from './adapter.js';
+import { addEmail, listEmails, makePrimary, removeEmail, verifyEmail } from './emails.js';
 import { emailField, field, requireSameOrigin } from './http.js';
 import { accountLink, addressInUse } from './invites.js';
 import type { Mailer } from './mail.js';
+import { tellAdministrators } from './notify.js';
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from './password.js';
 import { LIMITS, type Throttle } from './throttle.js';
+import type { Upstream } from './upstream/service.js';
 import { consumeToken, createToken, peekToken } from './tokens.js';
 
 export interface AccountRouteOptions {
@@ -43,12 +41,17 @@ export interface AccountRouteOptions {
   /** The issuer's origin, which is also where the links in mail point. */
   origin: string;
   signup: SignupPolicy;
+  upstream: Upstream;
   autoApproveDomains: string[];
   maxPending: number;
 }
 
 export function registerAccountRoutes(app: FastifyInstance, options: AccountRouteOptions): void {
-  const { db, throttle, mailer, origin, signup, autoApproveDomains, maxPending } = options;
+  const { db, throttle, mailer, origin, signup, autoApproveDomains, maxPending, upstream } =
+    options;
+
+  const providersOf = () =>
+    [...upstream.providers.values()].map((p) => ({ id: p.config.id, label: p.config.label }));
 
   const address = (request: FastifyRequest): string => throttle.key('address', request.ip);
 
@@ -75,7 +78,11 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
 
   app.get('/auth/options', (_request, reply) => {
     reply.header('cache-control', 'no-store');
-    return { mail: mailer !== undefined, signup };
+    return {
+      mail: mailer !== undefined,
+      signup,
+      providers: providersOf(),
+    };
   });
 
   app.post('/auth/signup', async (request, reply) => {
@@ -132,8 +139,8 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
             request.log.warn({ err }, 'sending the verification mail failed'),
           );
         if (created.applicationId) {
-          await tellAdministrators(displayName, email, note).catch((err: unknown) =>
-            request.log.warn({ err }, 'notifying the administrators failed'),
+          await tellAdministrators(db, mailer, origin, { name: displayName, email, note }).catch(
+            (err: unknown) => request.log.warn({ err }, 'notifying the administrators failed'),
           );
         }
       }
@@ -144,27 +151,6 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     }
     return reply.code(202).send({ status });
   });
-
-  /** A line to every administrator that someone waits; the queue is also on the applications page. */
-  async function tellAdministrators(name: string, email: string, note: string | undefined) {
-    if (!mailer) return;
-    const admins = await db
-      .selectFrom('users')
-      .select('email')
-      .where('is_admin', '=', true)
-      .where('status', '=', 'active')
-      .where('email', 'is not', null)
-      .limit(10)
-      .execute();
-    for (const admin of admins) {
-      if (!admin.email) continue;
-      await mailer.send({
-        to: admin.email,
-        subject: `${name} asks to join curanno`,
-        text: `${name} <${email}> applied for an account.${note ? `\n\nThey wrote: ${note}` : ''}\n\nDecide at ${origin}/applications\n`,
-      });
-    }
-  }
 
   app.post('/auth/invite/peek', async (request, reply) => {
     guard(request, reply);
@@ -254,7 +240,11 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
   app.post('/auth/email/verify', async (request, reply) => {
     guard(request, reply);
     const used = await useToken(request, 'verify', field(request.body, 'token', 200));
-    if (!used.principalId || !(await verifyEmail(db, used.principalId, used.email))) {
+    const principalId = used.principalId;
+    if (
+      !principalId ||
+      !(await db.transaction().execute((trx) => verifyEmail(trx, principalId, used.email)))
+    ) {
       throw conflict('That address could not be verified; it may belong to another account.');
     }
     // An applicant who proves an address in an allowed domain needs no administrator.
@@ -288,6 +278,8 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
       login: login ?? null,
       emails: await listEmails(db, userId),
       mail: mailer !== undefined,
+      links: await upstream.linksOf(userId),
+      providers: providersOf(),
     };
   });
 
@@ -339,7 +331,8 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
   app.post('/auth/emails/primary', async (request, reply) => {
     guard(request, reply);
     const { userId } = requireUser(request);
-    if (!(await makePrimary(db, userId, emailField(request.body)))) {
+    const email = emailField(request.body);
+    if (!(await db.transaction().execute((trx) => makePrimary(trx, userId, email)))) {
       throw notFound('No such verified address');
     }
     return {};
@@ -348,7 +341,8 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
   app.post('/auth/emails/remove', async (request, reply) => {
     guard(request, reply);
     const { userId } = requireUser(request);
-    if (!(await removeEmail(db, userId, emailField(request.body)))) {
+    const email = emailField(request.body);
+    if (!(await db.transaction().execute((trx) => removeEmail(trx, userId, email)))) {
       throw notFound('No such address, or it is the primary one');
     }
     return {};

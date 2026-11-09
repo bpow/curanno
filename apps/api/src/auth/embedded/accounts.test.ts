@@ -47,6 +47,8 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
         signup: 'approval',
         autoApproveDomains: ['trusted.example'],
         maxPending: 200,
+        providers: [],
+        autolink: [],
         bootstrapAdminEmail: undefined,
       },
       oidc: { issuer: ORIGIN, clientId: EMBEDDED_CLIENT_ID, audience: ORIGIN },

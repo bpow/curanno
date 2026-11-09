@@ -108,6 +108,8 @@ export async function createTestContext(options: TestContextOptions = {}): Promi
       signup: 'approval',
       autoApproveDomains: [],
       maxPending: 200,
+      providers: [],
+      autolink: [],
       bootstrapAdminEmail: undefined,
     },
     oidc: { issuer: ISSUER, clientId: CLIENT_ID, audience: CLIENT_ID },

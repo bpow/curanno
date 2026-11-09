@@ -41,6 +41,8 @@ describe('loadConfig', () => {
       signup: 'approval',
       autoApproveDomains: [],
       maxPending: 200,
+      providers: [],
+      autolink: [],
     });
     expect(config.oidc).toEqual({
       issuer: 'https://curanno.example',
@@ -69,6 +71,32 @@ describe('loadConfig', () => {
     expect(() =>
       loadConfig({ ...base, AUTH_MODE: 'embedded', AUTH_SECRET: secret, AUTH_MAX_PENDING: '-1' }),
     ).toThrow(/AUTH_MAX_PENDING/);
+  });
+
+  it('reads the upstream providers, and wants each one whole', () => {
+    const env = {
+      ...base,
+      AUTH_MODE: 'embedded',
+      AUTH_SECRET: secret,
+      UPSTREAM_GOOGLE_CLIENT_ID: 'g',
+      UPSTREAM_GOOGLE_CLIENT_SECRET: 'gs',
+      UPSTREAM_GITHUB_CLIENT_ID: 'h',
+      UPSTREAM_GITHUB_CLIENT_SECRET: 'hs',
+      UPSTREAM_OIDC_ISSUER: 'https://sso.example/realms/x/',
+      UPSTREAM_OIDC_CLIENT_ID: 'o',
+      UPSTREAM_OIDC_CLIENT_SECRET: 'os',
+      UPSTREAM_OIDC_NAME: 'Campus',
+      AUTH_AUTOLINK: 'google, oidc',
+    };
+    const { providers, autolink } = loadConfig(env).auth;
+    expect(providers.map((p) => [p.id, p.label, p.kind, p.issuer])).toEqual([
+      ['google', 'Google', 'oidc', 'https://accounts.google.com'],
+      ['github', 'GitHub', 'github', undefined],
+      ['oidc', 'Campus', 'oidc', 'https://sso.example/realms/x'],
+    ]);
+    expect(autolink).toEqual(['google', 'oidc']);
+    expect(() => loadConfig({ ...env, UPSTREAM_GITHUB_CLIENT_SECRET: '' })).toThrow(/together/);
+    expect(() => loadConfig({ ...env, UPSTREAM_OIDC_ISSUER: '' })).toThrow(/UPSTREAM_OIDC_ISSUER/);
   });
 
   it('refuses embedded mode without a long enough secret, and unknown modes', () => {

@@ -23,6 +23,9 @@ import { loadSigningKeys, retireOldKeys } from './keys.js';
 import { createMailer, type Mailer } from './mail.js';
 import { errorPage, logoutPage, signedOutPage, SUBMIT_SCRIPT_HASH } from './pages.js';
 import { cookieKeys } from './secrets.js';
+import { registerUpstreamRoutes } from './upstream/routes.js';
+import { tellAdministrators } from './notify.js';
+import { purgeUpstream, Upstream, type UpstreamOptions } from './upstream/service.js';
 import { purgeEvents, Throttle } from './throttle.js';
 import { purgeTokens } from './tokens.js';
 
@@ -55,6 +58,8 @@ export async function createEmbeddedIssuer(options: {
   db: Kysely<Database>;
   /** Replaces the SMTP mailer the configuration describes; for tests. */
   mailer?: Mailer;
+  /** Replaces the network clients of the upstream providers; for tests. */
+  upstreamClients?: UpstreamOptions['clientFor'];
 }): Promise<EmbeddedIssuer> {
   const { config, db } = options;
   const secret = config.auth.secret;
@@ -75,6 +80,15 @@ export async function createEmbeddedIssuer(options: {
     (config.auth.smtpUrl
       ? createMailer(config.auth.smtpUrl, config.auth.mailFrom ?? '')
       : undefined);
+
+  const upstream = new Upstream({
+    db,
+    origin: issuer,
+    auth: config.auth,
+    onApplication: (applicant) => tellAdministrators(db, mailer, issuer, applicant),
+    ...(options.upstreamClients ? { clientFor: options.upstreamClients } : {}),
+  });
+  const bindingCookie = https ? '__Host-curanno_up' : 'curanno_up';
 
   let keys = await loadSigningKeys(db, secret);
   const provider = new Provider(issuer, providerConfiguration());
@@ -149,11 +163,27 @@ export async function createEmbeddedIssuer(options: {
         scope.all('/.well-known/openid-configuration', handler);
         done();
       });
-      registerInteractionRoutes(app, { provider, db, throttle, origin: issuer });
+      registerInteractionRoutes(app, {
+        provider,
+        db,
+        throttle,
+        upstream,
+        bindingCookie,
+        origin: issuer,
+      });
+      registerUpstreamRoutes(app, {
+        provider,
+        db,
+        upstream,
+        throttle,
+        origin: issuer,
+        bindingCookie,
+      });
       registerAccountRoutes(app, {
         db,
         throttle,
         mailer,
+        upstream,
         origin: issuer,
         signup: config.auth.signup,
         autoApproveDomains: config.auth.autoApproveDomains,
@@ -171,6 +201,7 @@ export async function createEmbeddedIssuer(options: {
         Promise.all([
           purgeEvents(db),
           purgeTokens(db),
+          purgeUpstream(db),
           purgeApplications(db, { retentionDays: 30, staleDays: 14 }),
         ]).catch((err: unknown) => app.log.warn({ err }, 'purging account records failed'));
       };
