@@ -32,6 +32,8 @@ export interface PrincipalsTable {
   created_at: Timestamp;
 }
 
+export type UserStatus = 'pending' | 'active' | 'rejected' | 'disabled';
+
 export interface UsersTable {
   principal_id: string;
   issuer: string;
@@ -39,6 +41,7 @@ export interface UsersTable {
   display_name: string | null;
   email: string | null;
   is_admin: Generated<boolean>;
+  status: Generated<UserStatus>;
   created_at: Timestamp;
   last_login_at: OptionalTimestamp;
 }
@@ -109,6 +112,17 @@ export interface AuthEventsTable {
   principal_id: string | null;
   key: string | null;
   detail: string | null;
+}
+
+export interface ApplicationsTable {
+  id: Generated<string>;
+  principal_id: string;
+  note: string | null;
+  created_at: Timestamp;
+  decision: 'approved' | 'rejected' | null;
+  decided_at: OptionalTimestamp;
+  decided_by: string | null;
+  decision_note: string | null;
 }
 
 export interface GroupsTable {
@@ -231,6 +245,7 @@ export interface Database {
   user_emails: UserEmailsTable;
   account_tokens: AccountTokensTable;
   auth_events: AuthEventsTable;
+  applications: ApplicationsTable;
   groups: GroupsTable;
   group_memberships: GroupMembershipsTable;
   documents: DocumentsTable;
