@@ -34,6 +34,9 @@ describe('the sign-in page of the embedded issuer', () => {
     vi.unstubAllGlobals();
   });
 
+  /** The calls to the interaction, apart from the page asking the server what it can do. */
+  const interactionCalls = () => fetchMock.mock.calls.filter(([url]) => url.startsWith('/oidc/'));
+
   async function fill(wrapper: VueWrapper, login: string, password: string) {
     await wrapper.find('input[name=login]').setValue(login);
     await wrapper.find('input[name=password]').setValue(password);
@@ -54,11 +57,11 @@ describe('the sign-in page of the embedded issuer', () => {
 
   it('posts the credentials to the interaction it was given and resumes the flow', async () => {
     const resume = `${window.location.origin}/oidc/auth/${UID}`;
-    fetchMock.mockResolvedValue(reply(200, { redirectTo: resume }));
+    fetchMock.mockImplementation(() => Promise.resolve(reply(200, { redirectTo: resume })));
     const wrapper = mountLogin();
     await fill(wrapper, 'alice@example.org', 'a long password');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(interactionCalls()).toHaveLength(1);
+    const [url, init] = interactionCalls()[0] ?? [];
     expect(url).toBe(`/oidc/interaction/${UID}/login`);
     expect(init?.method).toBe('POST');
     expect(init?.credentials).toBe('same-origin');
@@ -70,7 +73,7 @@ describe('the sign-in page of the embedded issuer', () => {
   });
 
   it('says so when the login or password is wrong, and clears the password', async () => {
-    fetchMock.mockResolvedValue(reply(401, { title: 'Unauthorized' }));
+    fetchMock.mockImplementation(() => Promise.resolve(reply(401, { title: 'Unauthorized' })));
     const wrapper = mountLogin();
     await fill(wrapper, 'alice@example.org', 'nope');
     expect(wrapper.find('[role=alert]').text()).toContain('not right');
@@ -79,7 +82,7 @@ describe('the sign-in page of the embedded issuer', () => {
   });
 
   it('tells the user to start again when the sign-in has expired', async () => {
-    fetchMock.mockResolvedValue(reply(400, { title: 'Bad Request' }));
+    fetchMock.mockImplementation(() => Promise.resolve(reply(400, { title: 'Bad Request' })));
     const wrapper = mountLogin();
     await fill(wrapper, 'alice@example.org', 'a long password');
     expect(wrapper.find('form').exists()).toBe(false);
@@ -87,7 +90,9 @@ describe('the sign-in page of the embedded issuer', () => {
   });
 
   it('does not follow an address on another origin', async () => {
-    fetchMock.mockResolvedValue(reply(200, { redirectTo: 'https://evil.example/oidc/auth/x' }));
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(reply(200, { redirectTo: 'https://evil.example/oidc/auth/x' })),
+    );
     const wrapper = mountLogin();
     await fill(wrapper, 'alice@example.org', 'a long password');
     expect(assign).not.toHaveBeenCalled();
@@ -96,11 +101,11 @@ describe('the sign-in page of the embedded issuer', () => {
 
   it('cancels through the interaction, which sends the user back to the application', async () => {
     const back = `${window.location.origin}/oidc/auth/${UID}`;
-    fetchMock.mockResolvedValue(reply(200, { redirectTo: back }));
+    fetchMock.mockImplementation(() => Promise.resolve(reply(200, { redirectTo: back })));
     const wrapper = mountLogin();
     await wrapper.find('button[type=button]').trigger('click');
     await flushPromises();
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(`/oidc/interaction/${UID}/abort`);
+    expect(interactionCalls()[0]?.[0]).toBe(`/oidc/interaction/${UID}/abort`);
     expect(assign).toHaveBeenCalledWith(back);
   });
 
@@ -111,6 +116,17 @@ describe('the sign-in page of the embedded issuer', () => {
       expect(wrapper.find('form').exists()).toBe(false);
       expect(wrapper.find('[role=alert]').exists()).toBe(true);
     }
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(interactionCalls()).toEqual([]);
+  });
+
+  it('offers a password reset only when the server can send mail', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(reply(200, { mail: false })));
+    let wrapper = mountLogin();
+    await flushPromises();
+    expect(wrapper.text()).not.toContain('Forgot your password');
+    fetchMock.mockImplementation(() => Promise.resolve(reply(200, { mail: true })));
+    wrapper = mountLogin();
+    await flushPromises();
+    expect(wrapper.text()).toContain('Forgot your password');
   });
 });

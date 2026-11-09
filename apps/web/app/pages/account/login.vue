@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { NuxtLink } from '#components';
 import { definePageMeta, useHead, useRoute } from '#imports';
+import { call } from '../../account/http';
 
 // The page the embedded issuer sends the browser to while it signs someone in
 // (ADR 0028). It posts the credentials back to the interaction the issuer
@@ -19,6 +21,13 @@ const password = ref('');
 const busy = ref(false);
 const error = ref<string>();
 const expired = ref(false);
+/** Whether the server can send mail, and so whether a forgotten password can be reset. */
+const canReset = ref(false);
+
+onMounted(async () => {
+  const options = await call<{ mail?: boolean }>('/auth/options');
+  canReset.value = options.ok && options.body.mail === true;
+});
 
 async function post(action: 'login' | 'abort', body: object): Promise<Response> {
   return fetch(`/oidc/interaction/${uid.value}/${action}`, {
@@ -115,6 +124,9 @@ async function cancel(): Promise<void> {
         <button type="submit" class="primary" :disabled="busy">Sign in</button>
         <button type="button" class="link" :disabled="busy" @click="cancel">Cancel</button>
       </div>
+      <p v-if="canReset">
+        <NuxtLink to="/account/forgot" target="_blank">Forgot your password?</NuxtLink>
+      </p>
     </form>
   </section>
 </template>
