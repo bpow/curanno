@@ -4,7 +4,7 @@
  * does not change when sign-in methods are added or removed (ADR 0028).
  */
 import { sql, type Kysely, type Transaction } from 'kysely';
-import type { Database } from '../../db/schema.js';
+import type { Database, UserStatus } from '../../db/schema.js';
 import { consumeToken } from './tokens.js';
 import {
   checkPassword,
@@ -22,6 +22,8 @@ export interface NewPasswordUser {
   /** Whether someone has vouched that the user owns `email`: the operator, or a followed link. */
   emailVerified?: boolean | undefined;
   isAdmin?: boolean | undefined;
+  /** `active` unless the user must wait for approval. */
+  status?: UserStatus | undefined;
 }
 
 export class AccountError extends Error {}
@@ -83,6 +85,7 @@ export async function insertPasswordUser(
       display_name: input.displayName ?? null,
       email: email ?? null,
       is_admin: input.isAdmin ?? false,
+      status: input.status ?? 'active',
     })
     .execute();
   await trx
@@ -115,11 +118,13 @@ export async function verifyLogin(
 ): Promise<string | undefined> {
   const row = await db
     .selectFrom('credentials')
-    .select(['principal_id', 'password_hash'])
-    .where(sql`lower(login)`, '=', login.trim().toLowerCase())
+    .innerJoin('users', 'users.principal_id', 'credentials.principal_id')
+    .select(['credentials.principal_id', 'credentials.password_hash', 'users.status'])
+    .where(sql`lower(credentials.login)`, '=', login.trim().toLowerCase())
     .executeTakeFirst();
   const ok = await checkPassword(row?.password_hash, password);
-  return ok ? row?.principal_id : undefined;
+  // A disabled user is refused as if the password were wrong.
+  return ok && row?.status !== 'disabled' ? row?.principal_id : undefined;
 }
 
 export interface AccountProfile {
@@ -358,4 +363,51 @@ export async function loadLogin(
     .where('principal_id', '=', principalId)
     .executeTakeFirst();
   return row?.login;
+}
+
+export interface SignupInput extends NewPasswordUser {
+  displayName: string;
+  note?: string | undefined;
+}
+
+export class SignupRefused extends Error {}
+
+/**
+ * Creates a user who signed up by themself. Under approval they are `pending`
+ * and have an application; under open sign-up they are active at once. The
+ * queue is capped, so a flood of sign-ups cannot grow without bound.
+ */
+export async function signUp(
+  db: Kysely<Database>,
+  issuer: string,
+  input: SignupInput,
+  options: { approval: boolean; maxPending: number },
+): Promise<{ principalId: string; applicationId?: string }> {
+  checkNewPassword(input.password);
+  const passwordHash = await hashPassword(input.password);
+  return db.transaction().execute(async (trx) => {
+    if (options.approval) {
+      const waiting = await trx
+        .selectFrom('applications')
+        .select((eb) => eb.fn.countAll<string>().as('n'))
+        .where('decision', 'is', null)
+        .executeTakeFirstOrThrow();
+      if (Number(waiting.n) >= options.maxPending) {
+        throw new SignupRefused('Sign-up is paused: too many applications are waiting. Try later.');
+      }
+    }
+    const principalId = await insertPasswordUser(
+      trx,
+      issuer,
+      { ...input, emailVerified: false, status: options.approval ? 'pending' : 'active' },
+      passwordHash,
+    );
+    if (!options.approval) return { principalId };
+    const application = await trx
+      .insertInto('applications')
+      .values({ principal_id: principalId, note: input.note?.trim() || null })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+    return { principalId, applicationId: application.id };
+  });
 }

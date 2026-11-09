@@ -9,8 +9,15 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Kysely } from 'kysely';
 import type { Database } from '../db/index.js';
-import { forbidden, unauthorized } from '../problems.js';
-import { ANONYMOUS, resolveCaller, type Caller, type UserCaller } from './caller.js';
+import { accountWithheld, forbidden, unauthorized } from '../problems.js';
+import {
+  ANONYMOUS,
+  resolveCaller,
+  withhold,
+  type Caller,
+  type ResolveOptions,
+  type UserCaller,
+} from './caller.js';
 import type { TokenVerifier } from './verifier.js';
 
 declare module 'fastify' {
@@ -19,11 +26,9 @@ declare module 'fastify' {
   }
 }
 
-export interface AuthOptions {
+export interface AuthOptions extends ResolveOptions {
   db: Kysely<Database>;
   verifyToken: TokenVerifier;
-  /** Whether tokens carry the authoritative name and email (see `resolveCaller`). Default true. */
-  profileFromToken?: boolean;
   /** Longest time a resolved token is reused without touching the database. */
   cacheMs?: number;
 }
@@ -31,9 +36,12 @@ export interface AuthOptions {
 /** Live tokens kept at most; beyond it the oldest are re-verified on their next request. */
 const MAX_CACHED = 10_000;
 
+/** How long a user who may not act yet is remembered, at most. */
+const WITHHELD_CACHE_MS = 3000;
+
 export function installAuth(app: FastifyInstance, options: AuthOptions): void {
   const cacheMs = options.cacheMs ?? 60_000;
-  const cache = new Map<string, { caller: UserCaller; expiresAt: number }>();
+  const cache = new Map<string, { caller: Caller; expiresAt: number }>();
 
   app.decorateRequest('caller');
   app.addHook('onRequest', async (request) => {
@@ -52,11 +60,12 @@ export function installAuth(app: FastifyInstance, options: AuthOptions): void {
       return;
     }
     const claims = await options.verifyToken(token);
-    const caller = await resolveCaller(options.db, claims, {
-      profileFromToken: options.profileFromToken ?? true,
-    });
+    const user = await resolveCaller(options.db, claims, options);
+    const caller: Caller = user.status === 'active' ? user : withhold(user);
     const tokenExpiry = claims.expiresAt === undefined ? Infinity : claims.expiresAt * 1000;
-    cache.set(token, { caller, expiresAt: Math.min(now + cacheMs, tokenExpiry) });
+    // Someone waiting to be let in is re-checked soon, so approval is noticed within seconds.
+    const keepMs = caller.kind === 'user' ? cacheMs : Math.min(cacheMs, WITHHELD_CACHE_MS);
+    cache.set(token, { caller, expiresAt: Math.min(now + keepMs, tokenExpiry) });
     if (cache.size > MAX_CACHED) {
       for (const [key, entry] of cache) if (entry.expiresAt <= now) cache.delete(key);
       // Still too many live entries: drop the oldest, which a Map keeps first.
@@ -72,13 +81,24 @@ export function installAuth(app: FastifyInstance, options: AuthOptions): void {
 /** Security handlers keyed by the OpenAPI document's security scheme names. */
 export const securityHandlers = {
   bearerAuth(request: FastifyRequest): void {
-    if (request.caller.kind !== 'user') throw unauthorized('a bearer token is required');
+    const caller = request.caller;
+    if (caller.kind === 'user') return;
+    if (caller.withheld) {
+      // A user who may not act yet can still ask who they are, to be told why.
+      if (request.method === 'GET' && request.routeOptions.url === '/x/me') return;
+      throw accountWithheld(caller.withheld.status);
+    }
+    throw unauthorized('a bearer token is required');
   },
 };
 
 export function requireUser(request: FastifyRequest): UserCaller {
-  if (request.caller.kind !== 'user') throw unauthorized('a bearer token is required');
-  return request.caller;
+  const caller = request.caller;
+  if (caller.kind !== 'user') {
+    if (caller.withheld) throw accountWithheld(caller.withheld.status);
+    throw unauthorized('a bearer token is required');
+  }
+  return caller;
 }
 
 export function requireAdmin(request: FastifyRequest): UserCaller {

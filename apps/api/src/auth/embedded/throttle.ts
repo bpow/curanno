@@ -27,6 +27,8 @@ export const LIMITS = {
   resetPerAddress: { kind: 'reset-requested', max: 10, windowMs: 60 * 60_000 },
   verifyPerUser: { kind: 'verify-requested', max: 5, windowMs: 60 * 60_000 },
   tokenPerAddress: { kind: 'token-failed', max: 20, windowMs: 60 * 60_000 },
+  signupPerAddress: { kind: 'signup', max: 5, windowMs: 60 * 60_000 },
+  signupPerEmail: { kind: 'signup-email', max: 3, windowMs: 60 * 60_000 },
   passwordPerUser: { kind: 'password-failed', max: 10, windowMs: 15 * 60_000 },
 } satisfies Record<string, Limit>;
 

@@ -38,12 +38,37 @@ describe('loadConfig', () => {
       mode: 'embedded',
       secret,
       extraOrigins: ['http://localhost:5173', 'http://localhost:3001'],
+      signup: 'approval',
+      autoApproveDomains: [],
+      maxPending: 200,
     });
     expect(config.oidc).toEqual({
       issuer: 'https://curanno.example',
       clientId: EMBEDDED_CLIENT_ID,
       audience: 'https://curanno.example',
     });
+  });
+
+  it('reads the sign-up policy, the approved domains and the queue cap', () => {
+    const config = loadConfig({
+      ...base,
+      AUTH_MODE: 'embedded',
+      AUTH_SECRET: secret,
+      AUTH_SIGNUP: 'open',
+      AUTH_AUTO_APPROVE_DOMAINS: '@Example.org, uni.example',
+      AUTH_MAX_PENDING: '5',
+    });
+    expect(config.auth).toMatchObject({
+      signup: 'open',
+      autoApproveDomains: ['example.org', 'uni.example'],
+      maxPending: 5,
+    });
+    expect(() =>
+      loadConfig({ ...base, AUTH_MODE: 'embedded', AUTH_SECRET: secret, AUTH_SIGNUP: 'maybe' }),
+    ).toThrow(/AUTH_SIGNUP/);
+    expect(() =>
+      loadConfig({ ...base, AUTH_MODE: 'embedded', AUTH_SECRET: secret, AUTH_MAX_PENDING: '-1' }),
+    ).toThrow(/AUTH_MAX_PENDING/);
   });
 
   it('refuses embedded mode without a long enough secret, and unknown modes', () => {

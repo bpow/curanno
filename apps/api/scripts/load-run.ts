@@ -518,6 +518,7 @@ async function explainQueries(
     userId: heavy.userId as string,
     displayName: heavy.name,
     isAdmin: false,
+    status: 'active',
     principalIds: [heavy.userId as string, AUTHENTICATED_ID, PUBLIC_ID, ...heavy.groups],
   };
   const db = createDb(databaseUrl as string);

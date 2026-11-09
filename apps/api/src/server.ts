@@ -89,6 +89,7 @@ export async function buildServer(options: ServerOptions): Promise<FastifyInstan
   installAuth(app, {
     db,
     verifyToken: options.verifyToken,
+    provisionUsers: config.auth.mode === 'external',
     profileFromToken: config.auth.mode !== 'embedded',
     ...(options.authCacheMs !== undefined ? { cacheMs: options.authCacheMs } : {}),
   });
@@ -105,6 +106,7 @@ export async function buildServer(options: ServerOptions): Promise<FastifyInstan
     metrics,
     keepaliveMs: options.keepaliveMs ?? 30_000,
     replayPageSize: options.replayPageSize ?? 1000,
+    accountMail: options.embedded?.accountMail,
   };
 
   await app.register(openapiGlue, {

@@ -31,6 +31,11 @@ export class Problem extends Error {
     this.name = 'Problem';
   }
 
+  /** Fastify's name for the status; the OpenAPI glue reads it from a failed security handler. */
+  get statusCode(): number {
+    return this.status;
+  }
+
   toJSON(): ProblemBody {
     return {
       title: this.title,
@@ -48,6 +53,14 @@ export const unauthorized = (detail: string): Problem =>
     'www-authenticate': 'Bearer realm="curanno"',
   });
 export const forbidden = (detail: string): Problem => new Problem(403, 'Forbidden', detail);
+export const accountWithheld = (status: string): Problem =>
+  new Problem(
+    403,
+    'Forbidden',
+    status === 'pending'
+      ? 'Your account is waiting for approval by an administrator.'
+      : `Your account is ${status}.`,
+  );
 export const notFound = (detail = 'No such resource'): Problem =>
   new Problem(404, 'Not Found', detail);
 export const gone = (detail = 'The annotation was deleted'): Problem =>
@@ -94,6 +107,12 @@ function fromFastifyError(err: ValidationError): Problem {
         message: v.message ?? 'invalid',
       })),
     );
+  }
+  // A failed security handler: say what the handler said, not that none succeeded.
+  const nested = (err as { errors?: unknown }).errors;
+  if (Array.isArray(nested)) {
+    const reason = nested.find((e): e is Problem => e instanceof Problem);
+    if (reason) return reason;
   }
   const status = err.statusCode ?? 500;
   if (status === 401) return unauthorized(err.message);

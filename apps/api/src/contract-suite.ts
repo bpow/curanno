@@ -94,7 +94,7 @@ interface Scenario {
   request: () => InjectOptions;
   /** The status the scenario expects; the response is validated against the document either way. */
   status: number;
-  then?: (response: LightMyRequestResponse) => void;
+  then?: (response: LightMyRequestResponse) => unknown;
 }
 
 const LD_JSON = { 'content-type': 'application/ld+json' };
@@ -114,7 +114,8 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
       state['aliceId'] = me.json<{ id: string }>().id;
       const bobMe = await ctx.as(bob, { method: 'GET', url: '/x/me' });
       state['bobId'] = bobMe.json<{ id: string }>().id;
-      await ctx.as(root, { method: 'GET', url: '/x/me' });
+      const rootMe = await ctx.as(root, { method: 'GET', url: '/x/me' });
+      state['rootId'] = rootMe.json<{ id: string }>().id;
       // Bootstrapped directly, as an operator would for the first administrator (ADR 0026).
       await ctx.db
         .updateTable('users')
@@ -123,6 +124,35 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
         .execute();
       // So that searchPrincipals has a group to find alongside users.
       await createGroup(ctx, 'Search group', [alice]);
+      // Two people waiting for approval, as the embedded sign-up would leave them.
+      for (const [key, name] of [
+        ['first', 'Pending Pat'],
+        ['second', 'Pending Sam'],
+      ] as const) {
+        const principal = await ctx.db
+          .insertInto('principals')
+          .values({ kind: 'user' })
+          .returning('id')
+          .executeTakeFirstOrThrow();
+        await ctx.db
+          .insertInto('users')
+          .values({
+            principal_id: principal.id,
+            issuer: 'https://applicants.example',
+            subject: principal.id,
+            display_name: name,
+            email: `${key}@applicants.example`,
+            status: 'pending',
+          })
+          .execute();
+        const application = await ctx.db
+          .insertInto('applications')
+          .values({ principal_id: principal.id, note: 'I would like to help' })
+          .returning('id')
+          .executeTakeFirstOrThrow();
+        state[`${key}Applicant`] = principal.id;
+        state[`${key}Application`] = application.id;
+      }
     });
     afterAll(() => ctx.close());
 
@@ -166,7 +196,7 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
             const res = await ctx.as(scenario.as, scenario.request());
             expect(res.statusCode, res.body).toBe(scenario.status);
             validateAgainstDocument(operation, res);
-            scenario.then?.(res);
+            await scenario.then?.(res);
           });
         }
       });
@@ -794,6 +824,180 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
           payload: { isAdmin: false },
         }),
         then: (res) => expect(res.json<{ isAdmin: boolean }>().isAdmin).toBe(false),
+      },
+    ]);
+    run('updateUser', [
+      {
+        name: 'disables and re-enables',
+        as: root,
+        status: 200,
+        request: () => ({
+          method: 'PATCH',
+          url: `/x/users/${state['bobId']}`,
+          payload: { status: 'disabled' },
+        }),
+        then: (res) => expect(res.json<{ status: string }>().status).toBe('disabled'),
+      },
+      {
+        name: 'a disabled user is refused as anonymous on writes',
+        as: bob,
+        status: 403,
+        request: () => ({ method: 'POST', url: '/x/groups', payload: { name: 'Nope' } }),
+      },
+      {
+        name: 'a disabled user is still told their status',
+        as: bob,
+        status: 200,
+        request: () => ({ method: 'GET', url: '/x/me' }),
+        then: (res) => expect(res.json<{ status: string }>().status).toBe('disabled'),
+      },
+      {
+        name: 're-enables',
+        as: root,
+        status: 200,
+        request: () => ({
+          method: 'PATCH',
+          url: `/x/users/${state['bobId']}`,
+          payload: { status: 'active' },
+        }),
+      },
+      {
+        name: 'administrators cannot disable themselves',
+        as: root,
+        status: 409,
+        request: () => ({
+          method: 'PATCH',
+          url: `/x/users/${state['rootId']}`,
+          payload: { status: 'disabled' },
+        }),
+      },
+    ]);
+    run('listApplications', [
+      {
+        name: 'pending ones',
+        as: root,
+        status: 200,
+        request: () => ({ method: 'GET', url: '/x/applications?decision=pending' }),
+        then: (res) => expect(res.json<{ total: number }>().total).toBe(2),
+      },
+      {
+        name: '403 for others',
+        as: alice,
+        status: 403,
+        request: () => ({ method: 'GET', url: '/x/applications' }),
+      },
+      {
+        name: '401',
+        as: null,
+        status: 401,
+        request: () => ({ method: 'GET', url: '/x/applications' }),
+      },
+    ]);
+    run('getApplication', [
+      {
+        name: 'by id',
+        as: root,
+        status: 200,
+        request: () => ({ method: 'GET', url: `/x/applications/${state['firstApplication']}` }),
+        then: (res) =>
+          expect(res.json<{ decision: string; displayName: string }>()).toMatchObject({
+            decision: 'pending',
+            displayName: 'Pending Pat',
+          }),
+      },
+      {
+        name: '404',
+        as: root,
+        status: 404,
+        request: () => ({ method: 'GET', url: `/x/applications/${NIL}` }),
+      },
+      {
+        name: '403 for others',
+        as: alice,
+        status: 403,
+        request: () => ({ method: 'GET', url: `/x/applications/${state['firstApplication']}` }),
+      },
+    ]);
+    run('decideApplication', [
+      {
+        name: '403 for others',
+        as: alice,
+        status: 403,
+        request: () => ({
+          method: 'PATCH',
+          url: `/x/applications/${state['firstApplication']}`,
+          payload: { decision: 'approved' },
+        }),
+      },
+      {
+        name: 'approves, making the applicant active',
+        as: root,
+        status: 200,
+        request: () => ({
+          method: 'PATCH',
+          url: `/x/applications/${state['firstApplication']}`,
+          payload: { decision: 'approved', note: 'Welcome' },
+        }),
+        then: async (res) => {
+          expect(res.json<{ decision: string; decisionNote: string }>()).toMatchObject({
+            decision: 'approved',
+            decisionNote: 'Welcome',
+          });
+          const user = await ctx.db
+            .selectFrom('users')
+            .select('status')
+            .where('principal_id', '=', state['firstApplicant'] as string)
+            .executeTakeFirstOrThrow();
+          expect(user.status).toBe('active');
+        },
+      },
+      {
+        name: '409 when decided twice',
+        as: root,
+        status: 409,
+        request: () => ({
+          method: 'PATCH',
+          url: `/x/applications/${state['firstApplication']}`,
+          payload: { decision: 'rejected' },
+        }),
+      },
+      {
+        name: 'rejects',
+        as: root,
+        status: 200,
+        request: () => ({
+          method: 'PATCH',
+          url: `/x/applications/${state['secondApplication']}`,
+          payload: { decision: 'rejected' },
+        }),
+        then: async () => {
+          const user = await ctx.db
+            .selectFrom('users')
+            .select('status')
+            .where('principal_id', '=', state['secondApplicant'] as string)
+            .executeTakeFirstOrThrow();
+          expect(user.status).toBe('rejected');
+        },
+      },
+      {
+        name: '400 for an unknown decision',
+        as: root,
+        status: 400,
+        request: () => ({
+          method: 'PATCH',
+          url: `/x/applications/${state['secondApplication']}`,
+          payload: { decision: 'maybe' },
+        }),
+      },
+      {
+        name: '404',
+        as: root,
+        status: 404,
+        request: () => ({
+          method: 'PATCH',
+          url: `/x/applications/${NIL}`,
+          payload: { decision: 'approved' },
+        }),
       },
     ]);
     run('searchPrincipals', [

@@ -10,6 +10,8 @@ import { createLocalJWKSet, type JWTVerifyGetKey } from 'jose';
 import type { Kysely } from 'kysely';
 import Provider, { type Configuration } from 'oidc-provider';
 import type { Config } from '../../config.js';
+import type { AccountMail } from '../../routes/context.js';
+import { purgeApplications } from '../../accounts/applications.js';
 import type { Database } from '../../db/schema.js';
 import { createTokenVerifier, type TokenVerifier } from '../verifier.js';
 import { loadProfile } from './accounts.js';
@@ -42,6 +44,8 @@ export interface EmbeddedIssuer {
   verifyToken: TokenVerifier;
   /** Mounts the provider and its sign-in routes on the server. */
   register(app: FastifyInstance): Promise<void>;
+  /** Mail the API sends about accounts, when mail is set up. */
+  accountMail: AccountMail | undefined;
   /** Stops the housekeeping timer. */
   close(): void;
 }
@@ -101,6 +105,21 @@ export async function createEmbeddedIssuer(options: {
   return {
     provider,
     verifyToken,
+    accountMail: mailer && {
+      async decided(email, decision, note) {
+        await mailer.send({
+          to: email,
+          subject:
+            decision === 'approved'
+              ? 'Your curanno account is approved'
+              : 'Your curanno application',
+          text:
+            (decision === 'approved'
+              ? `Your account is approved. Sign in at ${issuer}\n`
+              : 'Your application was not approved.\n') + (note ? `\n${note}\n` : ''),
+        });
+      },
+    },
     async register(app) {
       const callback = provider.callback();
       await app.register((scope, _options, done) => {
@@ -131,7 +150,15 @@ export async function createEmbeddedIssuer(options: {
         done();
       });
       registerInteractionRoutes(app, { provider, db, throttle, origin: issuer });
-      registerAccountRoutes(app, { db, throttle, mailer, origin: issuer });
+      registerAccountRoutes(app, {
+        db,
+        throttle,
+        mailer,
+        origin: issuer,
+        signup: config.auth.signup,
+        autoApproveDomains: config.auth.autoApproveDomains,
+        maxPending: config.auth.maxPending,
+      });
       provider.on('server_error', (_ctx, err) => app.log.error({ err }, 'issuer error'));
 
       const housekeeping = (): void => {
@@ -141,9 +168,11 @@ export async function createEmbeddedIssuer(options: {
         retireOldKeys(db, 2 * DAY * 1000).catch((err: unknown) =>
           app.log.warn({ err }, 'retiring keys failed'),
         );
-        Promise.all([purgeEvents(db), purgeTokens(db)]).catch((err: unknown) =>
-          app.log.warn({ err }, 'purging account records failed'),
-        );
+        Promise.all([
+          purgeEvents(db),
+          purgeTokens(db),
+          purgeApplications(db, { retentionDays: 30, staleDays: 14 }),
+        ]).catch((err: unknown) => app.log.warn({ err }, 'purging account records failed'));
       };
       housekeeping();
       if (config.auth.bootstrapAdminEmail) {

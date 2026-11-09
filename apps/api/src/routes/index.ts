@@ -1,4 +1,5 @@
 import { aclHandlers } from './acl.js';
+import { applicationHandlers } from './applications.js';
 import type { AppContext, Handlers } from './context.js';
 import { documentHandlers } from './documents.js';
 import { eventHandlers } from './events.js';
@@ -19,6 +20,7 @@ export function createHandlers(ctx: AppContext): Handlers {
     ...documentHandlers(ctx),
     ...eventHandlers(ctx),
     ...userHandlers(ctx),
+    ...applicationHandlers(ctx),
     ...groupHandlers(ctx),
     ...vocabularyHandlers(),
   };

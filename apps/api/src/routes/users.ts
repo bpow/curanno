@@ -5,7 +5,8 @@ import { requireAdmin, requireUser } from '../auth/plugin.js';
 import type { UserCaller } from '../auth/caller.js';
 import { AUTHENTICATED_PRINCIPAL_ID, PUBLIC_PRINCIPAL_ID, type Database } from '../db/index.js';
 import { isoDate } from '../annotations/serialize.js';
-import { notFound } from '../problems.js';
+import { conflict, notFound } from '../problems.js';
+import { revokeSessions } from '../auth/embedded/adapter.js';
 import type { AppContext, Handlers } from './context.js';
 
 type User = components['schemas']['User'];
@@ -26,7 +27,7 @@ export async function loadUsers(
   if (ids.length === 0) return [];
   const rows = await db
     .selectFrom('users')
-    .select(['principal_id', 'display_name', 'email', 'is_admin', 'created_at'])
+    .select(['principal_id', 'display_name', 'email', 'is_admin', 'status', 'created_at'])
     .where('principal_id', 'in', ids)
     .execute();
   const memberships = await db
@@ -48,6 +49,7 @@ export async function loadUsers(
         ...(row.display_name !== null ? { displayName: row.display_name } : {}),
         ...(privileged && row.email !== null ? { email: row.email } : {}),
         isAdmin: row.is_admin,
+        status: row.status,
         created: isoDate(row.created_at),
         groups: privileged
           ? memberships.filter((m) => m.user_id === id).map((m) => ({ id: m.id, name: m.name }))
@@ -63,14 +65,29 @@ async function loadUser(db: Kysely<Database>, id: string, viewer: UserCaller): P
   return user;
 }
 
+/** A viewer who sees only their own record. */
+const ownView = {
+  kind: 'user' as const,
+  displayName: undefined,
+  isAdmin: false,
+  status: 'active' as const,
+  principalIds: [] as string[],
+};
+
 const like = (q: string): string => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
 export function userHandlers(ctx: AppContext): Handlers {
   const { db } = ctx;
   return {
     async getCurrentUser(request: FastifyRequest) {
-      const caller = requireUser(request);
-      return loadUser(db, caller.userId, caller);
+      const caller = request.caller;
+      if (caller.kind === 'anonymous' && caller.withheld) {
+        // Told their status, and nothing they could not see as the public.
+        const { userId } = caller.withheld;
+        return loadUser(db, userId, { ...ownView, userId });
+      }
+      const user = requireUser(request);
+      return loadUser(db, user.userId, user);
     },
 
     async listUsers(request) {
@@ -112,16 +129,22 @@ export function userHandlers(ctx: AppContext): Handlers {
       const caller = requireAdmin(request);
       const { id } = request.params as { id: string };
       const patch = request.body as UserPatch;
+      if (id === caller.userId && patch.status !== undefined && patch.status !== 'active') {
+        throw conflict('administrators cannot disable themselves');
+      }
       const updated = await db
         .updateTable('users')
         .set({
           ...(patch.displayName !== undefined ? { display_name: patch.displayName } : {}),
           ...(patch.isAdmin !== undefined ? { is_admin: patch.isAdmin } : {}),
+          ...(patch.status !== undefined ? { status: patch.status } : {}),
         })
         .where('principal_id', '=', id)
         .returning('principal_id')
         .executeTakeFirst();
       if (!updated) throw notFound(`no user ${id}`);
+      // Disabling takes effect now: the sessions and refresh tokens go (access tokens last at most an hour).
+      if (patch.status === 'disabled') await revokeSessions(db, id);
       return loadUser(db, id, caller);
     },
 

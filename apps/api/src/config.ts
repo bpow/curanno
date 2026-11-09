@@ -5,6 +5,8 @@
 /** The client id of the embedded issuer's one client: the sidebar and the site (ADR 0028). */
 export const EMBEDDED_CLIENT_ID = 'curanno';
 
+export type SignupPolicy = 'closed' | 'approval' | 'open';
+
 export interface Config {
   databaseUrl: string;
   /**
@@ -21,6 +23,12 @@ export interface Config {
     smtpUrl: string | undefined;
     /** Embedded mode: the From address of account mail. */
     mailFrom: string | undefined;
+    /** Embedded mode: who may create an account by themselves. Invitations work in every policy. */
+    signup: SignupPolicy;
+    /** Embedded mode, `approval`: applicants whose verified address is in one of these domains are approved at once. */
+    autoApproveDomains: string[];
+    /** Embedded mode: sign-up is refused while this many applications wait. */
+    maxPending: number;
     /** Embedded mode: while no administrator exists, this address is invited to become one. */
     bootstrapAdminEmail: string | undefined;
   };
@@ -71,6 +79,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         .split(/\s+/)
         .filter(Boolean)
         .map((o) => origin(o, 'AUTH_EXTRA_ORIGINS')),
+      signup: signupPolicy(env['AUTH_SIGNUP']),
+      autoApproveDomains: (env['AUTH_AUTO_APPROVE_DOMAINS'] || '')
+        .split(/[\s,]+/)
+        .map((d) => d.toLowerCase().replace(/^@/, ''))
+        .filter(Boolean),
+      maxPending: positive(env['AUTH_MAX_PENDING'], 200, 'AUTH_MAX_PENDING'),
       smtpUrl,
       mailFrom,
       bootstrapAdminEmail: env['BOOTSTRAP_ADMIN_EMAIL']?.trim().toLowerCase() || undefined,
@@ -91,6 +105,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       : undefined,
     metricsEnabled: env['METRICS_ENABLED'] !== 'false',
   };
+}
+
+function signupPolicy(value: string | undefined): SignupPolicy {
+  if (!value) return 'approval';
+  if (value === 'closed' || value === 'approval' || value === 'open') return value;
+  throw new Error(`AUTH_SIGNUP must be "closed", "approval" or "open", not "${value}"`);
+}
+
+function positive(value: string | undefined, fallback: number, name: string): number {
+  if (!value) return fallback;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0) throw new Error(`${name} must be a non-negative integer`);
+  return n;
 }
 
 function authMode(value: string | undefined): 'external' | 'embedded' {

@@ -5,12 +5,24 @@
  */
 import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
-import { AUTHENTICATED_PRINCIPAL_ID, PUBLIC_PRINCIPAL_ID, type Database } from '../db/index.js';
+import {
+  AUTHENTICATED_PRINCIPAL_ID,
+  PUBLIC_PRINCIPAL_ID,
+  type Database,
+  type UserStatus,
+} from '../db/index.js';
 import type { TokenClaims } from './verifier.js';
+import { unauthorized } from '../problems.js';
 
 export interface AnonymousCaller {
   kind: 'anonymous';
   principalIds: string[];
+  /**
+   * Set for a signed-in user who may not act yet or any more (waiting for
+   * approval, rejected, disabled): they read as the public, and may ask for
+   * their own status.
+   */
+  withheld?: { userId: string; status: Exclude<UserStatus, 'active'> };
 }
 
 export interface UserCaller {
@@ -18,6 +30,7 @@ export interface UserCaller {
   userId: string;
   displayName: string | undefined;
   isAdmin: boolean;
+  status: UserStatus;
   principalIds: string[];
   /** When the token behind this caller expires, in milliseconds since the epoch; absent when it never does. */
   expiresAt?: number;
@@ -25,12 +38,24 @@ export interface UserCaller {
 
 export type Caller = AnonymousCaller | UserCaller;
 
+/** A signed-in user who may not act: they are the public, plus a note of who they are. */
+export function withhold(user: UserCaller): AnonymousCaller {
+  if (user.status === 'active') throw new Error('an active user is not withheld');
+  return {
+    kind: 'anonymous',
+    principalIds: [PUBLIC_PRINCIPAL_ID],
+    withheld: { userId: user.userId, status: user.status },
+  };
+}
+
 export const ANONYMOUS: AnonymousCaller = {
   kind: 'anonymous',
   principalIds: [PUBLIC_PRINCIPAL_ID],
 };
 
 export interface ResolveOptions {
+  /** Whether an unknown identity creates a user. Disabled for the embedded issuer. Default true. */
+  provisionUsers?: boolean;
   /**
    * Whether the token's name and email replace the stored ones at each
    * request. They do for an external issuer, which owns the profile. The
@@ -41,7 +66,7 @@ export interface ResolveOptions {
 }
 
 /**
- * Map a validated token to a user, creating the user on first sight. Group
+ * Map a validated token to a user, provisioning external users on first sight. Group
  * membership is managed entirely through our own group API (ADR 0010); the
  * token is used only to establish identity.
  */
@@ -51,7 +76,7 @@ export async function resolveCaller(
   options: ResolveOptions = {},
 ): Promise<UserCaller> {
   return db.transaction().execute(async (trx) => {
-    const user = await upsertUser(trx, claims, options.profileFromToken ?? true);
+    const user = await upsertUser(trx, claims, options);
     const groups = await trx
       .selectFrom('group_memberships')
       .select('group_id')
@@ -62,6 +87,7 @@ export async function resolveCaller(
       userId: user.principal_id,
       displayName: user.display_name ?? undefined,
       isAdmin: user.is_admin,
+      status: user.status,
       principalIds: principalsOf(
         user.principal_id,
         groups.map((g) => g.group_id),
@@ -86,7 +112,7 @@ export async function refreshCaller(
 ): Promise<UserCaller | undefined> {
   const user = await db
     .selectFrom('users')
-    .select(['display_name', 'is_admin'])
+    .select(['display_name', 'is_admin', 'status'])
     .where('principal_id', '=', caller.userId)
     .executeTakeFirst();
   if (!user) return undefined;
@@ -97,6 +123,7 @@ export async function refreshCaller(
     .execute();
   return {
     ...caller,
+    status: user.status,
     displayName: user.display_name ?? undefined,
     isAdmin: user.is_admin,
     principalIds: principalsOf(
@@ -106,7 +133,12 @@ export async function refreshCaller(
   };
 }
 
-type UserRow = { principal_id: string; display_name: string | null; is_admin: boolean };
+type UserRow = {
+  principal_id: string;
+  display_name: string | null;
+  is_admin: boolean;
+  status: UserStatus;
+};
 
 /**
  * The user an identity belongs to. A user the previous release created has
@@ -143,10 +175,16 @@ async function findUserId(trx: Kysely<Database>, claims: TokenClaims): Promise<s
 async function upsertUser(
   trx: Kysely<Database>,
   claims: TokenClaims,
-  profileFromToken: boolean,
+  options: ResolveOptions,
 ): Promise<UserRow> {
+  const profileFromToken = options.profileFromToken ?? true;
   const existingId = await findUserId(trx, claims);
   if (existingId) return touchUser(trx, existingId, claims, profileFromToken);
+  // Embedded accounts are created only through sign-up or invitations. A still-valid token
+  // must not recreate a purged applicant as an active user.
+  if (options.provisionUsers === false) {
+    throw unauthorized('the account for this bearer token no longer exists');
+  }
   const principal = await trx
     .insertInto('principals')
     .values({ kind: 'user' })
@@ -164,7 +202,7 @@ async function upsertUser(
       last_login_at: sql`now()`,
     })
     .onConflict((oc) => oc.columns(['issuer', 'subject']).doNothing())
-    .returning(['principal_id', 'display_name', 'is_admin'])
+    .returning(['principal_id', 'display_name', 'is_admin', 'status'])
     .executeTakeFirst();
   if (inserted) {
     await trx
@@ -209,6 +247,6 @@ async function touchUser(
       last_login_at: sql`now()`,
     })
     .where('principal_id', '=', principalId)
-    .returning(['principal_id', 'display_name', 'is_admin'])
+    .returning(['principal_id', 'display_name', 'is_admin', 'status'])
     .executeTakeFirstOrThrow();
 }

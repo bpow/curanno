@@ -10,7 +10,9 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Kysely } from 'kysely';
 import type { Database } from '../../db/schema.js';
 import { requireUser } from '../plugin.js';
-import { badRequest, conflict, notFound, serviceUnavailable } from '../../problems.js';
+import { decideApplication } from '../../accounts/applications.js';
+import type { SignupPolicy } from '../../config.js';
+import { badRequest, conflict, forbidden, notFound, serviceUnavailable } from '../../problems.js';
 import {
   acceptInvite,
   AccountError,
@@ -22,6 +24,8 @@ import {
   makePrimary,
   removeEmail,
   setPasswordFor,
+  signUp,
+  SignupRefused,
   verifyEmail,
 } from './accounts.js';
 import { revokeSessions } from './adapter.js';
@@ -38,10 +42,13 @@ export interface AccountRouteOptions {
   mailer: Mailer | undefined;
   /** The issuer's origin, which is also where the links in mail point. */
   origin: string;
+  signup: SignupPolicy;
+  autoApproveDomains: string[];
+  maxPending: number;
 }
 
 export function registerAccountRoutes(app: FastifyInstance, options: AccountRouteOptions): void {
-  const { db, throttle, mailer, origin } = options;
+  const { db, throttle, mailer, origin, signup, autoApproveDomains, maxPending } = options;
 
   const address = (request: FastifyRequest): string => throttle.key('address', request.ip);
 
@@ -68,8 +75,96 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
 
   app.get('/auth/options', (_request, reply) => {
     reply.header('cache-control', 'no-store');
-    return { mail: mailer !== undefined };
+    return { mail: mailer !== undefined, signup };
   });
+
+  app.post('/auth/signup', async (request, reply) => {
+    guard(request, reply);
+    if (signup === 'closed') throw forbidden('Accounts are created by invitation here.');
+    const email = emailField(request.body);
+    const password = field(request.body, 'password', MAX_PASSWORD_LENGTH);
+    const displayName = field(request.body, 'displayName', 200).trim();
+    const rawNote = (request.body as { note?: unknown }).note;
+    const note = typeof rawNote === 'string' ? rawNote.slice(0, 1000) : undefined;
+    const byAddress = address(request);
+    const byEmail = throttle.key('email', email);
+    await throttle.check([LIMITS.signupPerAddress, byAddress]);
+    await throttle.record('signup', [byAddress]);
+    const status = signup === 'approval' ? 'pending' : 'active';
+    if (await addressInUse(db, email)) {
+      // Whether an address has an account is not for a stranger to learn. With mail, the answer is
+      // the same and the owner is told; without it, there is no way to hide that the login is taken.
+      if (!mailer) throw conflict('That address already has an account.');
+      try {
+        await throttle.check([LIMITS.signupPerEmail, byEmail]);
+        await throttle.record('signup-email', [byEmail]);
+        await mailer.send({
+          to: email,
+          subject: 'Someone used your address to sign up for curanno',
+          text: `Someone tried to create an account with this address, which already has one. If it was you, sign in, or choose "Forgot your password" to get back in. If not, ignore this message.\n${origin}\n`,
+        });
+      } catch {
+        // Over the limit or mail down: still the same answer.
+      }
+      return reply.code(202).send({ status });
+    }
+    try {
+      const created = await signUp(
+        db,
+        origin,
+        { login: email, email, password, displayName, note },
+        { approval: signup === 'approval', maxPending },
+      );
+      await throttle.note('signed-up', created.principalId, status);
+      if (mailer) {
+        const token = await createToken(db, {
+          purpose: 'verify',
+          email,
+          principalId: created.principalId,
+        });
+        await mailer
+          .send({
+            to: email,
+            subject: 'Verify your email address for curanno',
+            text: `Confirm that this address is yours (the link works once, for two days):\n${accountLink(origin, 'verify', token)}\n`,
+          })
+          .catch((err: unknown) =>
+            request.log.warn({ err }, 'sending the verification mail failed'),
+          );
+        if (created.applicationId) {
+          await tellAdministrators(displayName, email, note).catch((err: unknown) =>
+            request.log.warn({ err }, 'notifying the administrators failed'),
+          );
+        }
+      }
+    } catch (err) {
+      if (err instanceof SignupRefused) throw serviceUnavailable(err.message);
+      if (err instanceof AccountError) throw badRequest(err.message);
+      throw err;
+    }
+    return reply.code(202).send({ status });
+  });
+
+  /** A line to every administrator that someone waits; the queue is also on the applications page. */
+  async function tellAdministrators(name: string, email: string, note: string | undefined) {
+    if (!mailer) return;
+    const admins = await db
+      .selectFrom('users')
+      .select('email')
+      .where('is_admin', '=', true)
+      .where('status', '=', 'active')
+      .where('email', 'is not', null)
+      .limit(10)
+      .execute();
+    for (const admin of admins) {
+      if (!admin.email) continue;
+      await mailer.send({
+        to: admin.email,
+        subject: `${name} asks to join curanno`,
+        text: `${name} <${email}> applied for an account.${note ? `\n\nThey wrote: ${note}` : ''}\n\nDecide at ${origin}/applications\n`,
+      });
+    }
+  }
 
   app.post('/auth/invite/peek', async (request, reply) => {
     guard(request, reply);
@@ -161,6 +256,25 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     const used = await useToken(request, 'verify', field(request.body, 'token', 200));
     if (!used.principalId || !(await verifyEmail(db, used.principalId, used.email))) {
       throw conflict('That address could not be verified; it may belong to another account.');
+    }
+    // An applicant who proves an address in an allowed domain needs no administrator.
+    const domain = used.email.split('@').pop()?.toLowerCase() ?? '';
+    if (autoApproveDomains.includes(domain)) {
+      const pending = await db
+        .selectFrom('applications')
+        .select('id')
+        .where('principal_id', '=', used.principalId)
+        .where('decision', 'is', null)
+        .executeTakeFirst();
+      if (pending) {
+        await decideApplication(
+          db,
+          pending.id,
+          'approved',
+          null,
+          'Verified address in an approved domain',
+        );
+      }
     }
     return { email: used.email };
   });

@@ -8,7 +8,8 @@ import { EMBEDDED_CLIENT_ID, type Config } from '../../config.js';
 import { buildServer } from '../../server.js';
 import { createTestContext, databaseUrl, type TestContext } from '../../test/harness.js';
 import { createTokenVerifier } from '../verifier.js';
-import { createPasswordUser, verifyLogin } from './accounts.js';
+import { decideApplication, purgeApplications } from '../../accounts/applications.js';
+import { createPasswordUser, signUp, SignupRefused, verifyLogin } from './accounts.js';
 import { ensureBootstrapAdmin, createInvite } from './invites.js';
 import type { Mailer, Message } from './mail.js';
 import { createEmbeddedIssuer, type EmbeddedIssuer } from './provider.js';
@@ -43,6 +44,9 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
         extraOrigins: [],
         smtpUrl: undefined,
         mailFrom: undefined,
+        signup: 'approval',
+        autoApproveDomains: ['trusted.example'],
+        maxPending: 200,
         bootstrapAdminEmail: undefined,
       },
       oidc: { issuer: ORIGIN, clientId: EMBEDDED_CLIENT_ID, audience: ORIGIN },
@@ -373,6 +377,303 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
         (await post('/auth/emails/remove', { email: 'pat2@example.org' }, bearer)).statusCode,
       ).toBe(200);
     });
+  });
+
+  describe('sign-up with approval', () => {
+    let adminId = '';
+    beforeAll(async () => {
+      adminId = await createPasswordUser(ctx.db, ORIGIN, {
+        login: 'chief@example.org',
+        password: PASSWORD,
+        displayName: 'Chief',
+        emailVerified: true,
+        isAdmin: true,
+      });
+    });
+
+    const signup = (email: string, extra: object = {}, ip = '10.4.0.1') =>
+      post(
+        '/auth/signup',
+        { email, password: PASSWORD, displayName: 'Applicant', note: 'Please', ...extra },
+        undefined,
+        ip,
+      );
+    const meAs = async (id: string) =>
+      app.inject({
+        method: 'GET',
+        url: '/x/me',
+        headers: { authorization: `Bearer ${await sign(id)}` },
+      });
+
+    it('leaves the applicant pending, tells the administrators and mails a verification link', async () => {
+      sent.length = 0;
+      const res = await signup('applicant@example.org');
+      expect(res.statusCode).toBe(202);
+      expect(res.json()).toEqual({ status: 'pending' });
+      expect(sent.map((m) => m.to).sort()).toEqual([
+        'applicant@example.org',
+        'boss@example.org',
+        'chief@example.org',
+      ]);
+      expect(sent.find((m) => m.to === 'chief@example.org')?.text).toContain('/applications');
+      const id = await verifyLogin(ctx.db, 'applicant@example.org', PASSWORD);
+      expect(id).toBeDefined();
+      const row = await ctx.db
+        .selectFrom('applications')
+        .select(['decision', 'note'])
+        .where('principal_id', '=', id as string)
+        .executeTakeFirstOrThrow();
+      expect(row).toEqual({ decision: null, note: 'Please' });
+    });
+
+    it('treats a pending user as the public: told their status, refused writes, allowed public reads', async () => {
+      const id = (await verifyLogin(ctx.db, 'applicant@example.org', PASSWORD)) as string;
+      const me = await meAs(id);
+      expect(me.statusCode).toBe(200);
+      expect(me.json<{ status: string }>().status).toBe('pending');
+      const bearer = { authorization: `Bearer ${await sign(id)}` };
+      const write = await app.inject({
+        method: 'POST',
+        url: '/x/groups',
+        payload: { name: 'Sneaky' },
+        headers: bearer,
+      });
+      expect(write.statusCode).toBe(403);
+      expect(write.json<{ detail: string }>().detail).toMatch(/waiting for approval/);
+      const read = await app.inject({ method: 'GET', url: '/x/profiles', headers: bearer });
+      expect(read.statusCode).toBe(200);
+      const users = await app.inject({ method: 'GET', url: '/x/users', headers: bearer });
+      expect(users.statusCode).toBe(403);
+      const account = await app.inject({ method: 'GET', url: '/auth/account', headers: bearer });
+      expect(account.statusCode).toBe(403);
+    });
+
+    it('lets an administrator approve, after which the applicant acts as themself', async () => {
+      const id = (await verifyLogin(ctx.db, 'applicant@example.org', PASSWORD)) as string;
+      const application = await ctx.db
+        .selectFrom('applications')
+        .select('id')
+        .where('principal_id', '=', id)
+        .executeTakeFirstOrThrow();
+      const decided = await app.inject({
+        method: 'PATCH',
+        url: `/x/applications/${application.id}`,
+        payload: { decision: 'approved', note: 'Welcome aboard' },
+        headers: { authorization: `Bearer ${await sign(adminId)}` },
+      });
+      expect(decided.statusCode).toBe(200);
+      expect(
+        sent.find((m) => m.to === 'applicant@example.org' && /approved/.test(m.subject))?.text,
+      ).toContain('Welcome aboard');
+      expect((await meAs(id)).json<{ status: string }>().status).toBe('active');
+      const write = await app.inject({
+        method: 'POST',
+        url: '/x/groups',
+        payload: { name: 'Applicants group' },
+        headers: { authorization: `Bearer ${await sign(id)}` },
+      });
+      expect(write.statusCode).toBe(201);
+    });
+
+    it('approves at once an applicant who verifies an address in an approved domain', async () => {
+      sent.length = 0;
+      await signup('colleague@trusted.example', {}, '10.4.0.2');
+      const verification = sent.find((m) => m.to === 'colleague@trusted.example');
+      const id = (await verifyLogin(ctx.db, 'colleague@trusted.example', PASSWORD)) as string;
+      expect((await meAs(id)).json<{ status: string }>().status).toBe('pending');
+      expect(
+        (await post('/auth/email/verify', { token: tokenOf(linkIn(verification)) })).statusCode,
+      ).toBe(200);
+      expect((await meAs(id)).json<{ status: string }>().status).toBe('active');
+      const application = await ctx.db
+        .selectFrom('applications')
+        .select(['decision', 'decided_by'])
+        .where('principal_id', '=', id)
+        .executeTakeFirstOrThrow();
+      expect(application).toEqual({ decision: 'approved', decided_by: null });
+    });
+
+    it('answers the same for an address that has an account, and tells its owner instead', async () => {
+      sent.length = 0;
+      const known = await signup('chief@example.org', {}, '10.4.0.3');
+      const fresh = await signup('another@example.org', {}, '10.4.0.4');
+      expect(known.statusCode).toBe(202);
+      expect(known.body).toBe(fresh.body);
+      const notice = sent.find((m) => m.to === 'chief@example.org');
+      expect(notice?.subject).toMatch(/used your address/);
+    });
+
+    it('limits sign-ups from one address', async () => {
+      const codes: number[] = [];
+      for (let i = 0; i < 7; i++) {
+        codes.push((await signup(`flood${i}@example.org`, {}, '10.4.0.9')).statusCode);
+      }
+      expect(codes.filter((c) => c === 202)).toHaveLength(5);
+      expect(codes.filter((c) => c === 429)).toHaveLength(2);
+    });
+
+    it('refuses a weak password and an unknown field shape without creating anyone', async () => {
+      const before = await ctx.db
+        .selectFrom('users')
+        .select((eb) => eb.fn.countAll<string>().as('n'))
+        .executeTakeFirstOrThrow();
+      expect((await signup('weak@example.org', { password: 'short' }, '10.4.0.5')).statusCode).toBe(
+        400,
+      );
+      expect(
+        (
+          await post(
+            '/auth/signup',
+            { email: 'not-an-email', password: PASSWORD, displayName: 'x' },
+            undefined,
+            '10.4.0.6',
+          )
+        ).statusCode,
+      ).toBe(400);
+      const after = await ctx.db
+        .selectFrom('users')
+        .select((eb) => eb.fn.countAll<string>().as('n'))
+        .executeTakeFirstOrThrow();
+      expect(after.n).toBe(before.n);
+    });
+
+    it('stops taking applications at the cap, and activates at once under open sign-up', async () => {
+      const waiting = await ctx.db
+        .selectFrom('applications')
+        .select((eb) => eb.fn.countAll<string>().as('n'))
+        .where('decision', 'is', null)
+        .executeTakeFirstOrThrow();
+      await expect(
+        signUp(
+          ctx.db,
+          ORIGIN,
+          { login: 'capped@example.org', password: PASSWORD, displayName: 'C' },
+          { approval: true, maxPending: Number(waiting.n) },
+        ),
+      ).rejects.toBeInstanceOf(SignupRefused);
+      const open = await signUp(
+        ctx.db,
+        ORIGIN,
+        { login: 'open@example.org', password: PASSWORD, displayName: 'O' },
+        { approval: false, maxPending: 0 },
+      );
+      expect(open.applicationId).toBeUndefined();
+      const user = await ctx.db
+        .selectFrom('users')
+        .select('status')
+        .where('principal_id', '=', open.principalId)
+        .executeTakeFirstOrThrow();
+      expect(user.status).toBe('active');
+    });
+
+    it('does not let a disabled user sign in, and purges rejected and stale applicants after their time', async () => {
+      const id = await createPasswordUser(ctx.db, ORIGIN, {
+        login: 'banned@example.org',
+        password: PASSWORD,
+      });
+      await ctx.db
+        .updateTable('users')
+        .set({ status: 'disabled' })
+        .where('principal_id', '=', id)
+        .execute();
+      expect(await verifyLogin(ctx.db, 'banned@example.org', PASSWORD)).toBeUndefined();
+
+      const rejected = await signUp(
+        ctx.db,
+        ORIGIN,
+        { login: 'nope@example.org', password: PASSWORD, displayName: 'N' },
+        { approval: true, maxPending: 1000 },
+      );
+      await decideApplication(
+        ctx.db,
+        rejected.applicationId as string,
+        'rejected',
+        adminId,
+        undefined,
+      );
+      const stale = await signUp(
+        ctx.db,
+        ORIGIN,
+        { login: 'forgotten@example.org', password: PASSWORD, displayName: 'F' },
+        { approval: true, maxPending: 1000 },
+      );
+      expect(await purgeApplications(ctx.db, { retentionDays: 30, staleDays: 14 })).toBe(0);
+      const old = new Date(Date.now() - 40 * 24 * 3600_000);
+      await ctx.db
+        .updateTable('applications')
+        .set({ decided_at: old })
+        .where('id', '=', rejected.applicationId as string)
+        .execute();
+      await ctx.db
+        .updateTable('applications')
+        .set({ created_at: old })
+        .where('id', '=', stale.applicationId as string)
+        .execute();
+      expect(await purgeApplications(ctx.db, { retentionDays: 30, staleDays: 14 })).toBe(2);
+      const left = await ctx.db
+        .selectFrom('users')
+        .select('principal_id')
+        .where('principal_id', 'in', [rejected.principalId, stale.principalId])
+        .execute();
+      expect(left).toEqual([]);
+    });
+  });
+
+  describe('tokens for missing accounts', () => {
+    it.each(['pending', 'rejected'] as const)(
+      'rejects a still-valid token after a %s applicant is purged',
+      async (status) => {
+        const applicant = await signUp(
+          ctx.db,
+          ORIGIN,
+          { login: `purged-${status}@example.org`, password: PASSWORD, displayName: status },
+          { approval: true, maxPending: 1000 },
+        );
+        const applicationId = applicant.applicationId as string;
+        if (status === 'rejected') {
+          await decideApplication(ctx.db, applicationId, 'rejected', null, undefined);
+        }
+        const headers = { authorization: `Bearer ${await sign(applicant.principalId)}` };
+        const me = await app.inject({ method: 'GET', url: '/x/me', headers });
+        expect(me.statusCode).toBe(200);
+        expect(me.json<{ status: string }>().status).toBe(status);
+        const write = () =>
+          app.inject({
+            method: 'POST',
+            url: '/x/groups',
+            payload: { name: `Purged ${status}` },
+            headers,
+          });
+        expect((await write()).statusCode).toBe(403);
+
+        const old = new Date(Date.now() - 40 * 24 * 3600_000);
+        await ctx.db
+          .updateTable('applications')
+          .set({ created_at: old, ...(status === 'rejected' ? { decided_at: old } : {}) })
+          .where('id', '=', applicationId)
+          .execute();
+        expect(await purgeApplications(ctx.db, { retentionDays: 30, staleDays: 14 })).toBe(1);
+
+        expect((await app.inject({ method: 'GET', url: '/x/me', headers })).statusCode).toBe(401);
+        expect((await write()).statusCode).toBe(401);
+        expect(
+          await ctx.db
+            .selectFrom('identities')
+            .select('principal_id')
+            .where('issuer', '=', ORIGIN)
+            .where('subject', '=', applicant.principalId)
+            .executeTakeFirst(),
+        ).toBeUndefined();
+        expect(
+          await ctx.db
+            .selectFrom('users')
+            .select('principal_id')
+            .where('issuer', '=', ORIGIN)
+            .where('subject', '=', applicant.principalId)
+            .executeTakeFirst(),
+        ).toBeUndefined();
+      },
+    );
   });
 
   describe('the first administrator', () => {

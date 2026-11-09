@@ -25,6 +25,9 @@ const config: Config = {
     extraOrigins: [],
     smtpUrl: undefined,
     mailFrom: undefined,
+    signup: 'approval',
+    autoApproveDomains: [],
+    maxPending: 200,
     bootstrapAdminEmail: undefined,
   },
   oidc: {
