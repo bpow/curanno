@@ -125,6 +125,50 @@ export interface ApplicationsTable {
   decision_note: string | null;
 }
 
+export interface LinkedAccountsTable {
+  provider: string;
+  external_subject: string;
+  principal_id: string;
+  email: string | null;
+  display_name: string | null;
+  created_at: Timestamp;
+  last_login_at: OptionalTimestamp;
+}
+
+export interface UpstreamAttemptsTable {
+  state_hash: string;
+  provider: string;
+  purpose: 'login' | 'connect';
+  uid: string | null;
+  principal_id: string | null;
+  nonce: string;
+  code_verifier: string;
+  binding_hash: string;
+  created_at: Timestamp;
+  expires_at: Timestamp;
+}
+
+export interface PendingLinksTable {
+  id_hash: string;
+  provider: string;
+  external_subject: string;
+  email: string;
+  display_name: string | null;
+  principal_id: string;
+  uid: string;
+  binding_hash: string;
+  created_at: Timestamp;
+  expires_at: Timestamp;
+}
+
+export interface LoginTicketsTable {
+  ticket_hash: string;
+  principal_id: string;
+  uid: string;
+  binding_hash: string;
+  expires_at: Timestamp;
+}
+
 export interface GroupsTable {
   principal_id: string;
   name: string;
@@ -246,6 +290,10 @@ export interface Database {
   account_tokens: AccountTokensTable;
   auth_events: AuthEventsTable;
   applications: ApplicationsTable;
+  linked_accounts: LinkedAccountsTable;
+  upstream_attempts: UpstreamAttemptsTable;
+  pending_links: PendingLinksTable;
+  login_tickets: LoginTicketsTable;
   groups: GroupsTable;
   group_memberships: GroupMembershipsTable;
   documents: DocumentsTable;
