@@ -254,7 +254,11 @@ jobs:
       - run: docker build --target web -t curanno-web -f Dockerfile .
       - run: >-
           docker run --rm curanno-api node -e
-          "const fs = require('node:fs'); for (const f of ['openapi.yaml', 'static/sidebar/index.html', 'static/pdf/index.html', 'static/guest.js', 'zitadel/provision.ts']) fs.accessSync(f); console.log('api image ok')"
+          "const fs = require('node:fs'); for (const f of ['openapi.yaml', 'static/sidebar/index.html', 'static/pdf/index.html', 'static/guest.js', 'zitadel/provision.ts', 'dist/auth/embedded/cli.js', 'dist/accounts/merge-cli.js']) fs.accessSync(f); console.log('api image ok')"
+      # The embedded issuer's native password hashing and its provider load in the image.
+      - run: >-
+          docker run --rm curanno-api node -e
+          "Promise.all([import('@node-rs/argon2'), import('oidc-provider'), import('nodemailer')]).then(() => console.log('embedded issuer dependencies ok'))"
       - run: docker run --rm curanno-web node -e "require('node:fs').accessSync('server/index.mjs'); console.log('web image ok')"
       # The site's CSP names the issuer it is started with, not the one it was built with.
       - run: >-
