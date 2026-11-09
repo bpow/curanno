@@ -23,6 +23,7 @@ import { loadSigningKeys, retireOldKeys, rotateSigningKey } from './keys.js';
 import { checkPassword, hashPassword } from './password.js';
 import { createEmbeddedIssuer, type EmbeddedIssuer } from './provider.js';
 import { seal, unseal } from './secrets.js';
+import { LIMITS } from './throttle.js';
 
 const SECRET = 'a-test-secret-of-at-least-32-characters';
 const PASSWORD = 'correct horse battery staple';
@@ -108,7 +109,14 @@ describe.skipIf(!databaseUrl)('embedded issuer', () => {
       ...ctx.config,
       port,
       publicUrl: base,
-      auth: { mode: 'embedded', secret: SECRET, extraOrigins: [] },
+      auth: {
+        mode: 'embedded',
+        secret: SECRET,
+        extraOrigins: [],
+        smtpUrl: undefined,
+        mailFrom: undefined,
+        bootstrapAdminEmail: undefined,
+      },
       oidc: { issuer: base, clientId: EMBEDDED_CLIENT_ID, audience: base },
     };
     issuer = await createEmbeddedIssuer({ config, db: ctx.db });
@@ -196,6 +204,22 @@ describe.skipIf(!databaseUrl)('embedded issuer', () => {
 
   const me = (token: string) =>
     app.inject({ method: 'GET', url: '/x/me', headers: { authorization: `Bearer ${token}` } });
+
+  it('locks a login after repeated failures from anywhere, and records no login name', async () => {
+    await createPasswordUser(ctx.db, base, { login: 'target-of-guessing', password: PASSWORD });
+    for (let i = 0; i < LIMITS.loginPerLogin.max; i++) {
+      const wrong = await authorize(new Browser(base), 'target-of-guessing', `wrong ${i}`);
+      expect(wrong.login.status).toBe(401);
+    }
+    const locked = await authorize(new Browser(base), 'Target-Of-Guessing', PASSWORD);
+    expect(locked.login.status).toBe(429);
+    expect(locked.login.headers.get('retry-after')).toBeTruthy();
+    const events = await ctx.db
+      .selectFrom('auth_events')
+      .select(['kind', 'key', 'detail'])
+      .execute();
+    expect(JSON.stringify(events)).not.toContain('target-of-guessing');
+  });
 
   it('is discoverable at the origin, with its endpoints under /oidc and no private key published', async () => {
     const res = await fetch(`${base}/.well-known/openid-configuration`);

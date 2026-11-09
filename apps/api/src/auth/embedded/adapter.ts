@@ -94,3 +94,12 @@ export async function purgeExpired(db: Kysely<Database>): Promise<number> {
     .executeTakeFirst();
   return Number(result.numDeletedRows);
 }
+
+/**
+ * Ends every session, grant and token of a user, so that a reset password
+ * locks out whoever had the old one. Access tokens already issued stay valid
+ * until they expire (at most an hour).
+ */
+export async function revokeSessions(db: Kysely<Database>, principalId: string): Promise<void> {
+  await sql`delete from oidc_store where payload->>'accountId' = ${principalId}`.execute(db);
+}

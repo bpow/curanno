@@ -9,9 +9,11 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { Kysely } from 'kysely';
 import type Provider from 'oidc-provider';
 import type { Database } from '../../db/schema.js';
-import { badRequest, forbidden, Problem } from '../../problems.js';
+import { badRequest, Problem } from '../../problems.js';
 import { verifyLogin } from './accounts.js';
+import { requireSameOrigin } from './http.js';
 import { MAX_PASSWORD_LENGTH } from './password.js';
+import { LIMITS, type Throttle } from './throttle.js';
 
 export const LOGIN_PAGE = '/account/login';
 const MAX_LOGIN_LENGTH = 320;
@@ -19,12 +21,13 @@ const MAX_LOGIN_LENGTH = 320;
 export interface InteractionOptions {
   provider: Provider;
   db: Kysely<Database>;
+  throttle: Throttle;
   /** The issuer's origin; a browser posting from anywhere else is refused. */
   origin: string;
 }
 
 export function registerInteractionRoutes(app: FastifyInstance, options: InteractionOptions): void {
-  const { provider, db, origin } = options;
+  const { provider, db, origin, throttle } = options;
 
   async function details(request: FastifyRequest, reply: FastifyReply) {
     const { uid } = request.params as { uid: string };
@@ -37,14 +40,7 @@ export function registerInteractionRoutes(app: FastifyInstance, options: Interac
     throw badRequest('This sign-in has expired or was not started in this browser. Start again.');
   }
 
-  /** A cross-site page cannot make the user's browser sign in as someone else. */
-  function sameOrigin(request: FastifyRequest): void {
-    const from = request.headers.origin;
-    const site = request.headers['sec-fetch-site'];
-    if ((from !== undefined && from !== origin) || (site !== undefined && site !== 'same-origin')) {
-      throw forbidden('Cross-site requests are not accepted here');
-    }
-  }
+  const sameOrigin = (request: FastifyRequest): void => requireSameOrigin(request, origin);
 
   app.get('/oidc/interaction/:uid', async (request, reply) => {
     const found = await details(request, reply);
@@ -69,9 +65,15 @@ export function registerInteractionRoutes(app: FastifyInstance, options: Interac
     }
     const found = await details(request, reply);
     if (found.prompt.name !== 'login') throw badRequest('This sign-in is not waiting for a login');
+    const byLogin = throttle.key('login', body.login);
+    const byAddress = throttle.key('address', request.ip);
+    await throttle.check([LIMITS.loginPerLogin, byLogin], [LIMITS.loginPerAddress, byAddress]);
     const accountId = await verifyLogin(db, body.login, body.password);
-    if (!accountId)
+    if (!accountId) {
+      await throttle.record('login-failed', [byLogin, byAddress]);
       throw new Problem(401, 'Unauthorized', 'The login or the password is not right');
+    }
+    await throttle.note('login', accountId);
     const redirectTo = await provider.interactionResult(
       request.raw,
       reply.raw,

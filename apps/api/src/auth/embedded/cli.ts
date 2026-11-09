@@ -4,6 +4,7 @@
  *
  *   node dist/auth/embedded/cli.js create --login you@example.org [--name "Your Name"] [--admin]
  *   node dist/auth/embedded/cli.js set-password --login you@example.org
+ *   node dist/auth/embedded/cli.js invite --email someone@example.org [--admin]
  *   node dist/auth/embedded/cli.js rotate-key
  *
  * The password is read from ACCOUNT_PASSWORD, from a pipe, or typed at a
@@ -13,6 +14,7 @@ import { parseArgs } from 'node:util';
 import { loadConfig } from '../../config.js';
 import { createDb } from '../../db/index.js';
 import { AccountError, createPasswordUser, setPassword } from './accounts.js';
+import { createInvite } from './invites.js';
 import { rotateSigningKey } from './keys.js';
 
 async function readPassword(): Promise<string> {
@@ -73,6 +75,8 @@ try {
         password: await readPassword(),
         displayName: values.name,
         email: values.email,
+        // The operator vouches for the address they type.
+        emailVerified: true,
         isAdmin: values.admin,
       });
       console.log(`Created ${values.admin ? 'administrator' : 'user'} ${values.login} (${id}).`);
@@ -86,6 +90,15 @@ try {
       console.log(`Changed the password of ${values.login}.`);
       break;
     }
+    case 'invite': {
+      if (!values.email) throw new AccountError('--email is required');
+      const link = await createInvite(db, config.publicUrl, {
+        email: values.email,
+        isAdmin: values.admin,
+      });
+      console.log(`Give ${values.email} this link; it works once, for a week:\n${link}`);
+      break;
+    }
     case 'rotate-key': {
       const kid = await rotateSigningKey(db, config.auth.secret);
       console.log(`New signing key ${kid}. Restart the API so that it signs with it.`);
@@ -93,7 +106,7 @@ try {
     }
     default:
       console.error(
-        'Usage: cli.js create|set-password|rotate-key [--login L] [--name N] [--email E] [--admin]',
+        'Usage: cli.js create|set-password|invite|rotate-key [--login L] [--name N] [--email E] [--admin]',
       );
       code = 2;
   }

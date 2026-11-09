@@ -13,11 +13,16 @@ import type { Config } from '../../config.js';
 import type { Database } from '../../db/schema.js';
 import { createTokenVerifier, type TokenVerifier } from '../verifier.js';
 import { loadProfile } from './accounts.js';
+import { registerAccountRoutes } from './account-routes.js';
 import { createAdapterClass, purgeExpired } from './adapter.js';
+import { ensureBootstrapAdmin } from './invites.js';
 import { registerInteractionRoutes } from './interaction.js';
 import { loadSigningKeys, retireOldKeys } from './keys.js';
+import { createMailer, type Mailer } from './mail.js';
 import { errorPage, logoutPage, signedOutPage, SUBMIT_SCRIPT_HASH } from './pages.js';
 import { cookieKeys } from './secrets.js';
+import { purgeEvents, Throttle } from './throttle.js';
+import { purgeTokens } from './tokens.js';
 
 const HOUR = 3600;
 const DAY = 24 * HOUR;
@@ -44,6 +49,8 @@ export interface EmbeddedIssuer {
 export async function createEmbeddedIssuer(options: {
   config: Config;
   db: Kysely<Database>;
+  /** Replaces the SMTP mailer the configuration describes; for tests. */
+  mailer?: Mailer;
 }): Promise<EmbeddedIssuer> {
   const { config, db } = options;
   const secret = config.auth.secret;
@@ -57,6 +64,13 @@ export async function createEmbeddedIssuer(options: {
   const authSecret: string = secret;
   const https = issuer.startsWith('https://');
   const origins = [...new Set([issuer, ...config.auth.extraOrigins])];
+
+  const throttle = new Throttle(db, authSecret);
+  const mailer: Mailer | undefined =
+    options.mailer ??
+    (config.auth.smtpUrl
+      ? createMailer(config.auth.smtpUrl, config.auth.mailFrom ?? '')
+      : undefined);
 
   let keys = await loadSigningKeys(db, secret);
   const provider = new Provider(issuer, providerConfiguration());
@@ -116,7 +130,8 @@ export async function createEmbeddedIssuer(options: {
         scope.all('/.well-known/openid-configuration', handler);
         done();
       });
-      registerInteractionRoutes(app, { provider, db, origin: issuer });
+      registerInteractionRoutes(app, { provider, db, throttle, origin: issuer });
+      registerAccountRoutes(app, { db, throttle, mailer, origin: issuer });
       provider.on('server_error', (_ctx, err) => app.log.error({ err }, 'issuer error'));
 
       const housekeeping = (): void => {
@@ -126,8 +141,21 @@ export async function createEmbeddedIssuer(options: {
         retireOldKeys(db, 2 * DAY * 1000).catch((err: unknown) =>
           app.log.warn({ err }, 'retiring keys failed'),
         );
+        Promise.all([purgeEvents(db), purgeTokens(db)]).catch((err: unknown) =>
+          app.log.warn({ err }, 'purging account records failed'),
+        );
       };
       housekeeping();
+      if (config.auth.bootstrapAdminEmail) {
+        await ensureBootstrapAdmin(db, {
+          email: config.auth.bootstrapAdminEmail,
+          publicUrl: issuer,
+          mailer,
+          log: app.log,
+        }).catch((err: unknown) =>
+          app.log.warn({ err }, 'inviting the first administrator failed'),
+        );
+      }
       timer = setInterval(housekeeping, HOUSEKEEPING_MS);
       timer.unref();
     },
