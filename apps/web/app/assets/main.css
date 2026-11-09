@@ -271,3 +271,12 @@ blockquote {
   gap: 0.75rem;
   align-items: center;
 }
+
+.account-card .providers {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}

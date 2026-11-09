@@ -129,4 +129,58 @@ describe('the sign-in page of the embedded issuer', () => {
     await flushPromises();
     expect(wrapper.text()).toContain('Forgot your password');
   });
+
+  it('offers the configured providers, as links into the interaction', async () => {
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(
+        reply(200, {
+          providers: [
+            { id: 'google', label: 'Google' },
+            { id: 'github', label: 'GitHub' },
+          ],
+        }),
+      ),
+    );
+    const wrapper = mountLogin();
+    await flushPromises();
+    const hrefs = wrapper.findAll('a.button').map((a) => a.attributes('href'));
+    expect(hrefs).toEqual([
+      `/oidc/interaction/${UID}/upstream/google`,
+      `/oidc/interaction/${UID}/upstream/github`,
+    ]);
+  });
+
+  it('explains what went wrong at a provider in words', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(reply(200, {})));
+    setRouteQuery({ uid: UID, error: 'use-existing' });
+    const wrapper = mountLogin();
+    await flushPromises();
+    expect(wrapper.find('[role=alert]').text()).toContain('no password');
+    setRouteQuery({ uid: UID, error: 'nonsense' });
+    expect(mountLogin().find('[role=alert]').exists()).toBe(false);
+  });
+
+  it('says what a pending link would connect, hides the providers, and sends the link with the password', async () => {
+    fetchMock.mockImplementation((url) =>
+      Promise.resolve(
+        url.startsWith('/auth/upstream/pending/')
+          ? reply(200, { label: 'Google', email: 'owner@example.org' })
+          : url === '/auth/options'
+            ? reply(200, { providers: [{ id: 'google', label: 'Google' }] })
+            : reply(200, { redirectTo: `${window.location.origin}/oidc/auth/${UID}` }),
+      ),
+    );
+    setRouteQuery({ uid: UID, link: 'abc123' });
+    const wrapper = mountLogin();
+    await flushPromises();
+    expect(wrapper.find('[role=status]').text()).toContain('owner@example.org');
+    expect(wrapper.find('a.button').exists()).toBe(false);
+    await fill(wrapper, 'owner@example.org', 'a long password');
+    const posted = interactionCalls()[0]?.[1];
+    expect(JSON.parse(posted?.body as string)).toEqual({
+      login: 'owner@example.org',
+      password: 'a long password',
+      link: 'abc123',
+    });
+  });
 });
