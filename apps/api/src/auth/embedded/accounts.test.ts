@@ -9,6 +9,7 @@ import { buildServer } from '../../server.js';
 import { createTestContext, databaseUrl, type TestContext } from '../../test/harness.js';
 import { createTokenVerifier } from '../verifier.js';
 import { decideApplication, purgeApplications } from '../../accounts/applications.js';
+import { mergeAccounts } from '../../accounts/merge.js';
 import { createPasswordUser, signUp, SignupRefused, verifyLogin } from './accounts.js';
 import { ensureBootstrapAdmin, createInvite } from './invites.js';
 import type { Mailer, Message } from './mail.js';
@@ -676,6 +677,22 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
         ).toBeUndefined();
       },
     );
+
+    it('still resolves a merged identity whose original principal was deleted', async () => {
+      const survivor = await createPasswordUser(ctx.db, ORIGIN, {
+        login: 'merge-survivor',
+        password: PASSWORD,
+      });
+      const loser = await createPasswordUser(ctx.db, ORIGIN, {
+        login: 'merge-loser',
+        password: PASSWORD,
+      });
+      const headers = { authorization: `Bearer ${await sign(loser)}` };
+      await ctx.db.transaction().execute((trx) => mergeAccounts(trx, survivor, loser, null));
+      const me = await app.inject({ method: 'GET', url: '/x/me', headers });
+      expect(me.statusCode).toBe(200);
+      expect(me.json<{ id: string }>().id).toBe(survivor);
+    });
   });
 
   describe('the first administrator', () => {
