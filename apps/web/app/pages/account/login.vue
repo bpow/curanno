@@ -23,10 +23,13 @@ const error = ref<string>();
 const expired = ref(false);
 /** Whether the server can send mail, and so whether a forgotten password can be reset. */
 const canReset = ref(false);
+const canSignUp = ref(false);
 
 onMounted(async () => {
-  const options = await call<{ mail?: boolean }>('/auth/options');
+  const options = await call<{ mail?: boolean; signup?: string }>('/auth/options');
   canReset.value = options.ok && options.body.mail === true;
+  canSignUp.value =
+    options.ok && options.body.signup !== undefined && options.body.signup !== 'closed';
 });
 
 async function post(action: 'login' | 'abort', body: object): Promise<Response> {
@@ -124,6 +127,9 @@ async function cancel(): Promise<void> {
         <button type="submit" class="primary" :disabled="busy">Sign in</button>
         <button type="button" class="link" :disabled="busy" @click="cancel">Cancel</button>
       </div>
+      <p v-if="canSignUp">
+        <NuxtLink to="/account/signup" target="_blank">Create an account</NuxtLink>
+      </p>
       <p v-if="canReset">
         <NuxtLink to="/account/forgot" target="_blank">Forgot your password?</NuxtLink>
       </p>

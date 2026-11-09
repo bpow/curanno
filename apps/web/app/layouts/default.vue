@@ -2,6 +2,7 @@
 import { ClientOnly, NuxtLink } from '#components';
 import UserMenu from '../components/UserMenu.vue';
 import AdminNav from '../components/AdminNav.vue';
+import AccountStatusBanner from '../components/AccountStatusBanner.vue';
 </script>
 
 <template>
@@ -18,6 +19,7 @@ import AdminNav from '../components/AdminNav.vue';
       </ClientOnly>
     </header>
     <main class="content">
+      <ClientOnly><AccountStatusBanner /></ClientOnly>
       <slot />
     </main>
   </div>

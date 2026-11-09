@@ -6,5 +6,8 @@ const auth = useAuth();
 </script>
 
 <template>
-  <NuxtLink v-if="auth.isAdmin.value" to="/users">Users</NuxtLink>
+  <template v-if="auth.isAdmin.value">
+    <NuxtLink to="/users">Users</NuxtLink>
+    <NuxtLink to="/applications">Applications</NuxtLink>
+  </template>
 </template>
