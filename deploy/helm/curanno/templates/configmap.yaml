@@ -1,3 +1,4 @@
+{{- include "curanno.validate" . -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,9 +7,46 @@ metadata:
     {{- include "curanno.labels" . | nindent 4 }}
 data:
   PORT: '3000'
+  {{- if include "curanno.embedded" . }}
+  # The API is its own issuer on PUBLIC_URL (ADR 0028); the client id is fixed.
+  AUTH_MODE: embedded
+  AUTH_SIGNUP: {{ .Values.auth.signup | quote }}
+  AUTH_MAX_PENDING: {{ .Values.auth.maxPending | quote }}
+  {{- with .Values.auth.autoApproveDomains }}
+  AUTH_AUTO_APPROVE_DOMAINS: {{ join " " . | quote }}
+  {{- end }}
+  {{- with .Values.auth.autolink }}
+  AUTH_AUTOLINK: {{ join " " . | quote }}
+  {{- end }}
+  {{- with .Values.auth.extraOrigins }}
+  AUTH_EXTRA_ORIGINS: {{ join " " . | quote }}
+  {{- end }}
+  {{- with .Values.auth.bootstrapAdminEmail }}
+  BOOTSTRAP_ADMIN_EMAIL: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.auth.mail.from }}
+  MAIL_FROM: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.auth.providers.google.clientId }}
+  UPSTREAM_GOOGLE_CLIENT_ID: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.auth.providers.github.clientId }}
+  UPSTREAM_GITHUB_CLIENT_ID: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.auth.providers.oidc }}
+  {{- if .clientId }}
+  UPSTREAM_OIDC_CLIENT_ID: {{ .clientId | quote }}
+  UPSTREAM_OIDC_ISSUER: {{ required "auth.providers.oidc.issuer is required with a clientId" .issuer | quote }}
+  {{- with .name }}
+  UPSTREAM_OIDC_NAME: {{ . | quote }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- else }}
   OIDC_ISSUER: {{ required "config.oidcIssuer is required" .Values.config.oidcIssuer | quote }}
   {{- if not .Values.zitadel.provision.enabled }}
   OIDC_CLIENT_ID: {{ required "config.oidcClientId is required" .Values.config.oidcClientId | quote }}
+  {{- end }}
   {{- end }}
   {{- with .Values.config.oidcAudience }}
   OIDC_AUDIENCE: {{ . | quote }}

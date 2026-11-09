@@ -24,6 +24,10 @@ spec:
       http:
         paths:
           {{- $paths := list "/annotations" "/x" "/sidebar" "/guest.js" "/healthz" "/readyz" }}
+          {{- if include "curanno.embedded" . }}
+          {{- /* The issuer and its account routes; the site's own /auth/callback is not among them. */}}
+          {{- $paths = concat $paths (list "/oidc" "/idp" "/.well-known/openid-configuration") }}
+          {{- end }}
           {{- if .Values.ingress.metrics }}
           {{- $paths = append $paths "/metrics" }}
           {{- end }}

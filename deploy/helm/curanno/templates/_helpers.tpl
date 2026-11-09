@@ -27,6 +27,26 @@ app.kubernetes.io/name: {{ include "curanno.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
+{{- define "curanno.embedded" -}}
+{{- if eq .Values.auth.mode "embedded" }}true{{- end }}
+{{- end }}
+
+{{/* Fails the render for settings that cannot work together. */}}
+{{- define "curanno.validate" -}}
+{{- if not (has .Values.auth.mode (list "external" "embedded")) }}
+{{- fail "auth.mode must be external or embedded" }}
+{{- end }}
+{{- if and (include "curanno.embedded" .) .Values.zitadel.provision.enabled }}
+{{- fail "zitadel.provision.enabled is for auth.mode=external" }}
+{{- end }}
+{{- if and (include "curanno.embedded" .) (not .Values.secrets.existingSecret) (lt (len (default "" .Values.secrets.authSecret)) 32) }}
+{{- fail "secrets.authSecret (at least 32 characters) is required when auth.mode=embedded" }}
+{{- end }}
+{{- if not (has .Values.auth.signup (list "approval" "open" "closed")) }}
+{{- fail "auth.signup must be approval, open or closed" }}
+{{- end }}
+{{- end }}
+
 {{- define "curanno.image" -}}
 {{- printf "%s:%s" .Values.image.repository (default .Chart.AppVersion .Values.image.tag) }}
 {{- end }}
@@ -63,6 +83,30 @@ env:
         key: {{ .Values.secrets.databaseUrlKey }}
   {{- if .Values.zitadel.provision.enabled }}
   {{- include "curanno.provisionedClientId" (dict "root" . "name" "OIDC_CLIENT_ID") | nindent 2 }}
+  {{- end }}
+  {{- if include "curanno.embedded" . }}
+  - name: AUTH_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: {{ include "curanno.secretName" . }}
+        key: AUTH_SECRET
+  {{- if and .Values.auth.mail.from (or .Values.secrets.smtpUrl .Values.secrets.existingSecret) }}
+  - name: SMTP_URL
+    valueFrom:
+      secretKeyRef:
+        name: {{ include "curanno.secretName" . }}
+        key: SMTP_URL
+        optional: true
+  {{- end }}
+  {{- range $id, $upper := dict "google" "GOOGLE" "github" "GITHUB" "oidc" "OIDC" }}
+  {{- if (index $.Values.auth.providers $id).clientId }}
+  - name: UPSTREAM_{{ $upper }}_CLIENT_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: {{ include "curanno.secretName" $ }}
+        key: UPSTREAM_{{ $upper }}_CLIENT_SECRET
+  {{- end }}
+  {{- end }}
   {{- end }}
 envFrom:
   - configMapRef:

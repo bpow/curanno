@@ -40,12 +40,63 @@ config:
   # (see ingress.metrics below) or turn them off.
   metricsEnabled: true
 
+# Who issues the tokens. `external` (the default) trusts the OpenID Connect
+# provider named in `config.oidcIssuer` (ADR 0005; Zitadel can be provisioned
+# below). `embedded` makes the API its own issuer on `config.publicUrl`
+# (ADR 0028): then only Postgres is needed, `config.oidcIssuer`,
+# `config.oidcClientId` and `zitadel.provision` are not used, and
+# `secrets.authSecret` is required. See docs/operator-guide.md.
+auth:
+  mode: external
+  # Who may create an account by themselves: approval (they wait for an
+  # administrator), open, or closed (invitations only, always possible).
+  signup: approval
+  # Under approval, applicants with a verified address in these domains are approved at once.
+  autoApproveDomains: []
+  # Providers whose verified email may join an existing account without its
+  # password (google, github, oidc). Leave empty unless you trust them.
+  autolink: []
+  # Sign-up pauses while this many applications wait.
+  maxPending: 200
+  # While no administrator exists, this address is invited to become one.
+  bootstrapAdminEmail: ''
+  # Origins besides config.publicUrl where the sidebar or site run (redirect URIs).
+  extraOrigins: []
+  # Mail for invitations, resets and verification; set `from` and
+  # `secrets.smtpUrl`. Without them nothing is sent: administrators hand out
+  # invitation links (`account invite`) and password reset is off.
+  mail:
+    from: ''
+  # Sign in with another service. Set the client id here and its secret under
+  # `secrets.upstream`. The redirect URI to register is
+  # <config.publicUrl>/idp/upstream/<google|github|oidc>/callback.
+  providers:
+    google:
+      clientId: ''
+    github:
+      clientId: ''
+    oidc:
+      issuer: ''
+      clientId: ''
+      name: ''
+
 # The database URL is a secret. Either set it here (rendered into a Secret
 # managed by the chart) or name an existing Secret holding DATABASE_URL.
 secrets:
   databaseUrl: ''
   existingSecret: ''
   databaseUrlKey: DATABASE_URL
+  # Embedded mode. At least 32 random characters, the same on every replica
+  # and kept across upgrades: it seals the signing keys in the database and
+  # keys the cookies (`openssl rand -base64 48`). With `existingSecret`, hold
+  # these under the keys AUTH_SECRET, SMTP_URL and UPSTREAM_<GOOGLE|GITHUB|OIDC>_CLIENT_SECRET.
+  authSecret: ''
+  # smtp://user:password@host:587 or smtps://...
+  smtpUrl: ''
+  upstream:
+    googleClientSecret: ''
+    githubClientSecret: ''
+    oidcClientSecret: ''
 
 # With Zitadel as the provider (deploy/zitadel/README.md): a hook Job runs
 # deploy/zitadel/provision.ts from the API image before every install and

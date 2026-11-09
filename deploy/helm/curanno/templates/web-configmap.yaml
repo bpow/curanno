@@ -12,9 +12,14 @@ data:
   # The site is an ordinary client of the API on the same origin (ADR 0020).
   NUXT_PUBLIC_API_BASE: ''
   # Also fills in the site's Content-Security-Policy when it starts, so it must be set.
+  {{- if include "curanno.embedded" . }}
+  NUXT_PUBLIC_OIDC_ISSUER: {{ required "config.publicUrl is required" .Values.config.publicUrl | trimSuffix "/" | quote }}
+  NUXT_PUBLIC_OIDC_CLIENT_ID: curanno
+  {{- else }}
   NUXT_PUBLIC_OIDC_ISSUER: {{ required "config.oidcIssuer is required" .Values.config.oidcIssuer | trimSuffix "/" | quote }}
   {{- if not .Values.zitadel.provision.enabled }}
   NUXT_PUBLIC_OIDC_CLIENT_ID: {{ .Values.config.oidcClientId | quote }}
+  {{- end }}
   {{- end }}
   {{- with .Values.pdfViewer.host }}
   NUXT_PUBLIC_PDF_VIEWER_URL: {{ printf "https://%s/pdf/" . | quote }}

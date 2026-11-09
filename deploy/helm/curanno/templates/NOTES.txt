@@ -2,7 +2,21 @@
 
 Configuration comes from the ConfigMap {{ include "curanno.fullname" . }} and the Secret {{ include "curanno.secretName" . }} (DATABASE_URL). Migrations run in an init container before each pod starts.
 
-The API image serves the sidebar at {{ .Values.config.publicUrl }}/sidebar/ and the guest bundle at {{ .Values.config.publicUrl }}/guest.js{{- with .Values.pdfViewer.host }}, and the PDF viewer at https://{{ . }}/pdf/ (that host only){{- end }}. {{- if .Values.zitadel.provision.enabled }} The provisioning Job registered these redirect URIs with Zitadel and wrote the client id to the ConfigMap {{ include "curanno.oidcConfigMap" . }}:{{- else }} Register these redirect URIs with the identity provider for client {{ .Values.config.oidcClientId }}:{{- end }} {{ .Values.config.publicUrl }}/sidebar/, {{ .Values.config.publicUrl }}/sidebar/popup-callback.html, {{ .Values.config.publicUrl }}/sidebar/silent-renew.html{{- if .Values.web.enabled }}, {{ .Values.config.publicUrl }}/auth/callback{{- end }}.
+The API image serves the sidebar at {{ .Values.config.publicUrl }}/sidebar/ and the guest bundle at {{ .Values.config.publicUrl }}/guest.js{{- with .Values.pdfViewer.host }}, and the PDF viewer at https://{{ . }}/pdf/ (that host only){{- end }}. {{- if include "curanno.embedded" . }} The API is its own OpenID Connect issuer at {{ .Values.config.publicUrl }} (auth.mode=embedded, client id "curanno"); nothing needs registering with an identity provider, and its redirect URIs are derived from config.publicUrl{{- with .Values.auth.extraOrigins }} and auth.extraOrigins{{- end }}.
+{{- if not (hasPrefix "https://" .Values.config.publicUrl) }}
+
+WARNING: config.publicUrl is not https. Browsers will not send the issuer's secure cookies over http, and passwords would cross the network in the clear. Use http only to try it out.
+{{- end }}
+{{- if .Values.auth.bootstrapAdminEmail }}
+
+While no administrator exists, {{ .Values.auth.bootstrapAdminEmail }} is invited to become one: {{- if and .Values.auth.mail.from .Values.secrets.smtpUrl }} the invitation is mailed.{{- else }} no mail is configured, so the invitation link is in the API log: kubectl logs deploy/{{ include "curanno.fullname" . }} | grep invite{{- end }}
+{{- else }}
+
+Create the first administrator: kubectl exec deploy/{{ include "curanno.fullname" . }} -- node dist/auth/embedded/cli.js create --login you@example.org --admin  (reads ACCOUNT_PASSWORD from the environment, or a pipe)
+{{- end }}
+Keep secrets.authSecret across upgrades and the same on every replica: it seals the signing keys stored in the database. Route {{ .Values.config.publicUrl }}/oidc, /idp and /.well-known/openid-configuration to the API (the ingress here does so).
+{{- else if .Values.zitadel.provision.enabled }} The provisioning Job registered these redirect URIs with Zitadel and wrote the client id to the ConfigMap {{ include "curanno.oidcConfigMap" . }}:{{- else }} Register these redirect URIs with the identity provider for client {{ .Values.config.oidcClientId }}:{{- end }}
+{{- if not (include "curanno.embedded" .) }} {{ .Values.config.publicUrl }}/sidebar/, {{ .Values.config.publicUrl }}/sidebar/popup-callback.html, {{ .Values.config.publicUrl }}/sidebar/silent-renew.html{{- if .Values.web.enabled }}, {{ .Values.config.publicUrl }}/auth/callback{{- end }}.{{- end }}
 
 Health: GET /healthz (liveness) and GET /readyz (readiness; checks the database). Metrics: GET /metrics on the API Service{{- if not .Values.ingress.metrics }} (not on the ingress){{- end }}.
 
