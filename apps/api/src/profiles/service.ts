@@ -39,6 +39,7 @@ export class ProfileService {
           iri: profile.iri,
           title: profile.title,
           description: profile.description ?? null,
+          default_purpose: profile.defaultPurpose ?? null,
           schema: JSON.stringify(profile.schema),
           builtin: true,
           enabled: true,
@@ -47,6 +48,7 @@ export class ProfileService {
           oc.column('iri').doUpdateSet({
             title: profile.title,
             description: profile.description ?? null,
+            default_purpose: profile.defaultPurpose ?? null,
             schema: JSON.stringify(profile.schema),
             builtin: true,
             updated_at: new Date(),
@@ -65,7 +67,7 @@ export class ProfileService {
     if (this.cached && Date.now() - this.cached.loadedAt < this.ttlMs) return this.cached.registry;
     const rows = await this.db
       .selectFrom('body_profiles')
-      .select(['iri', 'title', 'description', 'schema', 'builtin'])
+      .select(['iri', 'title', 'description', 'default_purpose', 'schema', 'builtin'])
       .where('enabled', '=', true)
       .execute();
     const profiles: BodyProfile[] = rows.map((row) => {
@@ -75,6 +77,7 @@ export class ProfileService {
         iri: row.iri,
         title: row.title,
         ...(row.description !== null ? { description: row.description } : {}),
+        ...(row.default_purpose !== null ? { defaultPurpose: row.default_purpose } : {}),
         schema: row.schema,
       };
     });
@@ -140,6 +143,7 @@ export class ProfileService {
     const values = {
       title: input.title,
       description: input.description ?? null,
+      default_purpose: input.defaultPurpose ?? null,
       schema: JSON.stringify(input.schema),
       enabled: input.enabled ?? true,
     };
@@ -180,6 +184,7 @@ interface ProfileRow {
   iri: string;
   title: string;
   description: string | null;
+  default_purpose: string | null;
   schema: unknown;
   builtin: boolean;
   enabled: boolean;
@@ -192,6 +197,7 @@ function toJson(row: ProfileRow): BodyProfileJson {
     iri: row.iri,
     title: row.title,
     ...(row.description !== null ? { description: row.description } : {}),
+    ...(row.default_purpose !== null ? { defaultPurpose: row.default_purpose } : {}),
     schema: row.schema as Record<string, never>,
     builtin: row.builtin,
     enabled: row.enabled,

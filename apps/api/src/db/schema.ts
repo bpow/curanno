@@ -255,6 +255,7 @@ export interface BodyProfilesTable {
   iri: string;
   title: string;
   description: string | null;
+  default_purpose: string | null;
   schema: JSONColumnType<JsonSchema>;
   builtin: Generated<boolean>;
   enabled: Generated<boolean>;

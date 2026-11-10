@@ -32,7 +32,8 @@ A profile is:
 | `iri`         | Identifies the profile. By convention it ends in a version number (`.../evidence-excerpt/1`); a breaking schema change is a new profile, not an edit. |
 | `title`, `description` | For listings and editors                                                                         |
 | `schema`      | JSON Schema 2020-12 for `value`. Compiled by the same Ajv instance that validates requests (ADR 0003).   |
-| `purposes`    | Optional purposes that select this profile for JSON textual bodies that name no profile                  |
+| `defaultPurpose` | Optional purpose that clients give a new body of this profile. Several profiles may share one.  |
+| `purposes`    | Optional purposes that select this profile for JSON textual bodies that name no profile. Each purpose selects at most one profile, and only built-in profiles can set them ([ADR 0030](adr/0030-default-purpose.md)). |
 
 Two sources feed the registry:
 

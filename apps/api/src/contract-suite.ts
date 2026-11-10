@@ -675,6 +675,7 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
           url: `/x/profiles/${customProfile}`,
           payload: {
             title: 'Note',
+            defaultPurpose: 'commenting',
             schema: {
               type: 'object',
               required: ['text'],

@@ -1405,6 +1405,9 @@ components:
           type: string
         description:
           type: string
+        defaultPurpose:
+          description: The purpose clients give a new body of this profile. Several profiles may share one.
+          $ref: '#/components/schemas/Motivation'
         schema:
           description: A JSON Schema (draft 2020-12) for the body's `value`.
           type: object
@@ -1422,6 +1425,9 @@ components:
           type: string
         description:
           type: string
+        defaultPurpose:
+          description: The purpose clients give a new body of this profile. Several profiles may share one.
+          $ref: '#/components/schemas/Motivation'
         schema:
           description: A JSON Schema (draft 2020-12) for the body's `value`.
           type: object
