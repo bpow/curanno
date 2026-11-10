@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { JsonValue, ValidationError } from '@curanno/model';
 import { computed } from 'vue';
-import type { SchemaField } from '../profiles/schema';
+import type { SchemaField, Term } from '../profiles/schema';
+import TermListInput from './TermListInput.vue';
 
 const props = defineProps<{
   fields: SchemaField[];
@@ -68,6 +69,22 @@ function listText(name: string): string {
 
 function setNumber(name: string, text: string): void {
   set(name, text === '' ? undefined : Number(text));
+}
+
+function terms(name: string): Term[] {
+  const current = value.value[name];
+  if (!Array.isArray(current)) return [];
+  return current.flatMap((t) => {
+    if (typeof t !== 'object' || t === null || Array.isArray(t)) return [];
+    const { id, label } = t;
+    if (typeof label !== 'string') return [];
+    return [typeof id === 'string' ? { id, label } : { label }];
+  });
+}
+
+function setTerms(name: string, list: Term[]): void {
+  const json = list.map((t) => (t.id ? { id: t.id, label: t.label } : { label: t.label }));
+  set(name, json.length ? json : undefined);
 }
 
 function items(name: string): JsonValue[] {
@@ -148,6 +165,14 @@ function removeItem(name: string, index: number): void {
         :required="field.required"
         :value="value[field.name] ?? ''"
         @input="setNumber(field.name, ($event.target as HTMLInputElement).value)"
+      />
+      <TermListInput
+        v-else-if="field.kind === 'term-list' && field.ontology"
+        :input-id="`field-${nameOf(field)}`"
+        :name="nameOf(field)"
+        :ontology="field.ontology"
+        :model-value="terms(field.name)"
+        @update:model-value="setTerms(field.name, $event)"
       />
       <input
         v-else-if="field.kind === 'string-list'"

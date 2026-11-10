@@ -49,11 +49,21 @@ const text = (title: string, description: string, maxLength = 200) => ({
   maxLength,
 });
 
-const hpoList = (title: string, description: string) => ({
+// A phenotype picked from HPO keeps its ID and the label it had then; text HPO has no term for is only a label.
+const phenotypeList = (title: string, description: string) => ({
   title,
   description,
   type: 'array',
-  items: { type: 'string', pattern: '^HP:[0-9]{7}$' },
+  ontology: { name: 'hp', root: 'HP:0000118' },
+  items: {
+    type: 'object',
+    required: ['label'],
+    additionalProperties: false,
+    properties: {
+      id: { type: 'string', pattern: '^HP:[0-9]{7}$' },
+      label: { type: 'string', minLength: 1, maxLength: 500 },
+    },
+  },
   uniqueItems: true,
 });
 
@@ -62,7 +72,8 @@ const hpoList = (title: string, description: string) => ({
  * after the Case-Individuals template of the ClinGen Hypothes.is annotation
  * overview (v1). Titles keep the template's CamelCase labels so that curators
  * trained on it recognise the fields. The template's "n/a" convention becomes
- * an omitted field, and MultipleGeneVariants becomes the `variants` list.
+ * an omitted field, MultipleGeneVariants becomes the `variants` list, and
+ * each HPO list also holds the free text its CaseHPOFreeText field held.
  */
 export const caseIndividualProfile: BodyProfile = {
   iri: `${PROFILE_BASE}case-individual/1`,
@@ -91,20 +102,13 @@ export const caseIndividualProfile: BodyProfile = {
         'Family history, consanguinity, segregation or affected relatives.',
         2000,
       ),
-      casePresentingHpos: hpoList(
+      casePresentingHpos: phenotypeList(
         'CasePresentingHPOs',
-        'HPO terms for the phenotypes present, for example HP:0001639.',
+        'Phenotypes present. Pick HPO terms; text that matches none is kept as written.',
       ),
-      caseHpoFreeText: text(
-        'CaseHPOFreeText',
-        'Phenotypes present, as described in the article.',
-        2000,
-      ),
-      caseNotHpos: hpoList('CaseNOTHPOs', 'HPO terms for phenotypes the article says are absent.'),
-      caseNotHpoFreeText: text(
-        'CaseNOTHPOFreeText',
-        'Absent phenotypes, as described in the article.',
-        2000,
+      caseNotHpos: phenotypeList(
+        'CaseNOTHPOs',
+        'Phenotypes the article says are absent. Pick HPO terms; text that matches none is kept as written.',
       ),
       casePreviousTesting: text(
         'CasePreviousTesting',

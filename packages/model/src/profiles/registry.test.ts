@@ -1,10 +1,11 @@
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import type { JsonValue } from '../annotation/types.js';
 import { describe, expect, it } from 'vitest';
+import { addProfileKeywords } from './keywords.js';
 import { builtinProfiles, caseIndividualProfile, evidenceExcerptProfile } from './builtin.js';
 import { ProfileRegistry, type BodyProfile } from './registry.js';
 
-const compiler = new Ajv2020({ strict: true, allErrors: true });
+const compiler = addProfileKeywords(new Ajv2020({ strict: true, allErrors: true }));
 const registry = new ProfileRegistry(compiler, builtinProfiles);
 
 describe('ProfileRegistry', () => {
@@ -115,7 +116,10 @@ describe('case-individual profile', () => {
       validate({
         case: 'Patient 3',
         diseaseAssertion: 'Hypertrophic cardiomyopathy',
-        casePresentingHpos: ['HP:0001639'],
+        casePresentingHpos: [
+          { id: 'HP:0001639', label: 'Hypertrophic cardiomyopathy' },
+          { label: 'exertional chest pain' },
+        ],
         genotypingMethod: 'Exome sequencing',
         variants: [
           { geneName: 'MYH7', variant: 'NM_000257.4:c.1208G>A', clinVarId: '123', caid: 'CA1' },
@@ -135,7 +139,9 @@ describe('case-individual profile', () => {
   it('checks identifier formats and empty fields', () => {
     const result = validate({
       case: '',
-      casePresentingHpos: ['HP:1639'],
+      casePresentingHpos: [{ id: 'HP:1639', label: 'Hypertrophic cardiomyopathy' }],
+      caseNotHpos: [{ id: 'HP:0001250' }],
+      caseHpoFreeText: 'removed field',
       variants: [{ variant: 'c.1A>G', clinVarId: 'VCV1', caid: '123', typo: 1 }],
     });
     const paths = (result as { errors: { instancePath: string }[] }).errors.map(
@@ -144,7 +150,8 @@ describe('case-individual profile', () => {
     expect(paths).toEqual(
       expect.arrayContaining([
         '/value/case',
-        '/value/casePresentingHpos/0',
+        '/value/casePresentingHpos/0/id',
+        '/value/caseNotHpos/0',
         '/value/variants/0/clinVarId',
         '/value/variants/0/caid',
         '/value/variants/0',

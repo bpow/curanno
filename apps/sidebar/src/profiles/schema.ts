@@ -6,9 +6,11 @@
 import type { BodyProfile as ApiBodyProfile } from '@curanno/api-client';
 import {
   addAnnotationFormats,
+  addProfileKeywords,
   ProfileRegistry,
   type BodyProfile,
   type JsonSchema,
+  type OntologyLookup,
 } from '@curanno/model';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
@@ -27,11 +29,25 @@ export function createRegistry(profiles: Iterable<BodyProfile>): ProfileRegistry
   const ajv = new Ajv2020({ allErrors: true, strict: false });
   addFormats(ajv);
   addAnnotationFormats(ajv);
+  addProfileKeywords(ajv);
   return new ProfileRegistry(ajv, profiles);
 }
 
+/** A term-list item: a picked ontology term, or text that matched none (no `id`). */
+export interface Term {
+  id?: string;
+  label: string;
+}
+
 export type FieldKind =
-  'select' | 'text' | 'textarea' | 'number' | 'boolean' | 'string-list' | 'object-list';
+  | 'select'
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'boolean'
+  | 'string-list'
+  | 'object-list'
+  | 'term-list';
 
 export interface SchemaField {
   name: string;
@@ -44,6 +60,8 @@ export interface SchemaField {
   /** For an object list: the fields of each item and the item's name. */
   fields?: SchemaField[];
   itemTitle?: string;
+  /** For a term list: where its suggestions come from. */
+  ontology?: OntologyLookup;
 }
 
 interface PropertySchema {
@@ -56,6 +74,7 @@ interface PropertySchema {
   items?: PropertySchema;
   properties?: Record<string, PropertySchema>;
   required?: string[];
+  ontology?: OntologyLookup;
 }
 
 function kindOf(schema: PropertySchema): FieldKind {
@@ -64,6 +83,7 @@ function kindOf(schema: PropertySchema): FieldKind {
   if (type === 'boolean') return 'boolean';
   if (type === 'number' || type === 'integer') return 'number';
   if (type === 'array') {
+    if (schema.ontology) return 'term-list';
     const items = schema.items;
     return items?.type === 'object' || items?.properties ? 'object-list' : 'string-list';
   }
@@ -86,6 +106,7 @@ export function fieldsOf(schema: JsonSchema): SchemaField[] {
       kind,
       ...(property.enum ? { options: property.enum.map(String) } : {}),
       ...(pattern !== undefined ? { pattern } : {}),
+      ...(kind === 'term-list' && property.ontology ? { ontology: property.ontology } : {}),
       ...(kind === 'object-list' && property.items
         ? {
             fields: fieldsOf(property.items as JsonSchema),

@@ -1,5 +1,6 @@
 import { caseIndividualProfile, evidenceExcerptProfile, type BodyProfile } from '@curanno/model';
 import { mount } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { describe, expect, it } from 'vitest';
 import StructuredBodyEditor from './StructuredBodyEditor.vue';
 
@@ -130,11 +131,14 @@ describe('StructuredBodyEditor', () => {
   });
 
   it('builds the case-individual form with a variant list', () => {
+    setActivePinia(createPinia());
     const wrapper = mount(StructuredBodyEditor, {
       props: { profile: caseIndividualProfile, modelValue: { case: 'P1', variants: [{}] } },
     });
     expect(wrapper.find('input[name="case"]').attributes('required')).toBeDefined();
     expect(wrapper.find('textarea[name="diseaseAssertion"]').exists()).toBe(true);
+    expect(wrapper.find('input[role="combobox"][name="casePresentingHpos"]').exists()).toBe(true);
+    expect(wrapper.find('[name="caseHpoFreeText"]').exists()).toBe(false);
     expect(wrapper.find('input[name="variants.0.variant"]').attributes('required')).toBeDefined();
     expect(wrapper.find('input[name="variants.0.clinVarId"]').exists()).toBe(true);
     expect(wrapper.text()).toContain('Add Variant');
