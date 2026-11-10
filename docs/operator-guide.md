@@ -27,6 +27,8 @@ podman build --target web -t ghcr.io/example/curanno-web:1.0.0 -f Dockerfile .
 
 Push both to your registry and set `image.repository`, `web.image.repository` and the tags in the chart's values (the tag defaults to the chart's `appVersion`). CI builds both images on every change without publishing them.
 
+The `Publish images` workflow (`.github/workflows/publish-images.yml`) publishes them to `ghcr.io/<owner>/curanno-api` and `ghcr.io/<owner>/curanno-web`, which the chart uses by default: every push to `main` as `:main` and `:sha-<commit>`, and every tag `vX.Y.Z` as `:X.Y.Z`, `:X.Y` and `:latest`. Tag a release with the chart's `appVersion` (`v1.0.0` for `appVersion: '1.0.0'`) so the default tag exists. It can also be run by hand from the Actions tab.
+
 ## 3. Configure the identity provider
 
 Create a **public** OpenID Connect client (Authorization Code with PKCE, no client secret) for the sidebar and the site. With `PUBLIC_URL` being `https://curanno.example`:

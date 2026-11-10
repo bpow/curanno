@@ -191,8 +191,8 @@ jobs:
             apps/web/test-results/
 
   # Both images must build and the chart must render without a cluster
-  # (plan, Phase 3 and 5). Neither job pushes anything: publishing is the
-  # operator's release step (docs/operator-guide.md).
+  # (plan, Phase 3 and 5). Neither job pushes anything: publish-images.yml
+  # pushes the images from main and from release tags.
   image:
     runs-on: ubuntu-latest
     steps:
