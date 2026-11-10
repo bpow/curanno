@@ -137,7 +137,7 @@ postgres:
     accessModes: [ReadWriteOnce]
   resources:
     requests:
-      cpu: 50m
+      cpu: 100m
       memory: 128Mi
     limits:
       memory: 512Mi
@@ -166,7 +166,7 @@ web:
     pullPolicy: IfNotPresent
   resources:
     requests:
-      cpu: 50m
+      cpu: 100m
       memory: 128Mi
     limits:
       memory: 256Mi
