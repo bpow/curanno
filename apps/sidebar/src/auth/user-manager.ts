@@ -36,6 +36,9 @@ export function createUserManager(): UserManager {
     popup_post_logout_redirect_uri: new URL('popup-callback.html', base).href,
     silent_redirect_uri: new URL('silent-renew.html', base).href,
     automaticSilentRenew: true,
+    // Where third-party cookies are blocked the provider never answers the
+    // hidden frame; give up before the user notices a late sign-in.
+    silentRequestTimeoutInSeconds: 5,
     // Tokens live in sessionStorage of this origin only. The sign-in state
     // (PKCE verifier, no tokens) uses localStorage so that the popup and
     // silent-renew windows can complete the exchange.

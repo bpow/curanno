@@ -18,6 +18,7 @@ export function stubUserManager(user: User | null = null): UserManager {
     signinRedirect: () => Promise.resolve(),
     signinRedirectCallback: () => Promise.resolve(user),
     signinPopup: () => Promise.resolve(user),
+    signinSilent: () => Promise.reject(new Error('login_required')),
     signoutRedirect: () => Promise.resolve(),
     signoutPopup: () => Promise.resolve(),
     removeUser: () => Promise.resolve(),

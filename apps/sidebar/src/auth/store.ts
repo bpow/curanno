@@ -55,7 +55,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * Completes a redirect sign-in when the URL carries the provider's
-   * response, otherwise restores the session from storage.
+   * response, otherwise restores the session from storage. With nothing
+   * stored, a silent sign-in runs in the background so a new tab picks up a
+   * live provider session without a click (ADR 0019); the sidebar is usable
+   * anonymously meanwhile.
    */
   async function init(): Promise<void> {
     const m = getManager();
@@ -68,10 +71,22 @@ export const useAuthStore = defineStore('auth', () => {
         setUser(signedIn);
         return;
       }
-      setUser(await m.getUser());
+      const stored = await m.getUser();
+      setUser(stored);
+      if (!user.value) void trySilentSignin(m);
     } catch (err) {
       error.value = err instanceof Error ? err.message : String(err);
       status.value = 'anonymous';
+    }
+  }
+
+  async function trySilentSignin(m: UserManager): Promise<void> {
+    try {
+      const signedIn = await m.signinSilent();
+      // A sign-in or sign-out by the user while this ran takes precedence.
+      if (status.value === 'anonymous') setUser(signedIn);
+    } catch {
+      // login_required, blocked third-party cookies or a timeout: stay anonymous.
     }
   }
 
