@@ -204,6 +204,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/x/ontologies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the ontologies loaded for term lookup */
+        get: operations["listOntologies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/x/ontologies/{name}/terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ontology's CURIE prefix in lower case, for example `hp`. */
+                name: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Find terms by ID, label or synonym
+         * @description Terms whose ID equals `q` or whose label or exact or related synonym contains it, ignoring case. The best matches come first: the ID, the whole name, a name prefix, a word prefix, then anywhere in a name.
+         */
+        get: operations["searchOntologyTerms"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/x/documents": {
         parameters: {
             query?: never;
@@ -624,6 +664,34 @@ export interface components {
             created?: string;
             /** Format: date-time */
             modified?: string;
+        } & {
+            [key: string]: unknown;
+        };
+        Ontology: {
+            /** @description The ontology's CURIE prefix in lower case. */
+            name: string;
+            title: string;
+            /** @description The release, for example `2026-09-01`. */
+            version?: string;
+            /** @description The license the release names, for attribution. */
+            license?: string;
+            /**
+             * Format: uri
+             * @description Where users find out more about the ontology, for attribution.
+             */
+            homepage?: string;
+            terms: number;
+            /** Format: date-time */
+            loaded: string;
+        } & {
+            [key: string]: unknown;
+        };
+        OntologyTermMatch: {
+            /** @description CURIE, for example `HP:0001639`. */
+            id: string;
+            label: string;
+            /** @description The synonym that matched, when it was not the label. */
+            synonym?: string;
         } & {
             [key: string]: unknown;
         };
@@ -1207,6 +1275,8 @@ export type AclGrant = components['schemas']['AclGrant'];
 export type AclEntry = components['schemas']['AclEntry'];
 export type BodyProfileInput = components['schemas']['BodyProfileInput'];
 export type BodyProfile = components['schemas']['BodyProfile'];
+export type Ontology = components['schemas']['Ontology'];
+export type OntologyTermMatch = components['schemas']['OntologyTermMatch'];
 export type DocumentUriRelation = components['schemas']['DocumentUriRelation'];
 export type DocumentLink = components['schemas']['DocumentLink'];
 export type DocumentMetadata = components['schemas']['DocumentMetadata'];
@@ -1732,6 +1802,58 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    listOntologies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The loaded ontologies, with their releases */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ontology"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    searchOntologyTerms: {
+        parameters: {
+            query: {
+                q: string;
+                /** @description Only this term and its descendants, for example `HP:0000118`. */
+                root?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                /** @description The ontology's CURIE prefix in lower case, for example `hp`. */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matching terms, best first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OntologyTermMatch"][];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
         };
     };
     lookupDocument: {
