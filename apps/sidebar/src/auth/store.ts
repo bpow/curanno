@@ -16,6 +16,18 @@ export function setUserManagerFactory(factory: () => UserManager): void {
   managerFactory = factory;
 }
 
+// oidc-client-ts's words when window.open gave it no window to steer.
+const POPUP_UNREACHABLE = 'Attempted to navigate on a disposed window';
+
+function signinError(err: unknown): string {
+  const message = err instanceof Error ? err.message : String(err);
+  // A page with Cross-Origin-Opener-Policy: same-origin opens the popup but
+  // cuts it off from this frame, which leaves it empty (ADR 0029).
+  return message === POPUP_UNREACHABLE
+    ? 'This page blocks the sign-in window, so it stayed empty. Close it; the CurAnno browser extension can sign in on pages like this one.'
+    : message;
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const manager = shallowRef<UserManager>();
   const user = shallowRef<User | null>(null);
@@ -101,7 +113,7 @@ export const useAuthStore = defineStore('auth', () => {
         await m.signinRedirect({ state });
       }
     } catch (err) {
-      error.value = err instanceof Error ? err.message : String(err);
+      error.value = signinError(err);
     }
   }
 
