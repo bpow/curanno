@@ -18,6 +18,7 @@ export function toModelProfile(profile: ApiBodyProfile): BodyProfile {
     iri: profile.iri,
     title: profile.title,
     ...(profile.description !== undefined ? { description: profile.description } : {}),
+    ...(profile.defaultPurpose !== undefined ? { defaultPurpose: profile.defaultPurpose } : {}),
     schema: profile.schema,
   };
 }

@@ -14,6 +14,7 @@ import {
   createTestContext,
   databaseUrl,
   PUBLIC_URL,
+  root,
   type TestContext,
 } from '../test/harness.js';
 
@@ -428,6 +429,35 @@ describe.skipIf(!databaseUrl)('W3C protocol', () => {
         }),
       });
       expect(res.statusCode).toBe(422);
+    });
+
+    it('lists default purposes, which profiles may share', async () => {
+      await ctx.as(root, { method: 'GET', url: '/x/me' });
+      await ctx.db
+        .updateTable('users')
+        .set({ is_admin: true })
+        .where('subject', '=', root.sub)
+        .execute();
+      for (const n of [1, 2]) {
+        const put = await ctx.as(root, {
+          method: 'PUT',
+          url: `/x/profiles/${encodeURIComponent(`https://example.org/profiles/shared/${n}`)}`,
+          payload: {
+            title: `Shared ${n}`,
+            defaultPurpose: 'describing',
+            schema: { type: 'object' },
+          },
+        });
+        expect(put.statusCode).toBe(201);
+      }
+      const list = await ctx.as(null, { method: 'GET', url: '/x/profiles' });
+      const byIri = new Map(
+        list.json<{ iri: string; defaultPurpose?: string }[]>().map((p) => [p.iri, p]),
+      );
+      expect(byIri.get(profile)?.defaultPurpose).toBe('classifying');
+      expect(byIri.get(`${PROFILE_BASE}case-individual/1`)?.defaultPurpose).toBe('describing');
+      expect(byIri.get('https://example.org/profiles/shared/1')?.defaultPurpose).toBe('describing');
+      expect(byIri.get('https://example.org/profiles/shared/2')?.defaultPurpose).toBe('describing');
     });
   });
 

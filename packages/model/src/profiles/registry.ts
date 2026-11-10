@@ -14,9 +14,14 @@ export interface BodyProfile {
   /** JSON Schema 2020-12 for the body's `value`. */
   schema: JsonSchema;
   /**
-   * Purposes this profile applies to by default: a TextualBody with
-   * `format: application/json` and one of these purposes is validated as if
-   * it named the profile.
+   * The purpose clients give a new body of this profile. Several profiles may
+   * share one (ADR 0030).
+   */
+  defaultPurpose?: Purpose;
+  /**
+   * Purposes that select this profile for a TextualBody with
+   * `format: application/json` that names no profile: the body is validated as
+   * if it named this one. Each purpose selects at most one profile.
    */
   purposes?: Purpose[];
 }

@@ -34,7 +34,7 @@ export const useProfilesStore = defineStore('profiles', () => {
   }
 
   function purposeOf(iri: string): Motivation | undefined {
-    return byIri(iri)?.purposes?.[0];
+    return byIri(iri)?.defaultPurpose;
   }
 
   return { profiles, registry, problem, loaded, load, byIri, validate, purposeOf };

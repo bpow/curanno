@@ -14,6 +14,7 @@ export const evidenceExcerptProfile: BodyProfile = {
   title: 'Evidence excerpt',
   description:
     'Classifies the annotated text as evidence of a kind, linked to the entities it concerns by CURIE.',
+  defaultPurpose: 'classifying',
   purposes: ['classifying'],
   schema: {
     $schema: 'https://json-schema.org/draft/2020-12/schema',
@@ -68,6 +69,7 @@ export const caseIndividualProfile: BodyProfile = {
   title: 'Case individual',
   description:
     'An individual reported to have a variant in the gene of interest (ClinGen Case-Individuals template).',
+  defaultPurpose: 'describing',
   schema: {
     $schema: 'https://json-schema.org/draft/2020-12/schema',
     $id: `${PROFILE_BASE}case-individual/1`,
