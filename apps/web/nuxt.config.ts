@@ -126,7 +126,8 @@ export default defineNuxtConfig({
     // Fills in the issuer in the security headers at startup (see above).
     experimental: { envExpansion: true },
     devProxy: {
-      '/annotations': `${apiProxyTarget}/annotations`,
+      // With the slashes, or the proxy drops the container's trailing slash and the API has no route for it.
+      '/annotations/': `${apiProxyTarget}/annotations/`,
       '/x': `${apiProxyTarget}/x`,
       // The embedded issuer (ADR 0028); nothing answers these when the provider is external.
       '/oidc': `${apiProxyTarget}/oidc`,
