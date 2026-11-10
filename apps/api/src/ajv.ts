@@ -8,7 +8,7 @@
  */
 import { Ajv2020, type Options } from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
-import { addAnnotationFormats } from '@curanno/model';
+import { addAnnotationFormats, addProfileKeywords } from '@curanno/model';
 
 const common: Options = {
   allErrors: true,
@@ -28,5 +28,5 @@ export function createCoercingAjv(): Ajv2020 {
 
 function withFormats(ajv: Ajv2020): Ajv2020 {
   addFormats.default(ajv);
-  return addAnnotationFormats(ajv);
+  return addProfileKeywords(addAnnotationFormats(ajv));
 }

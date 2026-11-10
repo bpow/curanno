@@ -8,6 +8,7 @@ export {
   caseIndividualProfile,
   evidenceExcerptProfile,
 } from './builtin.js';
+export { addProfileKeywords, type KeywordRegistry, type OntologyLookup } from './keywords.js';
 export {
   ProfileRegistry,
   isStructuredBody,

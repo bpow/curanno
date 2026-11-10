@@ -39,6 +39,12 @@ function entriesOf(
     if (!nested && field?.kind === 'object-list' && Array.isArray(v) && v.every(isObject)) {
       return { key, label, items: v.map((item) => entriesOf(item, field.fields ?? [], true)) };
     }
+    if (field?.kind === 'term-list' && Array.isArray(v) && v.every(isObject)) {
+      const terms = v.map((t) =>
+        t['id'] ? `${show(t['label'] ?? '')} (${show(t['id'])})` : show(t['label'] ?? ''),
+      );
+      return { key, label, text: terms.join(', ') };
+    }
     return { key, label, text: show(v) };
   });
 }
