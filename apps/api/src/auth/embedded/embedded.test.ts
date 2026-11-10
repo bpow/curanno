@@ -92,6 +92,8 @@ class Browser {
 const b64u = (b: Buffer): string => b.toString('base64url');
 const query = (params: Record<string, string>): string => new URLSearchParams(params).toString();
 
+const EXTENSION_ID = 'dmlkjhnoiinndnkboiknehimngilddpp';
+
 describe.skipIf(!databaseUrl)('embedded issuer', () => {
   let ctx: TestContext;
   let issuer: EmbeddedIssuer;
@@ -113,6 +115,7 @@ describe.skipIf(!databaseUrl)('embedded issuer', () => {
         mode: 'embedded',
         secret: SECRET,
         extraOrigins: [],
+        extensionIds: [EXTENSION_ID],
         smtpUrl: undefined,
         mailFrom: undefined,
         signup: 'approval',
@@ -149,12 +152,13 @@ describe.skipIf(!databaseUrl)('embedded issuer', () => {
     login: string,
     password: string,
     pkce = pair(),
+    redirect = redirectUri(),
   ): Promise<{ location: string; verifier: string; login: Response }> {
     const authorizeUrl =
       '/oidc/auth?' +
       query({
         client_id: EMBEDDED_CLIENT_ID,
-        redirect_uri: redirectUri(),
+        redirect_uri: redirect,
         response_type: 'code',
         scope: 'openid profile email offline_access',
         code_challenge: pkce.challenge,
@@ -209,6 +213,58 @@ describe.skipIf(!databaseUrl)('embedded issuer', () => {
 
   const me = (token: string) =>
     app.inject({ method: 'GET', url: '/x/me', headers: { authorization: `Bearer ${token}` } });
+
+  it('sends a configured extension the code, and its sign-out page may post towards it', async () => {
+    const extension = `https://${EXTENSION_ID}.chromiumapp.org/`;
+    const browser = new Browser(base);
+    const { location, verifier } = await authorize(
+      browser,
+      'alice@example.org',
+      PASSWORD,
+      pair(),
+      extension,
+    );
+    expect(location.startsWith(`${extension}?`)).toBe(true);
+    const tokens = await exchange({
+      grant_type: 'authorization_code',
+      code: new URL(location).searchParams.get('code') ?? '',
+      redirect_uri: extension,
+      code_verifier: verifier,
+    });
+    expect(tokens.status).toBe(200);
+
+    const out = await browser.request(
+      '/oidc/session/end?' +
+        query({
+          id_token_hint: tokens.body['id_token'] ?? '',
+          post_logout_redirect_uri: extension,
+        }),
+    );
+    expect(out.status).toBe(200);
+    // Chromium checks form-action against the redirect that follows the post.
+    expect(out.headers.get('content-security-policy')).toContain(extension);
+    const html = await out.text();
+    const confirmed = await browser.request(/action="([^"]+)"/.exec(html)?.[1] ?? '', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: query({ xsrf: /name="xsrf" value="([^"]+)"/.exec(html)?.[1] ?? '', logout: 'yes' }),
+    });
+    expect(confirmed.headers.get('location')).toBe(extension);
+
+    const unknown = await fetch(
+      `${base}/oidc/auth?` +
+        query({
+          client_id: EMBEDDED_CLIENT_ID,
+          redirect_uri: `https://${'a'.repeat(32)}.chromiumapp.org/`,
+          response_type: 'code',
+          scope: 'openid',
+          code_challenge: pair().challenge,
+          code_challenge_method: 'S256',
+        }),
+      { redirect: 'manual' },
+    );
+    expect(unknown.status).toBe(400);
+  });
 
   it('locks a login after repeated failures from anywhere, and records no login name', async () => {
     await createPasswordUser(ctx.db, base, { login: 'target-of-guessing', password: PASSWORD });

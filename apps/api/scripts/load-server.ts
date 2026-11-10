@@ -23,6 +23,7 @@ const config: Config = {
     mode: 'external',
     secret: undefined,
     extraOrigins: [],
+    extensionIds: [],
     smtpUrl: undefined,
     mailFrom: undefined,
     signup: 'approval',

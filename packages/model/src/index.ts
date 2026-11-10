@@ -9,3 +9,4 @@ export * from './text-model/index.js';
 export * from './document-identity/index.js';
 export * from './profiles/index.js';
 export * from './rpc/index.js';
+export * from './extension-bridge/index.js';

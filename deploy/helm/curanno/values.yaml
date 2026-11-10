@@ -40,6 +40,13 @@ config:
   # (see ingress.metrics below) or turn them off.
   metricsEnabled: true
 
+# Browser extensions the sidebar may sign in through, on pages that cut off
+# its sign-in popup (ADR 0029). Registered as https://<id>.chromiumapp.org/
+# with the embedded issuer, or by zitadel.provision; with another provider,
+# register that address yourself. apps/extension's id is
+# dmlkjhnoiinndnkboiknehimngilddpp.
+extensionIds: []
+
 # Who issues the tokens. `external` (the default) trusts the OpenID Connect
 # provider named in `config.oidcIssuer` (ADR 0005; Zitadel can be provisioned
 # below). `embedded` makes the API its own issuer on `config.publicUrl`

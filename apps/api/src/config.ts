@@ -33,6 +33,8 @@ export interface Config {
     secret: string | undefined;
     /** Embedded mode: origins besides `publicUrl` where the clients run, for the client's redirect URIs. */
     extraOrigins: string[];
+    /** Embedded mode: browser extensions whose `https://<id>.chromiumapp.org/` may receive codes (ADR 0029). */
+    extensionIds: string[];
     /** Embedded mode: where account mail (invitations, resets) is sent through, e.g. `smtps://user:pass@host`; unset sends none. */
     smtpUrl: string | undefined;
     /** Embedded mode: the From address of account mail. */
@@ -97,6 +99,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         .split(/\s+/)
         .filter(Boolean)
         .map((o) => origin(o, 'AUTH_EXTRA_ORIGINS')),
+      extensionIds: extensionIds(env['AUTH_EXTENSION_IDS']),
       signup: signupPolicy(env['AUTH_SIGNUP']),
       autoApproveDomains: (env['AUTH_AUTO_APPROVE_DOMAINS'] || '')
         .split(/[\s,]+/)
@@ -180,6 +183,16 @@ function authMode(value: string | undefined): 'external' | 'embedded' {
   if (!value || value === 'external') return 'external';
   if (value === 'embedded') return 'embedded';
   throw new Error(`AUTH_MODE must be "external" or "embedded", not "${value}"`);
+}
+
+function extensionIds(value: string | undefined): string[] {
+  const ids = (value || '').split(/[\s,]+/).filter(Boolean);
+  for (const id of ids) {
+    if (!/^[a-p]{32}$/.test(id)) {
+      throw new Error(`AUTH_EXTENSION_IDS: not an extension id (32 letters a-p): ${id}`);
+    }
+  }
+  return ids;
 }
 
 function origin(value: string, name: string): string {

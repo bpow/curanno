@@ -12,7 +12,8 @@
  *
  *   node deploy/zitadel/provision.ts --dev-users --write-env .env
  *   node deploy/zitadel/provision.ts --issuer https://idp.example \
- *     --pat-file admin.pat --origin https://curanno.example
+ *     --pat-file admin.pat --origin https://curanno.example \
+ *     --extension-id dmlkjhnoiinndnkboiknehimngilddpp
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
@@ -26,6 +27,8 @@ const { values: args } = parseArgs({
     },
     // Where the API serves the sidebar (/sidebar/) and the site runs (/).
     origin: { type: 'string', multiple: true },
+    // Browser extensions the sidebar may sign in through (ADR 0029).
+    'extension-id': { type: 'string', multiple: true },
     'dev-users': { type: 'boolean', default: false },
     'write-env': { type: 'string' },
     'write-configmap': { type: 'string' },
@@ -45,6 +48,12 @@ const DEV_ORIGINS = [
   `http://localhost:${port('PORT', 3000)}`,
 ];
 const origins = args.origin ?? DEV_ORIGINS;
+const extensionIds = args['extension-id'] ?? [];
+for (const id of extensionIds) {
+  if (!/^[a-p]{32}$/.test(id)) throw new Error(`--extension-id: not an extension id: ${id}`);
+}
+// What chrome.identity.getRedirectURL() gives the extension; sign-in and sign-out both end there.
+const extensionRedirects = extensionIds.map((id) => `https://${id}.chromiumapp.org/`);
 const issuer = args.issuer.replace(/\/$/, '');
 const token = readFileSync(args['pat-file'], 'utf8').trim();
 
@@ -71,17 +80,17 @@ async function call(method: string, body: object): Promise<Record<string, unknow
 }
 
 // Every redirect URI is exact: Zitadel has no wildcards.
-const redirectUris = origins.flatMap((o) => [
-  `${o}/sidebar/`,
-  `${o}/sidebar/popup-callback.html`,
-  `${o}/sidebar/silent-renew.html`,
-  `${o}/auth/callback`,
-]);
-const postLogoutRedirectUris = origins.flatMap((o) => [
-  `${o}/sidebar/`,
-  `${o}/sidebar/popup-callback.html`,
-  `${o}/`,
-]);
+const redirectUris = origins
+  .flatMap((o) => [
+    `${o}/sidebar/`,
+    `${o}/sidebar/popup-callback.html`,
+    `${o}/sidebar/silent-renew.html`,
+    `${o}/auth/callback`,
+  ])
+  .concat(extensionRedirects);
+const postLogoutRedirectUris = origins
+  .flatMap((o) => [`${o}/sidebar/`, `${o}/sidebar/popup-callback.html`, `${o}/`])
+  .concat(extensionRedirects);
 const oidcConfiguration = {
   redirectUris,
   postLogoutRedirectUris,

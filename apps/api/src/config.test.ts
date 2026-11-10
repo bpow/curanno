@@ -30,6 +30,7 @@ describe('loadConfig', () => {
       AUTH_SECRET: secret,
       PUBLIC_URL: 'https://curanno.example/',
       AUTH_EXTRA_ORIGINS: 'http://localhost:5173 http://localhost:3001/some/path',
+      AUTH_EXTENSION_IDS: 'dmlkjhnoiinndnkboiknehimngilddpp',
       // Left over from an external provider's setup; the embedded client keeps its name.
       OIDC_CLIENT_ID: '398448124395257859',
       OIDC_ISSUER: 'http://localhost:8080',
@@ -38,6 +39,7 @@ describe('loadConfig', () => {
       mode: 'embedded',
       secret,
       extraOrigins: ['http://localhost:5173', 'http://localhost:3001'],
+      extensionIds: ['dmlkjhnoiinndnkboiknehimngilddpp'],
       signup: 'approval',
       autoApproveDomains: [],
       maxPending: 200,

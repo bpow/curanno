@@ -103,6 +103,7 @@ export async function createTestContext(options: TestContextOptions = {}): Promi
       mode: 'external',
       secret: undefined,
       extraOrigins: [],
+      extensionIds: [],
       smtpUrl: undefined,
       mailFrom: undefined,
       signup: 'approval',

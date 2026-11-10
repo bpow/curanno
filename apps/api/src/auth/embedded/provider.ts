@@ -8,6 +8,7 @@
 import type { FastifyInstance } from 'fastify';
 import { createLocalJWKSet, type JWTVerifyGetKey } from 'jose';
 import type { Kysely } from 'kysely';
+import { extensionRedirectUri } from '@curanno/model';
 import Provider, { type Configuration } from 'oidc-provider';
 import type { Config } from '../../config.js';
 import type { AccountMail } from '../../routes/context.js';
@@ -73,6 +74,8 @@ export async function createEmbeddedIssuer(options: {
   const authSecret: string = secret;
   const https = issuer.startsWith('https://');
   const origins = [...new Set([issuer, ...config.auth.extraOrigins])];
+  // The sidebar signs in through these on pages that cut off its popup (ADR 0029).
+  const extensionRedirects = config.auth.extensionIds.map(extensionRedirectUri);
 
   const throttle = new Throttle(db, authSecret);
   const mailer: Mailer | undefined =
@@ -234,8 +237,14 @@ export async function createEmbeddedIssuer(options: {
           application_type: 'web',
           grant_types: ['authorization_code', 'refresh_token'],
           response_types: ['code'],
-          redirect_uris: origins.flatMap((o) => CLIENT_PATHS.map((p) => o + p)),
-          post_logout_redirect_uris: origins.flatMap((o) => [`${o}/sidebar/`, `${o}/`]),
+          redirect_uris: [
+            ...origins.flatMap((o) => CLIENT_PATHS.map((p) => o + p)),
+            ...extensionRedirects,
+          ],
+          post_logout_redirect_uris: [
+            ...origins.flatMap((o) => [`${o}/sidebar/`, `${o}/`]),
+            ...extensionRedirects,
+          ],
         },
       ],
       clientDefaults: { id_token_signed_response_alg: 'ES256' },
@@ -286,7 +295,7 @@ export async function createEmbeddedIssuer(options: {
           logoutSource(ctx, form) {
             ctx.set(
               'content-security-policy',
-              `default-src 'none'; style-src 'unsafe-inline'; script-src ${SUBMIT_SCRIPT_HASH}; form-action 'self' ${origins.join(' ')}`,
+              `default-src 'none'; style-src 'unsafe-inline'; script-src ${SUBMIT_SCRIPT_HASH}; form-action 'self' ${[...origins, ...extensionRedirects].join(' ')}`,
             );
             ctx.type = 'html';
             ctx.body = logoutPage(form);

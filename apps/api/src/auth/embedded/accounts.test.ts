@@ -43,6 +43,7 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
         mode: 'embedded',
         secret: SECRET,
         extraOrigins: [],
+        extensionIds: [],
         smtpUrl: undefined,
         mailFrom: undefined,
         signup: 'approval',

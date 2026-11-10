@@ -21,6 +21,9 @@ data:
   {{- with .Values.auth.extraOrigins }}
   AUTH_EXTRA_ORIGINS: {{ join " " . | quote }}
   {{- end }}
+  {{- with .Values.extensionIds }}
+  AUTH_EXTENSION_IDS: {{ join " " . | quote }}
+  {{- end }}
   {{- with .Values.auth.bootstrapAdminEmail }}
   BOOTSTRAP_ADMIN_EMAIL: {{ . | quote }}
   {{- end }}

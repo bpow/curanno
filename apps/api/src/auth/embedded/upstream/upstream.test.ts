@@ -298,6 +298,7 @@ describe.skipIf(!databaseUrl)('upstream sign-in and linking', () => {
         mode: 'embedded',
         secret: SECRET,
         extraOrigins: [],
+        extensionIds: [],
         signup: 'approval',
         autoApproveDomains: ['trusted.example'],
         maxPending: 200,
