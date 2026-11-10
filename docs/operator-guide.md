@@ -1,6 +1,6 @@
 # Operator guide
 
-Deploying, configuring, backing up and upgrading the platform. The system is two container images and a Helm chart; Postgres is the only stateful dependency and is not part of the chart (ADR 0004, plan section 9).
+Deploying, configuring, backing up and upgrading the platform. The system is two container images and a Helm chart; Postgres is the only stateful dependency; bring your own, or for small and trial installs let the chart run a single Postgres pod (section 4).
 
 ## 1. What runs
 
@@ -8,7 +8,7 @@ Deploying, configuring, backing up and upgrading the platform. The system is two
 | --- | --- | --- |
 | API | `curanno-api` (Dockerfile target `api`) | The W3C protocol and `/x/` extensions; the sidebar at `/sidebar/`, the guest bundle at `/guest.js`, the JSON-LD context at `/x/context.jsonld`; the PDF viewer at `/pdf/` on its own host; `/healthz`, `/readyz`, `/metrics` |
 | Management site | `curanno-web` (target `web`) | The landing page (with the bookmarklet) and the administration pages, under the same host as the API |
-| Postgres 17 | yours | Everything stateful |
+| Postgres 17 | yours, or the chart's (`postgres.enabled`) | Everything stateful |
 | OpenID Connect provider | yours, or the API itself (section 3a) | Sign-in for the sidebar and the site (ADR 0005, 0019, 0028) |
 
 Both images read their configuration from environment variables; nothing is baked in (ADR 0021). The sidebar and the viewer fetch `config.json` from the API at start, generated from the API's environment.
@@ -109,7 +109,14 @@ Values worth knowing (`deploy/helm/curanno/values.yaml` documents each):
 - `config.frameAncestors`: the origins allowed to embed the sidebar, as CSP source expressions. This is the clickjacking defence (ADR 0007): list the sites your users annotate, or `https:` for any https site if you accept the trade. Users of the browser extension annotate whatever site they are on, so serving them needs `https:`. The viewer's origin is added for you.
 - `pdfViewer.host`: a second host name for the PDF viewer, with its own certificate, so a PDF.js defect never runs on the sidebar's origin (ADR 0021). Point its DNS at the ingress; the chart adds the ingress rule.
 - `ingress.metrics`: whether `/metrics` is reachable from outside (default no). Scrape the API Service inside the cluster instead.
+- `postgres.enabled`: run Postgres in the release instead of using `secrets.databaseUrl` (below).
 - `web.enabled`: the management site; off, the API still serves the sidebar and viewer, and users install the bookmarklet from `pnpm --filter @curanno/guest bookmarklet` output instead of the landing page.
+
+### Postgres in the chart
+
+For a small or trial install, `postgres.enabled=true` runs `postgres:17` as a one-pod StatefulSet with a `postgres.persistence.size` volume (1 GiB by default) and points the API at it; leave `secrets.databaseUrl` empty. Set `postgres.password` (letters, digits and `. _ ~ -`; it goes into the connection string), or keep it under `POSTGRES_PASSWORD` in `secrets.existingSecret`. The password is applied only when the volume is first initialized. There is no replication or failover, and `helm uninstall` leaves the volume (`data-curanno-postgres-0` for a release named `curanno`) behind, so delete it by hand if you mean to. Back it up as in section 5 with `PG_DUMP="kubectl exec -i curanno-postgres-0 -- pg_dump"`.
+
+The pod sets no user, so OpenShift's restricted SCC assigns one from the namespace's range and the volume's group from its `fsGroup`. On other clusters the image's default user is root, which `runAsNonRoot` refuses; set `postgres.podSecurityContext` to `{runAsNonRoot: true, runAsUser: 999, fsGroup: 999}`.
 
 ### Deploying with Zitadel
 
