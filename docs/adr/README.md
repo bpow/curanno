@@ -42,3 +42,4 @@ An architecture decision record (ADR) captures one decision that shapes the syst
 | [0028](0028-embedded-issuer.md) | An optional embedded OpenID Connect issuer, with linked identities and approval-based sign-up | Accepted |
 | [0029](0029-extension-sign-in.md) | The extension runs the sidebar's sign-in window with `chrome.identity.launchWebAuthFlow` | Accepted |
 | [0030](0030-default-purpose.md) | A profile's default purpose is separate from its purpose mapping | Accepted |
+| [0031](0031-ontology-term-lookup.md) | Ontology terms for lookup are imported into Postgres and searched through the API | Accepted |

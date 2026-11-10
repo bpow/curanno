@@ -24,6 +24,7 @@
     "spike:manual": "node --experimental-strip-types spike/manual.ts",
     "account:merge": "tsc -b && node --env-file-if-exists=../../.env dist/accounts/merge-cli.js",
     "account": "tsc -b && node --env-file-if-exists=../../.env dist/auth/embedded/cli.js",
+    "ontology": "tsc -b && node --env-file-if-exists=../../.env dist/ontologies/cli.js",
     "migrate": "node --env-file-if-exists=../../.env --experimental-strip-types src/db/migrate.ts",
     "load:seed": "node --env-file-if-exists=../../.env --experimental-strip-types scripts/load-seed.ts",
     "load:run": "tsc -b && node --env-file-if-exists=../../.env --experimental-strip-types scripts/load-run.ts"

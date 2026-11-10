@@ -39,6 +39,8 @@ tags:
     description: Groups and memberships
   - name: vocabulary
     description: The JSON-LD context of the platform's extension terms
+  - name: ontologies
+    description: Ontologies loaded for term lookup, such as HPO (docs/ontologies.md)
 security:
   - bearerAuth: []
 paths:
@@ -576,6 +578,81 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /x/ontologies:
+    get:
+      operationId: listOntologies
+      tags: [ontologies]
+      summary: List the ontologies loaded for term lookup
+      security:
+        - {}
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The loaded ontologies, with their releases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ontology'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /x/ontologies/{name}/terms:
+    parameters:
+      - name: name
+        in: path
+        required: true
+        description: The ontology's CURIE prefix in lower case, for example `hp`.
+        schema:
+          type: string
+          pattern: '^[a-z][a-z0-9]*$'
+    get:
+      operationId: searchOntologyTerms
+      tags: [ontologies]
+      summary: Find terms by ID, label or synonym
+      description: >-
+        Terms whose ID equals `q` or whose label or exact or related synonym
+        contains it, ignoring case. The best matches come first: the ID, the
+        whole name, a name prefix, a word prefix, then anywhere in a name.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+        - name: root
+          in: query
+          description: Only this term and its descendants, for example `HP:0000118`.
+          schema:
+            type: string
+            maxLength: 100
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: Matching terms, best first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OntologyTermMatch'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /x/documents:
     post:
       operationId: registerDocument
@@ -1441,6 +1518,42 @@ components:
         modified:
           type: string
           format: date-time
+    Ontology:
+      type: object
+      required: [name, title, terms, loaded]
+      properties:
+        name:
+          description: The ontology's CURIE prefix in lower case.
+          type: string
+        title:
+          type: string
+        version:
+          description: The release, for example `2026-09-01`.
+          type: string
+        license:
+          description: The license the release names, for attribution.
+          type: string
+        homepage:
+          description: Where users find out more about the ontology, for attribution.
+          type: string
+          format: uri
+        terms:
+          type: integer
+        loaded:
+          type: string
+          format: date-time
+    OntologyTermMatch:
+      type: object
+      required: [id, label]
+      properties:
+        id:
+          description: CURIE, for example `HP:0001639`.
+          type: string
+        label:
+          type: string
+        synonym:
+          description: The synonym that matched, when it was not the label.
+          type: string
     DocumentUriRelation:
       description: How a URI relates to the page that reported it (docs/document-identity.md).
       type: string

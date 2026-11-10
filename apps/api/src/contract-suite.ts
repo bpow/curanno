@@ -17,6 +17,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PROFILE_BASE } from '@curanno/model';
 import { createStrictAjv } from './ajv.js';
 import { PUBLIC_PRINCIPAL_ID } from './db/index.js';
+import { parseOboGraph } from './ontologies/obographs.js';
+import { importOntology } from './ontologies/service.js';
 import {
   alice,
   annotationOn,
@@ -26,6 +28,7 @@ import {
   type TestContext,
   type TestUser,
 } from './test/harness.js';
+import { hpoFixture } from './test/hpo-fixture.js';
 
 type Json = Record<string, unknown>;
 
@@ -124,6 +127,7 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
         .execute();
       // So that searchPrincipals has a group to find alongside users.
       await createGroup(ctx, 'Search group', [alice]);
+      await importOntology(ctx.db, 'hp', parseOboGraph(hpoFixture, 'HP'));
       // Two people waiting for approval, as the embedded sign-up would leave them.
       for (const [key, name] of [
         ['first', 'Pending Pat'],
@@ -746,6 +750,35 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
           method: 'DELETE',
           url: `/x/profiles/${encodeURIComponent(`${PROFILE_BASE}evidence-excerpt/1`)}`,
         }),
+      },
+    ]);
+
+    run('listOntologies', [
+      {
+        name: 'lists',
+        as: null,
+        status: 200,
+        request: () => ({ method: 'GET', url: '/x/ontologies' }),
+      },
+    ]);
+    run('searchOntologyTerms', [
+      {
+        name: 'finds terms',
+        as: null,
+        status: 200,
+        request: () => ({ method: 'GET', url: '/x/ontologies/hp/terms?q=hcm&root=HP:0000118' }),
+      },
+      {
+        name: '400 without a query',
+        as: null,
+        status: 400,
+        request: () => ({ method: 'GET', url: '/x/ontologies/hp/terms' }),
+      },
+      {
+        name: '404 for an ontology not loaded',
+        as: null,
+        status: 404,
+        request: () => ({ method: 'GET', url: '/x/ontologies/mondo/terms?q=x' }),
       },
     ]);
 

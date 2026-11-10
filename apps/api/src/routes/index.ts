@@ -4,6 +4,7 @@ import type { AppContext, Handlers } from './context.js';
 import { documentHandlers } from './documents.js';
 import { eventHandlers } from './events.js';
 import { groupHandlers } from './groups.js';
+import { ontologyHandlers } from './ontologies.js';
 import { profileHandlers } from './profiles.js';
 import { protocolHandlers } from './protocol.js';
 import { searchHandlers } from './search.js';
@@ -17,6 +18,7 @@ export function createHandlers(ctx: AppContext): Handlers {
     ...searchHandlers(ctx),
     ...aclHandlers(ctx),
     ...profileHandlers(ctx),
+    ...ontologyHandlers(ctx),
     ...documentHandlers(ctx),
     ...eventHandlers(ctx),
     ...userHandlers(ctx),
