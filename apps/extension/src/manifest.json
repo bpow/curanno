@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "description": "Annotate web pages and PDFs with CurAnno, including pages that block the bookmarklet.",
   "minimum_chrome_version": "120",
-  "permissions": ["scripting", "storage", "webNavigation", "webRequest"],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2YWrfQImJtiUBiNFS+FXN42mAFjk+fcBUTJ7DzHPdTbwbOiHCN0Aqwzw1rhyEZAgExnI8L/NkJ/pjqzSUsqVf+MBUGTv9O9M6RKZrZT3jjnZPDCihWHXiyQXiGOZJXN3kMfmuyIIxIlimeRnZXn5TsG3MLJAiBv/ZUcctrfua//4uc3/iGA/QKCbhJpgOkVSEAbelokCpvjWdMB4nCrBlY6ymGHaDhl3M/3FjjmiVXbPUuRrmkD5wehdGEeIW1D0WAHYM/azLZwltx3ltJce9tQiyg55pcBmpsJFQ7po2Un7ZqrMkH+d5kr3uOwFPp0pONPi/eRF/kedJ4fBr2KZwQIDAQAB",
+  "permissions": ["identity", "scripting", "storage", "webNavigation", "webRequest"],
   "host_permissions": ["<all_urls>"],
   "background": { "service_worker": "background.js" },
   "action": {

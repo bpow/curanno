@@ -17,7 +17,7 @@ The bookmarklet (ADR 0007) adds a script element that loads the guest bundle fro
 - Iframes that a content script inserts are not subject to the page's `frame-src`, so the sidebar loads on pages that block the bookmarklet's. It still has to be allowed by the sidebar's `frame-ancestors` (ADR 0007), so a deployment that serves extension users on arbitrary sites lists `https:` there.
 - A main-frame response with `Content-Type: application/pdf` in a tab where the guest is on, or the button pressed on such a tab, sends the tab to the PDF viewer with the PDF's URL.
 - The badge shows the number of annotations the sidebar asked the tab's guests to anchor, which is what the viewer can read. The guest hands the content script that count and nothing else. While the guest is off, the badge can show the number of public annotations on the page from an anonymous `GET /x/search`. That sends every page address to the deployment, so it is off until the user turns it on in the options page.
-- The options page holds the sidebar URL, the API URL, the PDF viewer URL and the public-count switch, in `chrome.storage.sync`. The extension holds no token: sign-in stays in the sidebar origin (ADR 0019).
+- The options page holds the sidebar URL, the API URL, the PDF viewer URL and the public-count switch, in `chrome.storage.sync`. The extension holds no token: sign-in stays in the sidebar origin (ADR 0019). ADR 0029 has the extension open the sign-in window for the sidebar; the sidebar still redeems the code.
 
 ## Consequences
 

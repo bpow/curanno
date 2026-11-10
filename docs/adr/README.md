@@ -40,3 +40,4 @@ An architecture decision record (ADR) captures one decision that shapes the syst
 | [0026](0026-no-provider-group-sync.md) | Groups are managed entirely through our own API; OIDC is identity only | Accepted |
 | [0027](0027-zitadel-development-provider.md) | Zitadel is the development and CI identity provider | Accepted |
 | [0028](0028-embedded-issuer.md) | An optional embedded OpenID Connect issuer, with linked identities and approval-based sign-up | Accepted |
+| [0029](0029-extension-sign-in.md) | The extension runs the sidebar's sign-in window with `chrome.identity.launchWebAuthFlow` | Accepted |

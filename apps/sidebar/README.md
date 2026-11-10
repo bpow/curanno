@@ -34,6 +34,7 @@ In a deployment, configuration is read at run time from `config.json` next to th
 ## Login and isolation
 
 - Sign-in uses `oidc-client-ts` with the public client and PKCE. A top-level sidebar (development, tests) signs in through a redirect; a framed sidebar through a popup, because identity providers refuse to be framed. The popup returns only the authorization code to its opener on this origin; the token exchange and silent renewal happen in the sidebar frame.
+- When the browser extension's bridge is in the frame (`src/auth/extension.ts`), sign-in and sign-out go through it instead of the popup: the extension opens the provider's page with `chrome.identity.launchWebAuthFlow` and hands back the URL the provider redirected to, so a page whose `Cross-Origin-Opener-Policy` cuts the popup off cannot stop it (ADR 0029). The code is still exchanged here. Without the extension, such a page leaves the popup blank and the sidebar says why.
 - Tokens are kept in the sidebar origin's `sessionStorage` and attached as `Authorization: Bearer` by the API client. Nothing is stored in a cookie, nothing is written to `localStorage` but the sign-in state (PKCE verifier, no tokens), and nothing in the `Guest` interface carries a token, a body, a tag or a creator.
 - The identity provider, client and API origin are build-time configuration. The host page supplies nothing (ADR 0007); the `uri` query parameter is read by the development guest only, and the RPC guest accepts a connection only from `window.parent`.
 - `Content-Security-Policy: frame-ancestors …` limits which origins may embed the sidebar. The dev and preview servers send it from `VITE_FRAME_ANCESTORS`; the bookmarklet suite checks that an unlisted origin is refused.
@@ -47,7 +48,7 @@ The built assets (`pnpm --filter @curanno/sidebar build`, output in `dist/`) are
 3. Keep `popup-callback.html` and `silent-renew.html` reachable at the sidebar's base URL; both are registered redirect URIs.
 4. If a `script-src` directive is added, allow `'unsafe-eval'` or precompile the profile schemas: Ajv compiles JSON Schemas to functions at runtime.
 
-The identity provider must list `<base>`, `<base>popup-callback.html` and `<base>silent-renew.html` as redirect URIs and the sidebar origin as a web origin; `deploy/zitadel/provision.ts` does this for the dev ports.
+The identity provider must list `<base>`, `<base>popup-callback.html` and `<base>silent-renew.html` as redirect URIs and the sidebar origin as a web origin; `deploy/zitadel/provision.ts` does this for the dev ports. For the extension it also lists `https://<extension id>.chromiumapp.org/` as a redirect and post-logout redirect URI.
 
 ## Layout
 

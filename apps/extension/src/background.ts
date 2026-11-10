@@ -2,10 +2,10 @@
  * The service worker (ADR 0023). It turns the guest on and off per tab,
  * injects the content script into every frame that loads in a tab where
  * the guest is on, sends PDFs opened in such a tab to the viewer, and keeps
- * the badge. Its state lives in `chrome.storage.session`, because the
+ * the badge, and runs sign-in for the sidebar's bridge (ADR 0029). Its state lives in `chrome.storage.session`, because the
  * browser stops the worker whenever it is idle.
  */
-import { isAnchorCountMessage } from './messages.js';
+import { isAnchorCountMessage, isWebAuthRequest, type WebAuthResult } from './messages.js';
 import {
   ICON_SIZES,
   badgeText,
@@ -14,7 +14,7 @@ import {
   publicCountUrl,
   viewerUrlFor,
 } from './pages.js';
-import { apiOrigin, loadSettings } from './settings.js';
+import { apiOrigin, isSidebarUrl, loadSettings } from './settings.js';
 
 const session = chrome.storage.session;
 const onKey = (tabId: number): string => `on:${tabId}`;
@@ -78,10 +78,10 @@ async function refresh(tabId: number): Promise<void> {
   }
 }
 
-async function inject(tabId: number, frameIds?: number[]): Promise<void> {
+async function inject(tabId: number, frameIds?: number[], file = 'content.js'): Promise<void> {
   await chrome.scripting.executeScript({
     target: frameIds ? { tabId, frameIds } : { tabId, allFrames: true },
-    files: ['content.js'],
+    files: [file],
   });
 }
 
@@ -135,8 +135,9 @@ chrome.webNavigation.onCommitted.addListener((details) => {
 chrome.webNavigation.onDOMContentLoaded.addListener((details) => {
   void (async () => {
     if (!(await isOn(details.tabId))) return;
+    const sidebar = details.frameId !== 0 && isSidebarUrl(await loadSettings(), details.url);
     try {
-      await inject(details.tabId, [details.frameId]);
+      await inject(details.tabId, [details.frameId], sidebar ? 'bridge.js' : 'content.js');
     } catch {
       // A frame extensions may not script, or one that has navigated again.
     }
@@ -177,6 +178,34 @@ chrome.runtime.onMessage.addListener((message: unknown, sender) => {
     await session.set({ [`${countPrefix(tabId)}${sender.frameId}`]: message.count });
     await refresh(tabId);
   })();
+});
+
+async function webAuth(url: string): Promise<WebAuthResult> {
+  const target = new URL(url);
+  if (target.protocol !== 'https:' && target.protocol !== 'http:') {
+    return { error: 'Not a web address' };
+  }
+  try {
+    const ended = await chrome.identity.launchWebAuthFlow({ url, interactive: true });
+    return ended?.startsWith(chrome.identity.getRedirectURL())
+      ? { url: ended }
+      : { error: 'The sign-in window ended somewhere unexpected' };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+// Only the bridge in a sidebar frame may ask; its URL is the browser's word, not the page's.
+chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
+  if (!isWebAuthRequest(message) || sender.tab === undefined || sender.frameId === 0) return;
+  void (async () => {
+    if (!isSidebarUrl(await loadSettings(), sender.url)) {
+      sendResponse({ error: 'Not the sidebar' } satisfies WebAuthResult);
+      return;
+    }
+    sendResponse(await webAuth(message.url));
+  })();
+  return true;
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {

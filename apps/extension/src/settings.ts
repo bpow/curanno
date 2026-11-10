@@ -97,3 +97,15 @@ export function excludedOrigins(settings: Settings): string[] {
   if (settings.pdfViewerUrl) origins.push(new URL(settings.pdfViewerUrl).origin);
   return origins;
 }
+
+/** Whether a frame's URL is the sidebar page, which gets the sign-in bridge (ADR 0029). */
+export function isSidebarUrl(settings: Settings, frameUrl: string | undefined): boolean {
+  if (!frameUrl) return false;
+  try {
+    const sidebar = new URL(settings.sidebarUrl);
+    const frame = new URL(frameUrl);
+    return frame.origin === sidebar.origin && frame.pathname.startsWith(sidebar.pathname);
+  } catch {
+    return false;
+  }
+}

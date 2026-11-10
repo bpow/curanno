@@ -1,7 +1,8 @@
 /**
  * The extension in Chromium against the guest's fake sidebar: pages with
  * strict CSPs, a cross-origin frame, navigation in a tab where the guest
- * is on, the PDF redirect, both badge counts and the options page. The
+ * is on, the PDF redirect, both badge counts, the sidebar's sign-in bridge
+ * and the options page. The
  * toolbar button is pressed by dispatching its click event in the worker.
  */
 import { readFile } from 'node:fs/promises';
@@ -10,7 +11,7 @@ import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { chromium, type BrowserContext, type Frame, type Page, type Worker } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { GuestMessage } from '@curanno/model';
+import { EXTENSION_BRIDGE, type BridgeMessage, type GuestMessage } from '@curanno/model';
 import type { FakeSidebar } from '../../../../packages/guest/src/rpc/fake-sidebar.ts';
 import { buildGuest } from '../../../../packages/guest/scripts/bundle.ts';
 import { serve, type StaticServer } from '../../../../packages/guest/scripts/serve.ts';
@@ -46,7 +47,16 @@ async function site(routes: (origin: string) => Record<string, Route>): Promise<
   let table: Record<string, Route> = {};
   const server = http.createServer((req, res) => {
     requests.push(req);
-    const route = table[new URL(req.url ?? '/', 'http://x').pathname];
+    const url = new URL(req.url ?? '/', 'http://x');
+    // A provider that signs everyone in at once: back to redirect_uri with a code.
+    if (url.pathname === '/authorize') {
+      const back = new URL(url.searchParams.get('redirect_uri') ?? '');
+      back.searchParams.set('code', 'the-code');
+      back.searchParams.set('state', url.searchParams.get('state') ?? '');
+      res.writeHead(302, { location: back.href }).end();
+      return;
+    }
+    const route = table[url.pathname];
     if (!route) {
       res.writeHead(404).end();
       return;
@@ -267,6 +277,54 @@ describe('the toolbar button', () => {
     // Longer than a sub-frame guest's discovery interval.
     await p.waitForTimeout(2500);
     expect(await reported(frame)).toEqual([url]);
+    await p.close();
+  });
+});
+
+describe('the sign-in bridge', () => {
+  /** Runs in the sidebar frame's own world, as the sidebar does. */
+  function ask(frame: Frame, message: BridgeMessage, answer: string): Promise<BridgeMessage> {
+    return frame.evaluate(
+      ([m, a]) =>
+        new Promise<BridgeMessage>((resolve) => {
+          window.addEventListener('message', (event) => {
+            const data = event.data as BridgeMessage;
+            if (event.source === window && data?.bridge === m.bridge && data.type === a) {
+              resolve(data);
+            }
+          });
+          window.postMessage(m, location.origin);
+        }),
+      [message, answer] as const,
+    );
+  }
+
+  it('has a fixed extension id, so its redirect URI can be registered', () => {
+    expect(extensionId).toBe('dmlkjhnoiinndnkboiknehimngilddpp');
+  });
+
+  it('runs a sign-in for the sidebar frame and hands back where the provider sent it', async () => {
+    await configure({ sidebarUrl: `${sidebar.origin}/sidebar.html`, pdfViewerUrl: '' });
+    const url = `${pages.origin}/second.html`;
+    const p = await open(url);
+    await press(url);
+    const frame = await sidebarFrame(p);
+    const redirectUri = `https://${extensionId}.chromiumapp.org/`;
+    await expect
+      .poll(() => ask(frame, { bridge: EXTENSION_BRIDGE, type: 'query' }, 'ready'))
+      .toEqual({ bridge: EXTENSION_BRIDGE, type: 'ready', redirectUri });
+
+    const authorize = new URL(`${child.origin}/authorize`);
+    authorize.searchParams.set('redirect_uri', redirectUri);
+    authorize.searchParams.set('state', 's1');
+    const navigate = { bridge: EXTENSION_BRIDGE, type: 'navigate', id: 'n1', url: authorize.href };
+    const navigated = await ask(frame, navigate as BridgeMessage, 'navigated');
+    expect(navigated).toEqual({
+      bridge: EXTENSION_BRIDGE,
+      type: 'navigated',
+      id: 'n1',
+      url: `${redirectUri}?code=the-code&state=s1`,
+    });
     await p.close();
   });
 });

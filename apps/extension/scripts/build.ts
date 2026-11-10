@@ -1,6 +1,6 @@
 /**
  * Builds the unpacked extension into `dist/`: the service worker, the
- * content script and the options page bundled with esbuild, the manifest
+ * content script, the sidebar's sign-in bridge and the options page bundled with esbuild, the manifest
  * with the package's version, and the icons. The guest and the model are
  * bundled from source, as in the guest's own bundle, so a stale `dist/` of
  * either never leaks in.
@@ -26,6 +26,7 @@ function esbuildConfig(outDir: string, minify: boolean): esbuild.BuildOptions {
     entryPoints: {
       background: path.join(SRC, 'background.ts'),
       content: path.join(SRC, 'content.ts'),
+      bridge: path.join(SRC, 'bridge.ts'),
       options: path.join(SRC, 'options.ts'),
     },
     bundle: true,

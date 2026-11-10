@@ -3,6 +3,7 @@ import {
   DEFAULT_SETTINGS,
   apiOrigin,
   excludedOrigins,
+  isSidebarUrl,
   mergeSettings,
   sidebarLocation,
   validateSettings,
@@ -58,5 +59,16 @@ describe('derived locations', () => {
       'https://pdf.curanno.example',
     ]);
     expect(excludedOrigins({ ...deployed, pdfViewerUrl: '' })).toEqual(['https://curanno.example']);
+  });
+});
+
+describe('isSidebarUrl', () => {
+  it('matches the sidebar page and below it, on its origin only', () => {
+    expect(isSidebarUrl(deployed, 'https://curanno.example/sidebar/')).toBe(true);
+    expect(isSidebarUrl(deployed, 'https://curanno.example/sidebar/?x=1')).toBe(true);
+    expect(isSidebarUrl(deployed, 'https://curanno.example/account/login')).toBe(false);
+    expect(isSidebarUrl(deployed, 'https://evil.example/sidebar/')).toBe(false);
+    expect(isSidebarUrl(deployed, undefined)).toBe(false);
+    expect(isSidebarUrl(deployed, 'not a url')).toBe(false);
   });
 });

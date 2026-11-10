@@ -1,6 +1,7 @@
 import type { User, UserManager } from 'oidc-client-ts';
 import { defineStore } from 'pinia';
 import { computed, ref, shallowRef } from 'vue';
+import { extensionRedirectUri, listenForExtension } from './extension';
 import { appBaseUrl, createUserManager, isFramed } from './user-manager';
 
 export type AuthStatus = 'loading' | 'anonymous' | 'authenticated';
@@ -9,10 +10,12 @@ interface SigninState {
   returnTo?: string;
 }
 
-let managerFactory: () => UserManager = createUserManager;
+type ManagerFactory = (extensionRedirectUri?: string) => UserManager;
+
+let managerFactory: ManagerFactory = createUserManager;
 
 /** Tests swap the user manager for a stub. */
-export function setUserManagerFactory(factory: () => UserManager): void {
+export function setUserManagerFactory(factory: ManagerFactory): void {
   managerFactory = factory;
 }
 
@@ -73,6 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
    * anonymously meanwhile.
    */
   async function init(): Promise<void> {
+    listenForExtension();
     const m = getManager();
     const params = new URLSearchParams(window.location.search);
     try {
@@ -106,7 +110,12 @@ export const useAuthStore = defineStore('auth', () => {
     const m = getManager();
     error.value = undefined;
     try {
-      if (isFramed()) {
+      const viaExtension = extensionRedirectUri();
+      if (viaExtension) {
+        await managerFactory(viaExtension).signinPopup();
+        // The tokens are stored where this manager looks; loading them here starts renewal.
+        setUser(await m.getUser());
+      } else if (isFramed()) {
         setUser(await m.signinPopup());
       } else {
         const state: SigninState = { returnTo: window.location.search };
@@ -121,7 +130,10 @@ export const useAuthStore = defineStore('auth', () => {
     const m = getManager();
     error.value = undefined;
     try {
-      if (isFramed()) {
+      const viaExtension = extensionRedirectUri();
+      if (viaExtension) {
+        await managerFactory(viaExtension).signoutPopup();
+      } else if (isFramed()) {
         await m.signoutPopup();
       } else {
         // Back to the same document afterwards; the base URL with any query

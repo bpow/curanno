@@ -7,7 +7,9 @@ A Manifest V3 extension for Chromium browsers that runs the guest in every frame
 - **Badge:** while the guest is on, the number of annotations the sidebar has anchored in the tab. While it is off, and only if turned on in the options, the number of public annotations on the page from an anonymous search. That sends every page address to the API.
 - **Options:** the sidebar URL, the PDF viewer URL, public counts and the API origin they use. Right-click the button and choose Options.
 
-The extension holds no token and no annotation content; sign-in stays in the sidebar (ADR 0019).
+- **Sign-in:** the sidebar signs in through the extension, which opens the provider's page with `chrome.identity.launchWebAuthFlow` instead of a popup (ADR 0029). This works on pages whose `Cross-Origin-Opener-Policy` leaves the sidebar's own popup blank. The provider must list `https://dmlkjhnoiinndnkboiknehimngilddpp.chromiumapp.org/` as a redirect and post-logout redirect URI; the chart's `extensionIds` does that for the embedded issuer and for Zitadel.
+
+The extension holds no token and no annotation content. The sidebar keeps the PKCE verifier and redeems the code itself (ADR 0019, 0029).
 
 ## Layout
 
@@ -15,10 +17,11 @@ The extension holds no token and no annotation content; sign-in stays in the sid
 | ----------------------- | ----------------------------------------------------------------------------- |
 | `src/background.ts`     | Service worker: per-tab state, injection, PDF redirect, badge                 |
 | `src/content.ts`        | Content script: one guest per frame                                           |
+| `src/bridge.ts`         | Content script in the sidebar's frame: relays sign-in to the service worker   |
 | `src/settings.ts`       | Settings, their defaults and validation                                       |
 | `src/pages.ts`          | PDF detection, viewer and search addresses, badge text                        |
 | `src/options.*`         | Options page                                                                  |
-| `src/manifest.json`     | Manifest; the build sets its version from `package.json`                      |
+| `src/manifest.json`     | Manifest; the build sets its version from `package.json`. Its public `key` fixes the extension id |
 | `scripts/build.ts`      | esbuild bundle into `dist/`, with the guest and model bundled from source     |
 | `scripts/icons.ts`      | Draws the toolbar icons at build time                                         |
 | `test/browser/`         | Playwright tests of the built extension against the guest's fake sidebar      |
