@@ -7,3 +7,5 @@ coverage/
 .env.local
 .DS_Store
 .pnpm-store/
+# Signs packed builds of apps/extension; its public half is the manifest key.
+deploy/extension/extension-key.pem
