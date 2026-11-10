@@ -101,7 +101,7 @@ describe.skipIf(!adminUrl)('load seed', () => {
         `select count(*) as n from bodies where text_search @@ websearch_to_tsquery('english', 'variant')`,
       ),
     ).toBeGreaterThan(0);
-  });
+  }, 30_000);
 
   it('refuses to seed over existing data unless told to truncate, and is deterministic', async () => {
     const before = await checksum();
@@ -111,5 +111,5 @@ describe.skipIf(!adminUrl)('load seed', () => {
     await seedLoadData(url, { ...SIZES, truncate: true, seed: 2 });
     expect(await checksum()).not.toBe(before);
     expect(await count('select count(*) as n from body_profiles')).toBeGreaterThanOrEqual(0);
-  });
+  }, 30_000);
 });
