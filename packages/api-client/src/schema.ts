@@ -600,6 +600,8 @@ export interface components {
         BodyProfileInput: {
             title: string;
             description?: string;
+            /** @description The purpose clients give a new body of this profile. Several profiles may share one. */
+            defaultPurpose?: components["schemas"]["Motivation"];
             /** @description A JSON Schema (draft 2020-12) for the body's `value`. */
             schema: Record<string, unknown>;
             /** @default true */
@@ -612,6 +614,8 @@ export interface components {
             iri: string;
             title: string;
             description?: string;
+            /** @description The purpose clients give a new body of this profile. Several profiles may share one. */
+            defaultPurpose?: components["schemas"]["Motivation"];
             /** @description A JSON Schema (draft 2020-12) for the body's `value`. */
             schema: Record<string, unknown>;
             builtin: boolean;
