@@ -1,0 +1,42 @@
+{{- if .Values.route.enabled }}
+{{- $api := include "curanno.fullname" . }}
+{{- $host := default (urlParse .Values.config.publicUrl).host .Values.route.host }}
+{{- $routes := list }}
+{{- range splitList " " (include "curanno.apiPaths" (dict "ctx" . "metrics" .Values.route.metrics)) }}
+{{- $routes = append $routes (dict "host" $host "path" . "service" $api) }}
+{{- end }}
+{{- if .Values.web.enabled }}
+{{- $routes = append $routes (dict "host" $host "path" "/" "service" (printf "%s-web" $api)) }}
+{{- end }}
+{{- with .Values.pdfViewer.host }}
+{{- $routes = append $routes (dict "host" . "path" "/pdf" "service" $api "name" "pdf-viewer") }}
+{{- end }}
+{{- range $routes }}
+{{- $slug := default (.path | trimPrefix "/" | replace "." "-" | replace "/" "-" | trimPrefix "-") .name | default "site" }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ printf "%s-%s" $api $slug | trunc 63 | trimSuffix "-" }}
+  labels:
+    {{- include "curanno.labels" $ | nindent 4 }}
+  {{- with $.Values.route.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  host: {{ .host | quote }}
+  path: {{ .path }}
+  to:
+    kind: Service
+    name: {{ .service }}
+    weight: 100
+  port:
+    targetPort: http
+  {{- with $.Values.route.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  wildcardPolicy: None
+{{- end }}
+{{- end }}

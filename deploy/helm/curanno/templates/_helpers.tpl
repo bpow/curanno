@@ -51,6 +51,9 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if and .Values.postgres.enabled .Values.postgres.password (not (regexMatch "^[A-Za-z0-9._~-]+$" .Values.postgres.password)) }}
 {{- fail "postgres.password goes into DATABASE_URL unescaped; use only letters, digits and . _ ~ -" }}
 {{- end }}
+{{- if and .Values.ingress.enabled .Values.route.enabled }}
+{{- fail "enable ingress or route, not both" }}
+{{- end }}
 {{- if not (has .Values.auth.signup (list "approval" "open" "closed")) }}
 {{- fail "auth.signup must be approval, open or closed" }}
 {{- end }}
@@ -62,6 +65,19 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{- define "curanno.webImage" -}}
 {{- printf "%s:%s" .Values.web.image.repository (default .Chart.AppVersion .Values.web.image.tag) }}
+{{- end }}
+
+{{/* The main host's paths the API serves, space-separated; the rest go to the site. Shared by the Ingress and the Routes. */}}
+{{- define "curanno.apiPaths" -}}
+{{- $paths := list "/annotations" "/x" "/sidebar" "/guest.js" "/healthz" "/readyz" }}
+{{- if include "curanno.embedded" .ctx }}
+{{- /* The issuer and its account routes; the site's own /auth/callback is not among them. */}}
+{{- $paths = concat $paths (list "/oidc" "/idp" "/.well-known/openid-configuration") }}
+{{- end }}
+{{- if .metrics }}
+{{- $paths = append $paths "/metrics" }}
+{{- end }}
+{{- join " " $paths }}
 {{- end }}
 
 {{- define "curanno.postgresHost" -}}

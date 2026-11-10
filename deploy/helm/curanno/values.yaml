@@ -194,6 +194,26 @@ ingress:
   metrics: false
   tls: []
 
+# OpenShift Routes instead of an Ingress (not both): one Route per path, since
+# a Route has a single path, with TLS terminated at the router. Without
+# `tls.certificate`/`tls.key` the router's default certificate is used, which
+# covers hosts under the cluster's apps domain.
+route:
+  enabled: false
+  # The main host. Defaults to the host of config.publicUrl.
+  host: ''
+  annotations:
+    # Server-sent events: the router's default server timeout is 30 s.
+    haproxy.router.openshift.io/timeout: 1h
+    # The API takes the client's address from X-Forwarded-For for its sign-in
+    # and sign-up limits; the router appends to a client's own header by default.
+    haproxy.router.openshift.io/set-forwarded-headers: replace
+  # Whether /metrics is reachable through the router (see ingress.metrics).
+  metrics: false
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+
 resources:
   requests:
     cpu: 100m

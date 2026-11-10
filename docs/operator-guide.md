@@ -172,6 +172,21 @@ The ConfigMap `curanno-oidc` is not managed by Helm, so it survives `helm uninst
 - TLS on both hosts. The API sends `Strict-Transport-Security` when `publicUrl` is https.
 - Rate limiting and connection limits are the ingress's job; the chart sets none.
 
+### OpenShift Routes
+
+On OpenShift, `route.enabled=true` (instead of `ingress.enabled`) creates one Route per path above, since a Route carries a single path, on the host of `config.publicUrl` (or `route.host`) and `pdfViewer.host`. TLS is terminated at the router (`route.tls.termination: edge`, http redirected to https); without a certificate in `route.tls` the router's default one is used, which covers names under the cluster's apps domain:
+
+```yaml
+config:
+  publicUrl: https://curanno.apps.example.org
+pdfViewer:
+  host: curanno-pdf.apps.example.org
+route:
+  enabled: true
+```
+
+The default `route.annotations` raise the router's timeout to an hour for server-sent events and make it replace, rather than append to, a client's `X-Forwarded-For`, which the sign-in and sign-up limits rely on. Keep both if you override the annotations.
+
 ### Health and observability
 
 - `GET /healthz`: the process answers (liveness). `GET /readyz`: the database answers too (readiness), so a database outage drains pods instead of restarting them.
