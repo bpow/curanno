@@ -29,7 +29,8 @@ export function createRegistry(profiles: Iterable<BodyProfile>): ProfileRegistry
   return new ProfileRegistry(ajv, profiles);
 }
 
-export type FieldKind = 'select' | 'text' | 'textarea' | 'number' | 'boolean' | 'string-list';
+export type FieldKind =
+  'select' | 'text' | 'textarea' | 'number' | 'boolean' | 'string-list' | 'object-list';
 
 export interface SchemaField {
   name: string;
@@ -39,6 +40,9 @@ export interface SchemaField {
   kind: FieldKind;
   options?: string[];
   pattern?: string;
+  /** For an object list: the fields of each item and the item's name. */
+  fields?: SchemaField[];
+  itemTitle?: string;
 }
 
 interface PropertySchema {
@@ -49,6 +53,8 @@ interface PropertySchema {
   maxLength?: number;
   pattern?: string;
   items?: PropertySchema;
+  properties?: Record<string, PropertySchema>;
+  required?: string[];
 }
 
 function kindOf(schema: PropertySchema): FieldKind {
@@ -56,7 +62,10 @@ function kindOf(schema: PropertySchema): FieldKind {
   if (schema.enum) return 'select';
   if (type === 'boolean') return 'boolean';
   if (type === 'number' || type === 'integer') return 'number';
-  if (type === 'array') return 'string-list';
+  if (type === 'array') {
+    const items = schema.items;
+    return items?.type === 'object' || items?.properties ? 'object-list' : 'string-list';
+  }
   if (schema.maxLength === undefined || schema.maxLength > 200) return 'textarea';
   return 'text';
 }
@@ -76,6 +85,12 @@ export function fieldsOf(schema: JsonSchema): SchemaField[] {
       kind,
       ...(property.enum ? { options: property.enum.map(String) } : {}),
       ...(pattern !== undefined ? { pattern } : {}),
+      ...(kind === 'object-list' && property.items
+        ? {
+            fields: fieldsOf(property.items as JsonSchema),
+            itemTitle: property.items.title ?? 'item',
+          }
+        : {}),
     };
   });
 }

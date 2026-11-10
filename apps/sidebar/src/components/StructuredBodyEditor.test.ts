@@ -1,4 +1,4 @@
-import { evidenceExcerptProfile } from '@curanno/model';
+import { evidenceExcerptProfile, type BodyProfile } from '@curanno/model';
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import StructuredBodyEditor from './StructuredBodyEditor.vue';
@@ -62,5 +62,70 @@ describe('StructuredBodyEditor', () => {
       .findAll('.field')
       .find((f) => f.find('[name="identifiers"]').exists());
     expect(identifiers?.text()).toContain('must match pattern');
+  });
+
+  describe('object lists', () => {
+    const profile: BodyProfile = {
+      iri: 'https://curanno.example/profiles/test-list/1',
+      title: 'List test',
+      schema: {
+        type: 'object',
+        required: ['variants'],
+        properties: {
+          variants: {
+            title: 'Variants',
+            type: 'array',
+            minItems: 1,
+            items: {
+              title: 'Variant',
+              type: 'object',
+              required: ['variant'],
+              properties: { gene: { type: 'string' }, variant: { type: 'string' } },
+            },
+          },
+        },
+      },
+    };
+
+    it('adds, edits and removes items', async () => {
+      const wrapper = mount(StructuredBodyEditor, { props: { profile, modelValue: {} } });
+      await wrapper.find('button:not(.link)').trigger('click');
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([{ variants: [{}] }]);
+
+      await wrapper.setProps({ modelValue: { variants: [{ gene: 'MYH7' }, {}] } });
+      expect(wrapper.find<HTMLTextAreaElement>('[name="variants.0.gene"]').element.value).toBe(
+        'MYH7',
+      );
+      await wrapper.find('[name="variants.1.variant"]').setValue('c.1208G>A');
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
+        { variants: [{ gene: 'MYH7' }, { variant: 'c.1208G>A' }] },
+      ]);
+
+      await wrapper.find('button.link').trigger('click');
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([{ variants: [{}] }]);
+
+      await wrapper.setProps({ modelValue: { variants: [{}] } });
+      await wrapper.find('button.link').trigger('click');
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([{}]);
+    });
+
+    it('shows item errors inside the item and list errors under the list', () => {
+      const wrapper = mount(StructuredBodyEditor, {
+        props: {
+          profile,
+          modelValue: { variants: [{ gene: 'MYH7' }] },
+          errors: [
+            { instancePath: '/value/variants/0', message: 'must have required property variant' },
+            { instancePath: '/value/variants', message: 'must NOT have fewer than 1 items' },
+          ],
+        },
+      });
+      expect(wrapper.find('fieldset.item').text()).toContain('must have required property variant');
+      const list = wrapper.find('fieldset.list');
+      expect(list.findAll(':scope > .error').map((e) => e.text())).toEqual([
+        'must NOT have fewer than 1 items',
+      ]);
+      expect(wrapper.findAll('.error')).toHaveLength(2);
+    });
   });
 });
