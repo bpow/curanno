@@ -61,9 +61,19 @@ The sidebar runs the same registry client-side, with the schemas it fetched from
 
 `evidence-excerpt/1` classifies an excerpt as evidence of a kind (`case`, `functional`, `segregation`, `population`, `computational`, `other`), with CURIEs for the entities it concerns, an optional confidence and summary. It demonstrates the registry end to end and is expected to be replaced or extended by the curation team's own profiles; its schema is in `builtin.ts` and its tests in `registry.test.ts`.
 
-## 6. Adding a profile
+## 6. The case-individual profile
 
-1. Write the JSON Schema. Keep `additionalProperties: false` so that typos in field names are caught.
+`case-individual/1` follows the Case-Individuals template of ClinGen's [Hypothes.is annotation overview](https://www.clinicalgenome.org/site/assets/files/5693/hypothesis_annotation_overview_v1_final.pdf). Each field's `title` is the template's CamelCase label (`CasePresentingHPOs`, `GenotypingMethod`, …), and the JSON keys are their lower-camel-case forms. It departs from the template in three ways:
+
+- A field with no data is omitted, not filled with `n/a`. Empty strings are rejected.
+- `MultipleGeneVariants` becomes `variants`, a list with at least one item. Each item has `GeneName`, `Variant` (required), `ClinVarID`, `CAID`, `gnomAD` and `VariantEvidence`. The template asks for a ClinVarID or a CAID; the schema accepts either, both or neither.
+- HPO fields take lists of `HP:nnnnnnn` IDs. ClinVarIDs must be numeric and CAIDs must match `CA` followed by digits.
+
+The template's Article Information fields (PMID, Gene, HGNCID) are not part of this profile, because the annotation's target already identifies the article. Gene-specific protocols that add or remove fields should register their own profiles, not edit this one.
+
+## 7. Adding a profile
+
+1. Write the JSON Schema. Keep `additionalProperties: false` so that typos in field names are caught. The sidebar builds its form from the top-level `properties`. It handles strings, numbers, booleans, enums, lists of strings and lists of flat objects. A property's `title` labels the field, and an object list's `items.title` names its items.
 2. For a built-in profile, add it to `builtinProfiles` with a test; for a deployment-specific one, `PUT` it as an administrator.
 3. Document the fields where users will see them: the sidebar's editor for the profile.
 4. Never change a published schema incompatibly. Register `.../name/2` and migrate bodies if needed.

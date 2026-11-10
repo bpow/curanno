@@ -2,7 +2,12 @@
  * Body profile registry: JSON Schemas registered against profile IRIs and
  * purposes, used to validate structured bodies (docs/body-profiles.md).
  */
-export { PROFILE_BASE, builtinProfiles, evidenceExcerptProfile } from './builtin.js';
+export {
+  PROFILE_BASE,
+  builtinProfiles,
+  caseIndividualProfile,
+  evidenceExcerptProfile,
+} from './builtin.js';
 export {
   ProfileRegistry,
   isStructuredBody,
