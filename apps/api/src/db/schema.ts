@@ -264,6 +264,23 @@ export interface BodyProfilesTable {
   updated_at: Timestamp;
 }
 
+export interface OntologiesTable {
+  name: string;
+  title: string;
+  version: string | null;
+  license: string | null;
+  homepage: string | null;
+  loaded_at: Timestamp;
+}
+
+export interface OntologyTermsTable {
+  ontology: string;
+  id: string;
+  label: string;
+  synonyms: string[];
+  ancestors: string[];
+}
+
 export type AnnotationEventKind = 'created' | 'updated' | 'deleted';
 
 export interface AnnotationEventsTable {
@@ -304,6 +321,8 @@ export interface Database {
   bodies: BodiesTable;
   acl: AclTable;
   body_profiles: BodyProfilesTable;
+  ontologies: OntologiesTable;
+  ontology_terms: OntologyTermsTable;
   annotation_events: AnnotationEventsTable;
   schema_migrations: SchemaMigrationsTable;
 }
