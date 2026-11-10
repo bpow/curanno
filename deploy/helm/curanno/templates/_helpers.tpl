@@ -42,6 +42,15 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if and (include "curanno.embedded" .) (not .Values.secrets.existingSecret) (lt (len (default "" .Values.secrets.authSecret)) 32) }}
 {{- fail "secrets.authSecret (at least 32 characters) is required when auth.mode=embedded" }}
 {{- end }}
+{{- if and .Values.postgres.enabled .Values.secrets.databaseUrl }}
+{{- fail "secrets.databaseUrl is built for you when postgres.enabled; leave it empty" }}
+{{- end }}
+{{- if and .Values.postgres.enabled (not .Values.secrets.existingSecret) (not .Values.postgres.password) }}
+{{- fail "postgres.password (or secrets.existingSecret holding POSTGRES_PASSWORD) is required when postgres.enabled" }}
+{{- end }}
+{{- if and .Values.postgres.enabled .Values.postgres.password (not (regexMatch "^[A-Za-z0-9._~-]+$" .Values.postgres.password)) }}
+{{- fail "postgres.password goes into DATABASE_URL unescaped; use only letters, digits and . _ ~ -" }}
+{{- end }}
 {{- if not (has .Values.auth.signup (list "approval" "open" "closed")) }}
 {{- fail "auth.signup must be approval, open or closed" }}
 {{- end }}
@@ -53,6 +62,17 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{- define "curanno.webImage" -}}
 {{- printf "%s:%s" .Values.web.image.repository (default .Chart.AppVersion .Values.web.image.tag) }}
+{{- end }}
+
+{{- define "curanno.postgresHost" -}}
+{{- printf "%s-postgres" (include "curanno.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/* Distinct from curanno.selectorLabels, which the API Deployment selects on. */}}
+{{- define "curanno.postgresSelectorLabels" -}}
+app.kubernetes.io/name: {{ printf "%s-postgres" (include "curanno.name" .) }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: postgres
 {{- end }}
 
 {{- define "curanno.secretName" -}}
@@ -76,11 +96,21 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{/* Environment shared by the API container and the migration init container. */}}
 {{- define "curanno.containerEnv" -}}
 env:
+  {{- if .Values.postgres.enabled }}
+  - name: POSTGRES_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: {{ include "curanno.secretName" . }}
+        key: POSTGRES_PASSWORD
+  - name: DATABASE_URL
+    value: {{ printf "postgres://%s:$(POSTGRES_PASSWORD)@%s:5432/%s" .Values.postgres.username (include "curanno.postgresHost" .) .Values.postgres.database | quote }}
+  {{- else }}
   - name: DATABASE_URL
     valueFrom:
       secretKeyRef:
         name: {{ include "curanno.secretName" . }}
         key: {{ .Values.secrets.databaseUrlKey }}
+  {{- end }}
   {{- if .Values.zitadel.provision.enabled }}
   {{- include "curanno.provisionedClientId" (dict "root" . "name" "OIDC_CLIENT_ID") | nindent 2 }}
   {{- end }}

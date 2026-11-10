@@ -1,6 +1,10 @@
 {{ include "curanno.fullname" . }} is deploying {{ .Values.replicaCount }} replica(s) of {{ include "curanno.image" . }}{{- if .Values.web.enabled }} and {{ .Values.web.replicaCount }} of {{ include "curanno.webImage" . }}{{- end }}.
 
-Configuration comes from the ConfigMap {{ include "curanno.fullname" . }} and the Secret {{ include "curanno.secretName" . }} (DATABASE_URL). Migrations run in an init container before each pod starts.
+Configuration comes from the ConfigMap {{ include "curanno.fullname" . }} and the Secret {{ include "curanno.secretName" . }} ({{ if .Values.postgres.enabled }}POSTGRES_PASSWORD{{ else }}DATABASE_URL{{ end }}). Migrations run in an init container before each pod starts.
+{{- if .Values.postgres.enabled }}
+
+Postgres runs as the single pod {{ include "curanno.postgresHost" . }}-0 with a {{ .Values.postgres.persistence.size }} volume: no replication, so back it up (PG_DUMP="kubectl exec -i {{ include "curanno.postgresHost" . }}-0 -- pg_dump" scripts/db-backup.sh ...). The password is set only when the volume is first initialized. API pods restart until it is ready on first install.
+{{- end }}
 
 The API image serves the sidebar at {{ .Values.config.publicUrl }}/sidebar/ and the guest bundle at {{ .Values.config.publicUrl }}/guest.js{{- with .Values.pdfViewer.host }}, and the PDF viewer at https://{{ . }}/pdf/ (that host only){{- end }}. {{- if include "curanno.embedded" . }} The API is its own OpenID Connect issuer at {{ .Values.config.publicUrl }} (auth.mode=embedded, client id "curanno"); nothing needs registering with an identity provider, and its redirect URIs are derived from config.publicUrl{{- with .Values.auth.extraOrigins }} and auth.extraOrigins{{- end }}.
 {{- if not (hasPrefix "https://" .Values.config.publicUrl) }}

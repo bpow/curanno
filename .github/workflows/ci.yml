@@ -287,6 +287,12 @@ jobs:
       # Mistakes are refused rather than rendered.
       - run: '! helm template ci deploy/helm/curanno --set secrets.databaseUrl=postgres://ci --set auth.mode=embedded'
       - run: '! helm template ci deploy/helm/curanno --set secrets.databaseUrl=postgres://ci --set auth.mode=embedded --set secrets.authSecret=ci-only-secret-of-at-least-32-characters --set zitadel.provision.enabled=true'
+      # The bundled Postgres builds DATABASE_URL and needs a password of its own.
+      - run: >-
+          helm template ci deploy/helm/curanno --set postgres.enabled=true --set postgres.password=ci
+          --set auth.mode=embedded --set secrets.authSecret=ci-only-secret-of-at-least-32-characters | grep -q 'kind: StatefulSet'
+      - run: '! helm template ci deploy/helm/curanno --set config.oidcClientId=ci --set postgres.enabled=true'
+      - run: '! helm template ci deploy/helm/curanno --set config.oidcClientId=ci --set postgres.enabled=true --set postgres.password=ci --set secrets.databaseUrl=postgres://ci'
       # The values for the official Zitadel chart (deploy/zitadel/README.md) must render.
       - run: helm repo add zitadel https://charts.zitadel.com
       - run: >-

@@ -1,6 +1,6 @@
-# Default values for the curanno chart. Postgres is not part of this
-# chart (plan, section 9): point `secrets.databaseUrl` or `existingSecret` at
-# a database provided by the cluster or a managed service.
+# Default values for the curanno chart. Point `secrets.databaseUrl` or
+# `existingSecret` at a database provided by the cluster or a managed service,
+# or, for small and trial installs, enable the single-replica `postgres` below.
 #
 # Two deployments (ADR 0021): the API, which also serves the sidebar, the PDF
 # viewer and the guest bundle from its image, and the management site. One
@@ -114,6 +114,37 @@ zitadel:
       key: pat
     # Origins besides config.publicUrl to register redirect URIs for.
     extraOrigins: []
+
+# A single Postgres pod with a volume of its own: no replication or failover,
+# so back it up (docs/operator-guide.md). The API's DATABASE_URL is built from
+# these values; leave `secrets.databaseUrl` empty.
+postgres:
+  enabled: false
+  image:
+    # The Debian variant: its entrypoint runs under an arbitrary uid (OpenShift).
+    repository: docker.io/library/postgres
+    tag: '17'
+    pullPolicy: IfNotPresent
+  database: curanno
+  username: curanno
+  # Required unless `secrets.existingSecret` holds POSTGRES_PASSWORD. Letters,
+  # digits and . _ ~ - only, since it goes into DATABASE_URL. Applied only when
+  # the volume is first initialized; changing it later does not change the database's.
+  password: ''
+  persistence:
+    size: 1Gi
+    storageClass: '' # the cluster's default when empty
+    accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  # No user, for OpenShift's restricted SCC as above. Elsewhere the image's
+  # default user is root, which runAsNonRoot refuses: add runAsUser: 999 and fsGroup: 999.
+  podSecurityContext:
+    runAsNonRoot: true
 
 # Migrations run from an init container with the same image before each pod
 # starts; the runner takes an advisory lock so replicas starting together are safe.
