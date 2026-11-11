@@ -8,7 +8,7 @@ spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "curanno.selectorLabels" . | nindent 6 }}
+      {{- include "curanno.apiSelectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -17,8 +17,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "curanno.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/component: api
+        {{- include "curanno.apiSelectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

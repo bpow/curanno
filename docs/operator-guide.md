@@ -228,6 +228,15 @@ What a restore loses: annotations made after the dump, and nothing else; identit
 
 The OpenAPI document and the text model are versioned contracts (CONTRIBUTING.md); a breaking change to either is a new major version and the release notes say so.
 
+**Once, for releases installed before the API selector change.** The API Deployment's selector now includes `app.kubernetes.io/component: api`. It used to match the web and provisioning Job pods too, so `kubectl logs deploy/<release>` and `kubectl exec deploy/<release>` could land in the wrong pod. Kubernetes cannot change a Deployment's selector, so `helm upgrade` stops with a message naming this step. Delete the Deployment object but keep its pods, which go on serving through the Service, then upgrade:
+
+```bash
+kubectl delete deployment <release> --cascade=orphan -n <namespace>
+helm upgrade <release> deploy/helm/curanno -n <namespace> --reuse-values
+```
+
+The new Deployment takes over the running pods, whose labels already match, and replaces them as in any upgrade. A `helm rollback` to a revision from before this change needs the same step first.
+
 ## 7. Operating notes
 
 - Administrators: users with `is_admin` set, managed with SQL for the first one and `PATCH /x/users/{id}` thereafter.

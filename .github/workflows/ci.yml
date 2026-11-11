@@ -276,6 +276,14 @@ jobs:
       - run: helm lint deploy/helm/curanno --set secrets.databaseUrl=postgres://ci --set config.oidcClientId=ci
       - run: helm template ci deploy/helm/curanno --set secrets.databaseUrl=postgres://ci --set config.oidcClientId=ci --set ingress.enabled=true > /dev/null
       - run: helm template ci deploy/helm/curanno --set secrets.databaseUrl=postgres://ci --set zitadel.provision.enabled=true > /dev/null
+      # No selector may match another workload's pods; selectors cannot be changed once deployed.
+      - run: >-
+          helm template ci deploy/helm/curanno --set secrets.databaseUrl=postgres://ci --set zitadel.provision.enabled=true
+          | yq -o=json -I=0 'select(.kind != null)' | node scripts/check-chart-selectors.mjs
+      - run: >-
+          helm template ci deploy/helm/curanno --set postgres.enabled=true --set postgres.password=ci
+          --set auth.mode=embedded --set secrets.authSecret=ci-only-secret-of-at-least-32-characters
+          | yq -o=json -I=0 'select(.kind != null)' | node scripts/check-chart-selectors.mjs
       # The embedded issuer (ADR 0028) needs no identity provider, but does need a secret and routes /oidc and /idp to the API.
       - run: >-
           helm lint deploy/helm/curanno --set secrets.databaseUrl=postgres://ci

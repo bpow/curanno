@@ -11,8 +11,5 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
-  # The component keeps the web and Job pods, which share curanno.selectorLabels,
-  # out. The Deployment's selector stays as it was: it is immutable.
   selector:
-    {{- include "curanno.selectorLabels" . | nindent 4 }}
-    app.kubernetes.io/component: api
+    {{- include "curanno.apiSelectorLabels" . | nindent 4 }}
