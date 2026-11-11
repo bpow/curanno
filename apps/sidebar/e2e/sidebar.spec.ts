@@ -8,7 +8,10 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { embedded, passwordFor } from '../../api/src/test/e2e-auth.ts';
 
-const DOCUMENT = `https://example.test/e2e/${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+function freshDocument(): string {
+  return `https://example.test/e2e/${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+const DOCUMENT = freshDocument();
 
 /**
  * Zitadel's login form is server-rendered, so a fill that lands before React
@@ -23,8 +26,8 @@ async function fillUntilAccepted(field: Locator, value: string): Promise<void> {
   }).toPass();
 }
 
-async function login(page: Page, user: 'alice' | 'bob'): Promise<void> {
-  await page.goto(`/sidebar/?uri=${encodeURIComponent(DOCUMENT)}`);
+async function login(page: Page, user: 'alice' | 'bob', document = DOCUMENT): Promise<void> {
+  await page.goto(`/sidebar/?uri=${encodeURIComponent(document)}`);
   await page.getByRole('button', { name: 'Log in' }).click();
   if (embedded) {
     // The site's own sign-in page (ADR 0028).
@@ -39,7 +42,7 @@ async function login(page: Page, user: 'alice' | 'bob'): Promise<void> {
   }
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
   await expect(page).toHaveURL(
-    new RegExp(`uri=${encodeURIComponent(DOCUMENT).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
+    new RegExp(`uri=${encodeURIComponent(document).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
   );
 }
 
@@ -110,6 +113,49 @@ test('alice annotates, shares with bob, and bob follows the changes live', async
   await expect(alice.locator('article.card:not(.reply)')).toHaveCount(0);
   await expect(bob.locator('article.card:not(.reply)')).toHaveCount(0);
   await expect(bobGuestCalls).toContainText('unanchor 1');
+
+  await aliceContext.close();
+  await bobContext.close();
+});
+
+test('alice and bob share annotations and replies as they post them', async ({ browser }) => {
+  const document = freshDocument();
+  const aliceContext = await browser.newContext();
+  const bobContext = await browser.newContext();
+  const alice = await aliceContext.newPage();
+  const bob = await bobContext.newPage();
+  await login(bob, 'bob', document);
+  await login(alice, 'alice', document);
+
+  // Alice shares a page note with bob from the composer, before posting it.
+  await alice.getByRole('button', { name: 'New page note' }).click();
+  await alice.getByLabel('Comment').fill('Shared from the start');
+  await alice.getByText('Sharing').click();
+  await alice.getByLabel('Share with').fill('bob');
+  await alice.getByRole('button', { name: 'Bob Reviewer' }).click();
+  await expect(alice.getByLabel('read for Bob Reviewer')).toBeChecked();
+  await alice.getByRole('button', { name: 'Post' }).click();
+
+  const aliceCard = alice.locator('article.card').first();
+  await expect(aliceCard).toContainText('Shared from the start');
+  await expect(alice.getByRole('alert')).toHaveCount(0);
+  const bobCard = bob.locator('article.card').first();
+  await expect(bobCard).toContainText('Shared from the start');
+
+  // The grant is the one the composer staged.
+  await aliceCard.getByRole('button', { name: 'Share' }).click();
+  await expect(aliceCard.getByLabel('read for Bob Reviewer')).toBeChecked();
+  await expect(aliceCard.getByLabel('update for Bob Reviewer')).not.toBeChecked();
+
+  // Bob shares his reply with alice as he writes it, so she sees it at once.
+  await bobCard.getByRole('button', { name: 'Reply' }).click();
+  await bob.getByLabel('Comment').fill('Seen, thanks.');
+  await bob.getByText('Sharing').click();
+  await bob.getByLabel('Share with').fill('alice');
+  await bob.getByRole('button', { name: /^Alice/ }).click();
+  await bob.getByRole('button', { name: 'Reply', exact: true }).last().click();
+  await expect(bob.locator('article.card.reply')).toContainText('Seen, thanks.');
+  await expect(alice.locator('article.card.reply')).toContainText('Seen, thanks.');
 
   await aliceContext.close();
   await bobContext.close();
