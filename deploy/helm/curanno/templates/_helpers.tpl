@@ -27,6 +27,12 @@ app.kubernetes.io/name: {{ include "curanno.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
+{{/* The API's pods. The web and Job pods share curanno.selectorLabels, so the component tells them apart. */}}
+{{- define "curanno.apiSelectorLabels" -}}
+{{ include "curanno.selectorLabels" . }}
+app.kubernetes.io/component: api
+{{- end }}
+
 {{- define "curanno.embedded" -}}
 {{- if eq .Values.auth.mode "embedded" }}true{{- end }}
 {{- end }}
@@ -56,6 +62,11 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 {{- if not (has .Values.auth.signup (list "approval" "open" "closed")) }}
 {{- fail "auth.signup must be approval, open or closed" }}
+{{- end }}
+{{- /* Releases before the API selector gained its component cannot be upgraded in place: the selector is immutable. */}}
+{{- $api := lookup "apps/v1" "Deployment" .Release.Namespace (include "curanno.fullname" .) }}
+{{- if and $api (not (hasKey $api.spec.selector.matchLabels "app.kubernetes.io/component")) }}
+{{- fail (printf "the %s Deployment predates the API selector change; run `kubectl delete deployment %s --cascade=orphan -n %s` first (docs/operator-guide.md, section 6)" (include "curanno.fullname" .) (include "curanno.fullname" .) .Release.Namespace) }}
 {{- end }}
 {{- end }}
 
