@@ -63,7 +63,7 @@ The identity provider must list `<base>`, `<base>popup-callback.html` and `<base
 | `src/components/`                | Cards, threads, editors, sharing panel, composer, development guest panel                    |
 | `e2e/`                           | Playwright test over Zitadel, the API and the dev server; `e2e/guest/` the bookmarklet suite  |
 
-Replies are annotations whose target is the parent's IRI; they are threaded client-side. Each reply has its own ACL (ADR 0006), so a reply is visible to its author until shared. Edits and deletions fetch the annotation first and send its ETag as `If-Match`; a 412 is shown as a conflict with a reload action. Anchoring state is whatever the guest last reported for the annotation, falling back to the stored state; an orphaned or ambiguous annotation can be repaired from the current selection, which records `anchoring.repair` and leaves the original selectors in place (ADR 0010).
+Replies are annotations whose target is the parent's IRI; they are threaded client-side. Each reply has its own ACL (ADR 0006), so a reply is visible to its author until shared. The composer and the reply editor have a **Sharing** section whose grants are sent with `PUT /x/annotations/{id}/acl` right after the annotation is created; if that fails the annotation stays saved and private, and the error says so. Edits and deletions fetch the annotation first and send its ETag as `If-Match`; a 412 is shown as a conflict with a reload action. Anchoring state is whatever the guest last reported for the annotation, falling back to the stored state; an orphaned or ambiguous annotation can be repaired from the current selection, which records `anchoring.repair` and leaves the original selectors in place (ADR 0010).
 
 ## Tests
 

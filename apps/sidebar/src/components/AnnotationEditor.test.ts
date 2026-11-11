@@ -60,4 +60,36 @@ describe('AnnotationEditor', () => {
     await wrapper.find('button.link').trigger('click');
     expect(wrapper.emitted('reload')).toHaveLength(1);
   });
+
+  it('stages grants with the draft when sharing is offered', async () => {
+    const bob = { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', kind: 'user' as const, name: 'Bob' };
+    installFakeApi(({ url }) => (url.pathname === '/x/principals' ? json([bob]) : undefined));
+    const wrapper = mount(AnnotationEditor, {
+      props: { draft: { text: '', tags: [] }, sharing: true },
+    });
+    await wrapper.find('textarea[name="text"]').setValue('Hello');
+    await wrapper.find('input[name="principal"]').setValue('bob');
+    await new Promise((r) => setTimeout(r, 250));
+    await flushPromises();
+    await wrapper.find('.candidates button').trigger('click');
+    await wrapper.find('input[aria-label="update for Bob"]').setValue(true);
+    await wrapper.find('form').trigger('submit');
+    expect(wrapper.emitted('save')).toEqual([
+      [
+        {
+          text: 'Hello',
+          tags: [],
+          acl: [
+            { principal: bob, permission: 'read' },
+            { principal: bob, permission: 'update' },
+          ],
+        },
+      ],
+    ]);
+  });
+
+  it('offers no sharing controls unless asked', () => {
+    const wrapper = mount(AnnotationEditor, { props: { draft: { text: '', tags: [] } } });
+    expect(wrapper.find('.sharing').exists()).toBe(false);
+  });
 });
