@@ -123,15 +123,17 @@ async function saveReply(draft: AnnotationDraft): Promise<void> {
     const structuredPurpose = draft.structured
       ? profiles.purposeOf(draft.structured.profile)
       : undefined;
-    await store.create(
+    const created = await store.create(
       buildInput(draft, props.annotation.id, {
         reply: true,
         ...(structuredPurpose ? { structuredPurpose } : {}),
       }),
     );
     replyDraft.value = { text: '', tags: [] };
+    // Back to view before sharing so that a failed share cannot be retried as a second reply.
     mode.value = 'view';
     problem.value = undefined;
+    if (draft.acl) await store.share(created.annotation.id, draft.acl);
   } catch (err) {
     problem.value = toProblem(err);
   } finally {
@@ -285,6 +287,7 @@ async function repair(): Promise<void> {
       submit-label="Reply"
       placeholder="Write a reply"
       :busy="busy"
+      sharing
       :problem="problem"
       @save="saveReply"
       @cancel="setMode('view')"

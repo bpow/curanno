@@ -8,12 +8,12 @@
  * store, and whatever an earlier session's requests and streams bring back
  * afterwards is dropped.
  */
-import type { Annotation, AnnotationInput } from '@curanno/api-client';
+import type { AclEntry, Annotation, AnnotationInput } from '@curanno/api-client';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { annotationUuid, parentIri } from '../api/annotations';
 import { useApi } from '../api/client';
-import { toProblem, unwrap, type Problem } from '../api/problems';
+import { ApiError, toProblem, unwrap, type Problem } from '../api/problems';
 import { subscribeAnnotationEvents, type LiveStatus } from '../events/subscribe';
 import type { GuestDocument } from '../guest';
 
@@ -214,6 +214,25 @@ export const useAnnotationsStore = defineStore('annotations', () => {
     return { annotation, etag: result.response.headers.get('etag') ?? undefined };
   }
 
+  /**
+   * Replaces the ACL of an annotation just created, then refetches it so that
+   * its `public` flag, which decides which pages see it (ADR 0025), is current.
+   */
+  async function share(iri: string, acl: AclEntry[]): Promise<void> {
+    try {
+      unwrap(
+        await useApi().PUT('/x/annotations/{id}/acl', {
+          params: { path: { id: annotationUuid(iri) } },
+          body: acl.map((e) => ({ principal: e.principal.id, permission: e.permission })),
+        }),
+      );
+    } catch (err) {
+      const problem = toProblem(err);
+      throw new ApiError({ ...problem, title: `Saved, but not shared: ${problem.title}` });
+    }
+    await fetch(iri);
+  }
+
   async function destroy(iri: string, etag: string): Promise<void> {
     unwrap(
       await useApi().DELETE('/annotations/{id}', {
@@ -296,6 +315,7 @@ export const useAnnotationsStore = defineStore('annotations', () => {
     create,
     fetch,
     update,
+    share,
     destroy,
     applyEvent,
     upsert,

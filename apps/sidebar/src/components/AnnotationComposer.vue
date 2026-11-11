@@ -6,6 +6,7 @@ import { useGuest } from '../guest';
 import { useAnnotationsStore } from '../stores/annotations';
 import { useProfilesStore } from '../stores/profiles';
 import AnnotationEditor from './AnnotationEditor.vue';
+import ProblemAlert from './ProblemAlert.vue';
 
 const guest = useGuest();
 const store = useAnnotationsStore();
@@ -24,8 +25,8 @@ watch(selection, (next) => {
 
 function start(kind: Kind): void {
   open.value = kind;
-  draft.value = emptyDraft();
   problem.value = undefined;
+  draft.value = emptyDraft();
 }
 
 async function save(next: AnnotationDraft): Promise<void> {
@@ -40,13 +41,15 @@ async function save(next: AnnotationDraft): Promise<void> {
     const structuredPurpose = next.structured
       ? profiles.purposeOf(next.structured.profile)
       : undefined;
-    await store.create(
+    const created = await store.create(
       buildInput(next, target, structuredPurpose ? { structuredPurpose } : {}),
       doc.uri,
     );
     if (open.value === 'selection') guest.clearSelection();
+    // Closed before sharing so that a failed share cannot be retried as a second post.
     open.value = undefined;
     problem.value = undefined;
+    if (next.acl) await store.share(created.annotation.id, next.acl);
   } catch (err) {
     problem.value = toProblem(err);
   } finally {
@@ -63,6 +66,7 @@ async function save(next: AnnotationDraft): Promise<void> {
       </button>
       <button type="button" @click="start('page')">New page note</button>
       <blockquote v-if="selection" class="quote">{{ selection.quote }}</blockquote>
+      <ProblemAlert :problem="problem" />
     </div>
     <template v-else>
       <blockquote v-if="open === 'selection' && selection" class="quote">
@@ -74,6 +78,7 @@ async function save(next: AnnotationDraft): Promise<void> {
         submit-label="Post"
         :busy="busy"
         :problem="problem"
+        sharing
         @save="save"
         @cancel="open = undefined"
       />

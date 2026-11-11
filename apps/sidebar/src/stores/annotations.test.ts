@@ -119,3 +119,36 @@ describe('annotations store across sessions', () => {
     expect(store.problem).toBeUndefined();
   });
 });
+
+describe('sharing a new annotation', () => {
+  beforeEach(() => setActivePinia(createPinia()));
+
+  const bob = { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', kind: 'user' as const, name: 'Bob' };
+
+  it('replaces the ACL and refetches the annotation', async () => {
+    const a = annotation(1);
+    const calls: Call[] = [];
+    installFakeApi((call) => {
+      calls.push(call);
+      if (call.method === 'PUT' && call.url.pathname.endsWith('/acl')) return json([]);
+      if (call.method === 'GET') return json({ ...a, public: true });
+      return undefined;
+    });
+    const store = useAnnotationsStore();
+    store.upsert(a, PAGE);
+    await store.share(a.id, [{ principal: bob, permission: 'read' }]);
+    expect(calls.map((c) => [c.method, c.url.pathname])).toEqual([
+      ['PUT', `/x/annotations/${a.id.split('/').pop()}/acl`],
+      ['GET', `/annotations/${a.id.split('/').pop()}`],
+    ]);
+    expect(calls[0]?.body).toEqual([{ principal: bob.id, permission: 'read' }]);
+    expect(store.items.get(a.id)?.public).toBe(true);
+  });
+
+  it('says the annotation was saved when sharing fails', async () => {
+    installFakeApi(() => new Response(null, { status: 403, statusText: 'Forbidden' }));
+    await expect(
+      useAnnotationsStore().share(annotation(1).id, [{ principal: bob, permission: 'read' }]),
+    ).rejects.toMatchObject({ problem: { title: 'Saved, but not shared: Forbidden' } });
+  });
+});

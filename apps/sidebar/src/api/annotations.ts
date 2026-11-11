@@ -3,7 +3,7 @@
  * (one-or-many everywhere) for what the sidebar shows and edits: a comment,
  * tags, structured bodies, the quoted text and the anchoring state.
  */
-import type { Annotation, AnnotationInput } from '@curanno/api-client';
+import type { AclEntry, Annotation, AnnotationInput } from '@curanno/api-client';
 import type {
   AnchoringRepair,
   AnchoringState,
@@ -153,6 +153,8 @@ export interface AnnotationDraft {
   text: string;
   tags: string[];
   structured?: StructuredDraft;
+  /** Grants to make once a new annotation is saved; editing an existing one leaves this unset. */
+  acl?: AclEntry[];
 }
 
 export function emptyDraft(): AnnotationDraft {
