@@ -220,7 +220,6 @@ describe('the RPC guest', () => {
     t.guest.scrollTo('urn:a1');
     t.guest.clearSelection();
     t.guest.unanchor(['urn:a1']);
-    t.guest.closeSidebar();
     await flush();
     expect(t.port.received.slice(1)).toEqual([
       envelope({
@@ -231,7 +230,6 @@ describe('the RPC guest', () => {
       envelope({ type: 'scroll.to', id: 'urn:a1' }),
       envelope({ type: 'selection.clear' }),
       envelope({ type: 'annotations.unanchor', ids: ['urn:a1'] }),
-      envelope({ type: 'sidebar.close' }),
     ]);
     expect(t.guest.anchoring.value.size).toBe(0);
   });
@@ -470,12 +468,6 @@ describe('the RPC guest', () => {
     await flush();
     expect(framed.received.slice(-2).map((m) => m.type)).toEqual(['scroll.to', 'selection.clear']);
     expect(t.port.received.some((m) => m.type === 'scroll.to')).toBe(false);
-
-    // Only the host shows the sidebar, so only it is asked to close it.
-    t.guest.closeSidebar();
-    await flush();
-    expect(t.port.received.at(-1)?.type).toBe('sidebar.close');
-    expect(framed.received.some((m) => m.type === 'sidebar.close')).toBe(false);
 
     // The frame goes away: its document and results go with it.
     frame.closed = true;

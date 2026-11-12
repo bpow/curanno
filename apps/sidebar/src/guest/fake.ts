@@ -154,9 +154,6 @@ export function createFakeGuest(options: FakeGuestOptions = {}): FakeGuest {
     clearSelection() {
       selection.value = undefined;
     },
-    closeSidebar() {
-      note('close sidebar');
-    },
     allow(origin, source) {
       const pageKey = originKey(origin);
       if (pageKey === null) return;

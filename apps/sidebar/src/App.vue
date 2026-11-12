@@ -83,16 +83,6 @@ useGuestSync(guest, store);
       </button>
     </div>
     <UserMenu />
-    <button
-      v-if="!isFakeGuest(guest)"
-      type="button"
-      class="icon"
-      aria-label="Close sidebar"
-      title="Close sidebar"
-      @click="guest.closeSidebar()"
-    >
-      <AppIcon name="close" />
-    </button>
   </header>
   <FakeGuestPanel v-if="isFakeGuest(guest)" :guest="guest" />
   <p v-if="auth.error" class="alert" role="alert">{{ auth.error }}</p>

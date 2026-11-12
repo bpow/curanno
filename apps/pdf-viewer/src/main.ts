@@ -83,6 +83,7 @@ async function open(source: PdfSource): Promise<void> {
       url,
       ...(source.kind === 'file' ? { title: name } : {}),
     }),
+    onSidebarWidth: makeRoomForSidebar,
   });
   guest.start();
 }
@@ -111,12 +112,17 @@ element('zoom-in').addEventListener('click', () => viewer.increaseScale());
 element('zoom-out').addEventListener('click', () => viewer.decreaseScale());
 element('toggle-sidebar').addEventListener('click', () => guest?.toggleSidebar());
 
-// Make room for the sidebar frame while it is shown.
-new MutationObserver(() => {
-  const frame = document.querySelector<HTMLElement>('[data-curanno-guest="sidebar"]');
-  const open = frame !== null && !frame.hidden;
-  document.documentElement.style.setProperty('--sidebar-width', open ? 'min(420px, 100vw)' : '0px');
-}).observe(document.body, { childList: true, attributes: true, attributeFilter: ['hidden'] });
+/** Keep the pages clear of the sidebar, refitting a fitted zoom to the new width. */
+let refit = 0;
+function makeRoomForSidebar(width: number): void {
+  document.documentElement.style.setProperty('--sidebar-width', `${width}px`);
+  if (refit !== 0 || viewer.pagesCount === 0) return;
+  refit = requestAnimationFrame(() => {
+    refit = 0;
+    const preset = viewer.currentScaleValue;
+    if (Number.isNaN(Number(preset))) viewer.currentScaleValue = preset;
+  });
+}
 
 // The open panel
 element<HTMLFormElement>('open-url').addEventListener('submit', (event) => {

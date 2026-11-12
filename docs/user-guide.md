@@ -23,7 +23,9 @@ In Chrome and other Chromium browsers, the CurAnno extension does the same job w
 3. **Select text** in the page. The sidebar shows the selected text and an **Annotate selection** button. Press it, write your comment, add tags (type one and press Enter), optionally pick a **Structured data** form and fill it in, and **Post**.
 4. **New page note** writes an annotation about the page as a whole, without a selection.
 5. **Find an annotation in the page**: click its quoted text in the sidebar and the page scrolls to the highlight. Hover a card and its highlight is emphasised; click a highlight in the page and the sidebar scrolls to its card.
-6. **Reply**, **Edit**, **Delete** are on each card you have the right to. Edits keep the original selection; if someone changed the annotation since you opened it, the sidebar tells you and offers to load the latest version first.
+6. **Reply**, **Edit**, **Share** and **Delete** are the icon buttons under each card you have the right to (hover one for its name). Edits keep the original selection; if someone changed the annotation since you opened it, the sidebar tells you and offers to load the latest version first.
+
+7. **Arrange the sidebar**: the tab on its edge hides and shows it, and stays on the page while it is hidden; drag the sidebar's edge (or focus it and use the arrow keys) to make it wider or narrower. The buttons next to the title hide or show the highlights in the page and make the sidebar's text smaller or larger; the text size is remembered.
 
 ### When the page has changed
 

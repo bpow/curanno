@@ -24,6 +24,15 @@ import {
 
 const PAGE_URL = `${HOST_ORIGIN}${PAGE_PATH}`;
 
+function sidebarOpen(page: Page): Promise<boolean | null> {
+  return page.evaluate(
+    () =>
+      document
+        .querySelector<HTMLElement>('[data-curanno-guest="sidebar"]')
+        ?.hasAttribute('data-open') ?? null,
+  );
+}
+
 let page: Page;
 let sidebar: Frame;
 let api: StubApi;
@@ -75,34 +84,36 @@ test('the sidebar takes the document from the guest and anchors its annotations'
 
   // A second click on the bookmarklet toggles the sidebar instead of loading again.
   await page.evaluate(injectSource());
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () => document.querySelector<HTMLElement>('[data-curanno-guest="sidebar"]')?.hidden ?? null,
-      ),
-    )
-    .toBe(true);
+  await expect.poll(() => sidebarOpen(page)).toBe(false);
   expect(
     await page.evaluate(() => document.querySelectorAll('script[src$="guest.js"]').length),
   ).toBe(1);
   await page.evaluate(injectSource());
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () => document.querySelector<HTMLElement>('[data-curanno-guest="sidebar"]')?.hidden ?? null,
-      ),
-    )
-    .toBe(false);
+  await expect.poll(() => sidebarOpen(page)).toBe(true);
 
-  // The sidebar's own close button hides it as well.
-  await sidebar.getByRole('button', { name: 'Close sidebar' }).click();
+  // The tab on the sidebar's edge hides it, and stays on the page's edge to bring it back.
+  const width = await page.evaluate(() => window.innerWidth);
+  const open = await sidebar.evaluate(() => window.innerWidth);
+  await page.mouse.click(width - open - 16, 76);
+  await expect.poll(() => sidebarOpen(page)).toBe(false);
+  await page.mouse.click(width - 16, 76);
+  await expect.poll(() => sidebarOpen(page)).toBe(true);
+
+  // The handle on the sidebar's edge resizes it.
+  const before = await sidebar.evaluate(() => window.innerWidth);
+  await page.mouse.move(width - before, 300);
+  await page.mouse.down();
+  await page.mouse.move(width - before - 100, 300, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(() => sidebar.evaluate(() => window.innerWidth)).toBe(before + 100);
+
+  // The highlights can be hidden and shown again from the sidebar.
+  await sidebar.getByRole('button', { name: 'Hide highlights' }).click();
   await expect
-    .poll(() =>
-      page.evaluate(
-        () => document.querySelector<HTMLElement>('[data-curanno-guest="sidebar"]')?.hidden ?? null,
-      ),
-    )
-    .toBe(true);
+    .poll(() => page.evaluate(() => CSS.highlights.has('curanno-annotation')))
+    .toBe(false);
+  await sidebar.getByRole('button', { name: 'Hide highlights' }).click();
+  await expect.poll(() => highlightedTexts(page)).toEqual([PUBLIC_QUOTE]);
 });
 
 test('a selection in the page becomes an annotation through the sidebar', async () => {
@@ -146,8 +157,8 @@ test('a selection in the page becomes an annotation through the sidebar', async 
   await expect(sidebar.getByRole('button', { name: 'Annotate selection' })).toHaveCount(0);
 });
 
-test('closing the sidebar from inside it returns focus to the page', async () => {
-  const close = sidebar.getByRole('button', { name: 'Close sidebar' });
+test('closing the sidebar while it has focus returns focus to the page', async () => {
+  const inside = sidebar.getByRole('button', { name: 'Hide highlights' });
   const pageFocus = () =>
     page.evaluate(() => ({
       hasFocus: document.hasFocus(),
@@ -156,8 +167,8 @@ test('closing the sidebar from inside it returns focus to the page', async () =>
     }));
 
   // Nothing in the page had focus: it goes to the page itself, not the hidden frame.
-  await close.focus();
-  await page.keyboard.press('Enter');
+  await inside.focus();
+  await page.evaluate(injectSource());
   await expect.poll(pageFocus).toEqual({ hasFocus: true, id: '', tag: 'BODY' });
 
   // Otherwise it goes back to the element the user left.
@@ -169,7 +180,7 @@ test('closing the sidebar from inside it returns focus to the page', async () =>
     button.focus();
   });
   await page.evaluate(injectSource());
-  await close.focus();
-  await page.keyboard.press('Enter');
+  await inside.focus();
+  await page.evaluate(injectSource());
   await expect.poll(pageFocus).toEqual({ hasFocus: true, id: 'page-button', tag: 'BUTTON' });
 });
