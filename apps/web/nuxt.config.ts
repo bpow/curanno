@@ -55,6 +55,9 @@ const oidcDefaults = embedded
 const apiProxyTarget = process.env['API_PROXY_TARGET'] ?? `http://localhost:${devPort('PORT')}`;
 const sidebarProxyTarget =
   process.env['SIDEBAR_PROXY_TARGET'] ?? `http://localhost:${devPort('SIDEBAR_PORT')}`;
+/** The guest bundle server that `just guest` runs; the API serves the bundle in production. */
+const guestProxyTarget =
+  process.env['GUEST_PROXY_TARGET'] ?? `http://localhost:${devPort('GUEST_BUNDLE_PORT')}`;
 
 /**
  * Sent with every page by Nitro. Scripts come from the site itself, plus
@@ -135,6 +138,8 @@ export default defineNuxtConfig({
       '/idp': `${apiProxyTarget}/idp`,
       '/.well-known/openid-configuration': `${apiProxyTarget}/.well-known/openid-configuration`,
       '/sidebar/': { target: `${sidebarProxyTarget}/sidebar/`, ws: true },
+      // For the landing page's bookmarklet; answers only while `just guest` runs.
+      '/guest.js': `${guestProxyTarget}/guest.js`,
     },
   },
 });
