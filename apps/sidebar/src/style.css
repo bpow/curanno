@@ -8,12 +8,20 @@
     sans-serif;
   font-size: 14px;
   line-height: 1.4;
-  --border: light-dark(#d0d4d9, #3a3f46);
-  --muted: light-dark(#5f6670, #9aa3ad);
-  --accent: light-dark(#2457c5, #7fa6ff);
-  --danger: light-dark(#b42318, #ff8a80);
-  --surface: light-dark(#ffffff, #1e2227);
-  --surface-2: light-dark(#f4f6f8, #262b31);
+  --text: light-dark(#1a1d21, #e8eaed);
+  /* Decorative edges (cards, dividers). */
+  --border: light-dark(#c4c9cf, #4a515a);
+  /* Edges that identify a control, at 3:1 or more against the surfaces. */
+  --control-border: light-dark(#7b838d, #8a939e);
+  --muted: light-dark(#4a515b, #b3bbc5);
+  --accent: light-dark(#1f4fb8, #8fb0ff);
+  --on-accent: light-dark(#ffffff, #0d1a33);
+  --danger: light-dark(#a3160d, #ff9e96);
+  --surface: light-dark(#ffffff, #1a1d21);
+  --surface-2: light-dark(#eef1f4, #262b31);
+  --tag-bg: light-dark(#e3ebfb, #24365c);
+  --tag-text: light-dark(#163a87, #dbe6ff);
+  --tag-border: light-dark(#7f9cd9, #5b7cc4);
 }
 
 * {
@@ -23,6 +31,7 @@
 body {
   margin: 0;
   background: var(--surface);
+  color: var(--text);
 }
 
 h1 {
@@ -32,6 +41,7 @@ h1 {
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
   padding: 0.5rem 0.75rem;
@@ -46,7 +56,7 @@ h1 {
 button {
   font: inherit;
   padding: 0.25rem 0.6rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--control-border);
   border-radius: 4px;
   background: var(--surface);
   color: inherit;
@@ -65,11 +75,27 @@ button:disabled {
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 button.danger {
   color: var(--danger);
+}
+
+/* A button showing only an icon; its name is in aria-label. */
+button.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2em;
+  min-height: 2em;
+  padding: 0.3em;
+}
+
+button.icon[aria-pressed='true'] {
+  background: var(--surface-2);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 button.link {
@@ -86,7 +112,7 @@ select {
   font: inherit;
   color: inherit;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--control-border);
   border-radius: 4px;
   padding: 0.3rem 0.4rem;
   width: 100%;
