@@ -52,8 +52,15 @@ export function createCssHighlightRenderer(doc: Document): HighlightRenderer {
   const all = new view.Highlight();
   const focused = new view.Highlight();
   focused.priority = 1;
-  registry.set(HIGHLIGHT_NAME, all);
-  registry.set(FOCUS_HIGHLIGHT_NAME, focused);
+  const register = (): void => {
+    registry.set(HIGHLIGHT_NAME, all);
+    registry.set(FOCUS_HIGHLIGHT_NAME, focused);
+  };
+  const unregister = (): void => {
+    registry.delete(HIGHLIGHT_NAME);
+    registry.delete(FOCUS_HIGHLIGHT_NAME);
+  };
+  register();
 
   return {
     technique: 'css-highlight',
@@ -69,12 +76,15 @@ export function createCssHighlightRenderer(doc: Document): HighlightRenderer {
         for (const range of entry.ranges) focused.add(range);
       }
     },
+    setVisible(visible) {
+      if (visible) register();
+      else unregister();
+    },
     refresh() {
       // The browser repaints registered ranges itself.
     },
     dispose() {
-      registry.delete(HIGHLIGHT_NAME);
-      registry.delete(FOCUS_HIGHLIGHT_NAME);
+      unregister();
       style.remove();
     },
   };

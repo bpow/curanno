@@ -240,6 +240,12 @@ export interface HighlightsFocusMessage extends RpcEnvelope {
   ids: string[];
 }
 
+/** Show or hide every highlight; the guest keeps them and stops hit-testing while hidden. */
+export interface HighlightsVisibleMessage extends RpcEnvelope {
+  type: 'highlights.visible';
+  visible: boolean;
+}
+
 /** Scroll the page to the annotation's first highlight. */
 export interface ScrollToMessage extends RpcEnvelope {
   type: 'scroll.to';
@@ -274,6 +280,7 @@ export type SidebarMessage =
   | AnnotationsAnchorMessage
   | AnnotationsUnanchorMessage
   | HighlightsFocusMessage
+  | HighlightsVisibleMessage
   | ScrollToMessage
   | SelectionClearMessage
   | SidebarOpenMessage

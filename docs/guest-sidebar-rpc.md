@@ -87,6 +87,7 @@ The guest cannot start the conversation: the sidebar's frame sits in the host's 
   pointer over a highlight
   highlights.hovered {ids} ─────────────────────►    emphasise the cards
                             ◄──────────────────      highlights.focus {ids}   (card hover)
+                            ◄──────────────────      highlights.visible {visible}
                             ◄──────────────────      scroll.to {id}
   page DOM changes
   re-extract, re-anchor, redraw
@@ -127,6 +128,7 @@ The guest cannot start the conversation: the sidebar's frame sits in the host's 
 | `annotations.anchor`    | `requests`              | `{id, target}` each; `target` is the annotation's targets or a repair's. Replaces results for those IRIs. |
 | `annotations.unanchor`  | `ids`                   | Removes highlights and results.                                                                         |
 | `highlights.focus`      | `ids`                   | Emphasises these highlights; `[]` clears.                                                               |
+| `highlights.visible`    | `visible`               | Hides (`false`) or shows every highlight. Hidden highlights stay anchored but are not hovered or clicked. Sent after `sidebar.hello` to a guest that connects while they are hidden. |
 | `scroll.to`             | `id`                    | Scrolls the page to the annotation's first highlight.                                                   |
 | `selection.clear`       | —                       | Drops the selection; the guest answers `selection.changed {null}`.                                      |
 | `sidebar.open`, `sidebar.close`, `sidebar.toggle` | — | The guest shows or hides the frame and answers `sidebar.visibility`.                          |
@@ -146,6 +148,7 @@ The sidebar's `Guest` interface (`apps/sidebar/src/guest/types.ts`) is a view of
 | `anchor(requests, documentUri)` | `annotations.anchor` to the guests showing that document, now and when one reports it      |
 | `unanchor(ids)`                | `annotations.unanchor` to the guests that were asked                                       |
 | `focus(ids)`                   | `highlights.focus` to every guest                                                          |
+| `showHighlights(visible)`      | `highlights.visible` to every guest, now and when one connects                             |
 | `scrollTo(id)`                 | `scroll.to` to the guests that were asked to anchor it                                     |
 | `clearSelection()`             | `selection.clear` to the guest whose selection it is                                       |
 | `onActivate(handler)`          | `highlights.activated` from any guest                                                      |

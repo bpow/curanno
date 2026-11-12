@@ -156,6 +156,7 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
   const anchoring = shallowRef<ReadonlyMap<string, AnchoringState>>(new Map());
   const hovered = shallowRef<readonly string[]>([]);
   const withheld = shallowRef<ReadonlyMap<string, Withheld>>(new Map());
+  const highlightsVisible = shallowRef(true);
   const guestOrigin = shallowRef<string>();
   const connected = shallowRef(false);
   const guests = shallowRef<readonly ConnectedGuest[]>([]);
@@ -345,6 +346,8 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
     }
     if (message.type === 'guest.hello') {
       post(entry.port, { type: 'sidebar.hello' });
+      if (!highlightsVisible.value)
+        post(entry.port, { type: 'highlights.visible', visible: false });
       entry.connected = true;
       publish();
       return;
@@ -440,6 +443,7 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
     anchoring: shallowReadonly(anchoring),
     hovered: shallowReadonly(hovered),
     withheld: shallowReadonly(withheld),
+    highlightsVisible: shallowReadonly(highlightsVisible),
     guestOrigin: shallowReadonly(guestOrigin),
     connected: shallowReadonly(connected),
     guests: shallowReadonly(guests),
@@ -480,6 +484,10 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
       for (const entry of entries.values()) {
         send(entry, { type: 'highlights.focus', ids: ids.filter((id) => entry.asked.has(id)) });
       }
+    },
+    showHighlights(visible) {
+      highlightsVisible.value = visible;
+      for (const entry of entries.values()) send(entry, { type: 'highlights.visible', visible });
     },
     scrollTo(id) {
       for (const entry of entries.values()) {

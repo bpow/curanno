@@ -68,6 +68,8 @@ export function parseSidebarMessage(data: unknown): SidebarMessage | undefined {
     case 'annotations.unanchor':
     case 'highlights.focus':
       return isStringArray(data['ids']) ? ok() : undefined;
+    case 'highlights.visible':
+      return typeof data['visible'] === 'boolean' ? ok() : undefined;
     case 'scroll.to':
       return typeof data['id'] === 'string' ? ok() : undefined;
     case 'sidebar.error':

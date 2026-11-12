@@ -11,6 +11,7 @@ import { GUEST_ATTRIBUTE, type HighlightEntry, type HighlightRenderer } from './
 const STYLE = `
 :host { all: initial; position: fixed; top: 0; left: 0; width: 0; height: 0;
   overflow: visible; pointer-events: none; z-index: 2147483646; }
+:host([hidden]) { display: none; }
 .hl { position: absolute; background: rgba(255, 230, 0, 0.45); mix-blend-mode: multiply;
   border-bottom: 1px solid rgba(200, 160, 0, 0.9); box-sizing: border-box; }
 .hl.focus { background: rgba(255, 170, 0, 0.75); border-bottom-color: rgb(160, 90, 0); }
@@ -75,6 +76,9 @@ export function createOverlayRenderer(doc: Document, root: Element): HighlightRe
     focus(ids) {
       focused = ids;
       schedule();
+    },
+    setVisible(visible) {
+      host.hidden = !visible;
     },
     refresh: schedule,
     dispose() {
