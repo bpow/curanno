@@ -152,3 +152,23 @@ test('a selection in the text layer becomes an annotation naming the page', asyn
       expect.arrayContaining([PAGE_ONE_QUOTE, 'Ten Simple Rules for Reproducible Computational']),
     );
 });
+
+test('the pages make room for the sidebar as it closes and resizes', async () => {
+  await expect(sidebar.locator('article.card')).toHaveCount(2);
+  const width = await page.evaluate(() => window.innerWidth);
+  const containerRight = () =>
+    page.evaluate(() => document.querySelector('.viewerContainer')!.getBoundingClientRect().right);
+  const sidebarWidth = await sidebar.evaluate(() => window.innerWidth);
+  await expect.poll(containerRight).toBe(width - sidebarWidth);
+
+  // Narrower: the pages take the space it gave up.
+  await page.mouse.move(width - sidebarWidth, 300);
+  await page.mouse.down();
+  await page.mouse.move(width - sidebarWidth + 80, 300, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(containerRight).toBe(width - sidebarWidth + 80);
+
+  // Closed: the pages reach the edge.
+  await page.getByRole('button', { name: 'Annotations' }).click();
+  await expect.poll(containerRight).toBe(width);
+});

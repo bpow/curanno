@@ -503,10 +503,6 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
         send(entry, { type: 'selection.clear' });
       }
     },
-    closeSidebar() {
-      const entry = host();
-      if (entry) send(entry, { type: 'sidebar.close' });
-    },
     allow(pageOrigin, source) {
       const pageKey = originKey(pageOrigin);
       if (pageKey === null) return;

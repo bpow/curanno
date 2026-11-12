@@ -65,6 +65,12 @@ export interface GuestOptions {
    * badge. A count is all it gets, never identifiers or selectors.
    */
   onAnchorCount?: (count: number) => void;
+  /**
+   * Called with the width in CSS pixels the sidebar covers at the right
+   * edge of the viewport (0 while it is closed), now and whenever it
+   * changes; a page that is ours, like the PDF viewer, makes room for it.
+   */
+  onSidebarWidth?: (width: number) => void;
 }
 
 interface Anchored {
@@ -140,6 +146,8 @@ export class Guest {
         open: this.options.open ?? true,
       });
       this.frame.onVisibility((open) => this.send({ type: 'sidebar.visibility', open }));
+      const onWidth = this.options.onSidebarWidth;
+      if (onWidth) this.frame.onWidth(onWidth);
       this.connection = new GuestConnection({
         window: view,
         sidebarWindow: () => this.frame?.contentWindow ?? null,

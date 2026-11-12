@@ -17,7 +17,6 @@ const PATHS = {
   ],
   'text-smaller': ['M3 19 8 5l5 14', 'M4.8 14h6.4', 'M16 12h6'],
   'text-larger': ['M3 19 8 5l5 14', 'M4.8 14h6.4', 'M16 12h6', 'M19 9v6'],
-  close: ['M6 6l12 12', 'M18 6 6 18'],
 } as const;
 
 export type IconName = keyof typeof PATHS;
