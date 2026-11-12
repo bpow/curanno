@@ -26,6 +26,7 @@ import { useProfilesStore } from '../stores/profiles';
 import { formatTime } from '../util/time';
 import AnchoringBadge from './AnchoringBadge.vue';
 import AnnotationEditor from './AnnotationEditor.vue';
+import AppIcon from './AppIcon.vue';
 import ProblemAlert from './ProblemAlert.vue';
 import SharingPanel from './SharingPanel.vue';
 import StructuredBodyView from './StructuredBodyView.vue';
@@ -247,34 +248,50 @@ async function repair(): Promise<void> {
     </template>
 
     <footer v-if="auth.status === 'authenticated' && mode !== 'edit'" class="actions">
-      <button type="button" class="link" :disabled="busy" @click="setMode('reply')">Reply</button>
+      <button
+        type="button"
+        class="icon"
+        aria-label="Reply"
+        title="Reply"
+        :disabled="busy"
+        :aria-expanded="mode === 'reply'"
+        @click="setMode('reply')"
+      >
+        <AppIcon name="reply" />
+      </button>
       <button
         v-if="can(annotation, 'update')"
         type="button"
-        class="link"
+        class="icon"
+        aria-label="Edit"
+        title="Edit"
         :disabled="busy"
         @click="beginEdit"
       >
-        Edit
+        <AppIcon name="edit" />
       </button>
       <button
         v-if="can(annotation, 'share')"
         type="button"
-        class="link"
+        class="icon"
+        aria-label="Share"
+        title="Share"
         :disabled="busy"
         :aria-expanded="mode === 'share'"
         @click="setMode('share')"
       >
-        Share
+        <AppIcon name="share" />
       </button>
       <button
         v-if="can(annotation, 'delete')"
         type="button"
-        class="link danger"
+        class="icon danger"
+        aria-label="Delete"
+        title="Delete"
         :disabled="busy"
         @click="remove"
       >
-        Delete
+        <AppIcon name="delete" />
       </button>
       <button v-if="repairable" type="button" class="link" :disabled="busy" @click="repair">
         Repair with selection
@@ -347,7 +364,7 @@ header {
 .quote {
   margin: 0.4rem 0;
   padding: 0;
-  border-left: 3px solid light-dark(#f2c94c, #a67c00);
+  border-left: 3px solid light-dark(#c99a00, #d4a72c);
 }
 
 .quote-button {
@@ -358,7 +375,7 @@ header {
   border-radius: 0;
   background: none;
   padding: 0.2rem 0.6rem;
-  color: var(--muted);
+  color: var(--text);
   font-style: italic;
   overflow-wrap: anywhere;
 }
@@ -384,21 +401,43 @@ header {
 }
 
 .tags li {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: var(--tag-bg);
+  color: var(--tag-text);
+  border: 1px solid var(--tag-border);
   border-radius: 999px;
-  padding: 0 0.5rem;
+  padding: 0.05rem 0.55rem;
   font-size: 0.85em;
+  font-weight: 500;
 }
 
 .actions {
   display: flex;
-  gap: 0.75rem;
-  margin-top: 0.3rem;
-  font-size: 0.9em;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+/* Quiet until pointed at, so a long list is not a wall of boxes. */
+.actions .icon {
+  border-color: transparent;
+  background: none;
+  color: var(--muted);
+}
+
+.actions .icon:hover:not(:disabled),
+.actions .icon[aria-expanded='true'] {
+  border-color: var(--control-border);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.actions .icon.danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 .actions .link {
-  text-decoration: none;
+  margin-left: 0.4rem;
+  font-size: 0.9em;
 }
 </style>

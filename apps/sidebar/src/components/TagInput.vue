@@ -61,8 +61,9 @@ function onKeydown(event: KeyboardEvent): void {
 }
 
 .tag {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: var(--tag-bg);
+  color: var(--tag-text);
+  border: 1px solid var(--tag-border);
   border-radius: 999px;
   padding: 0 0.3rem 0 0.6rem;
   font-size: 0.9em;
@@ -72,7 +73,7 @@ function onKeydown(event: KeyboardEvent): void {
   border: 0;
   background: none;
   padding: 0 0.2rem;
-  color: var(--muted);
+  color: inherit;
 }
 
 input {
