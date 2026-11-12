@@ -88,6 +88,7 @@ export class Guest {
   private readonly anchored = new Map<string, Anchored>();
   private focused: ReadonlySet<string> = new Set();
   private hovered: string[] = [];
+  private highlightsVisible = true;
   private lastSelection: string | null | undefined;
   private hoverFrame = 0;
   private readonly cleanups: (() => void)[] = [];
@@ -274,6 +275,9 @@ export class Guest {
         this.focused = new Set(message.ids);
         this.renderer?.focus(this.focused);
         break;
+      case 'highlights.visible':
+        this.setHighlightsVisible(message.visible);
+        break;
       case 'scroll.to':
         this.scrollTo(message.id);
         break;
@@ -352,6 +356,16 @@ export class Guest {
     });
   }
 
+  private setHighlightsVisible(visible: boolean): void {
+    this.highlightsVisible = visible;
+    this.renderer?.setVisible(visible);
+    // Hidden highlights are not under the pointer.
+    if (!visible && this.hovered.length > 0) {
+      this.hovered = [];
+      this.send({ type: 'highlights.hovered', ids: [] });
+    }
+  }
+
   private scrollTo(id: string): void {
     const anchored = this.anchored.get(id);
     if (!anchored) return;
@@ -382,7 +396,7 @@ export class Guest {
   }
 
   private onPointerMove(event: PointerEvent): void {
-    if (this.hoverFrame !== 0 || this.anchored.size === 0) return;
+    if (this.hoverFrame !== 0 || this.anchored.size === 0 || !this.highlightsVisible) return;
     const { clientX, clientY } = event;
     this.hoverFrame =
       this.doc.defaultView?.requestAnimationFrame(() => {
@@ -396,7 +410,7 @@ export class Guest {
   }
 
   private onClick(event: MouseEvent): void {
-    if (isGuestOwned(event.target as Node)) return;
+    if (!this.highlightsVisible || isGuestOwned(event.target as Node)) return;
     const ids = this.index.idsAt(event.clientX, event.clientY);
     if (ids.length > 0) this.send({ type: 'highlights.activated', ids });
   }

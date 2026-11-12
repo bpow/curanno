@@ -46,6 +46,12 @@ describe('guards', () => {
     ).toBeUndefined();
     expect(parseSidebarMessage(envelope({ type: 'highlights.focus', ids: 'a' }))).toBeUndefined();
     expect(parseSidebarMessage(envelope({ type: 'scroll.to', id: 'urn:a1' }))).toBeDefined();
+    expect(
+      parseSidebarMessage(envelope({ type: 'highlights.visible', visible: false })),
+    ).toBeDefined();
+    expect(
+      parseSidebarMessage(envelope({ type: 'highlights.visible', visible: 'no' })),
+    ).toBeUndefined();
   });
 
   it('check anchoring results and selections from the guest', () => {

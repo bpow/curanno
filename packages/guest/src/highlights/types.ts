@@ -12,6 +12,8 @@ export interface HighlightRenderer {
   set(entries: HighlightEntry[]): void;
   /** Emphasise these annotations' highlights; an empty set clears. */
   focus(ids: ReadonlySet<string>): void;
+  /** Show or hide every highlight without forgetting them. */
+  setVisible(visible: boolean): void;
   /** Redraw after layout changed (overlay only; a no-op for CSS highlights). */
   refresh(): void;
   dispose(): void;

@@ -43,6 +43,7 @@ export function createFakeGuest(options: FakeGuestOptions = {}): FakeGuest {
   const overrides = new Map<string, AnchoringState>();
   // The same rule as for a real page (ADR 0025), with the document's origin as the page's.
   const withheld = shallowRef<ReadonlyMap<string, Withheld>>(new Map());
+  const highlightsVisible = shallowRef(true);
   const consent = createSessionConsent(null);
   const kept = new Map<string, AnchorRequest>();
   const pageOrigin = (): string => {
@@ -65,6 +66,7 @@ export function createFakeGuest(options: FakeGuestOptions = {}): FakeGuest {
     anchoring: shallowReadonly(anchoring),
     hovered: shallowReadonly(hovered),
     withheld: shallowReadonly(withheld),
+    highlightsVisible: shallowReadonly(highlightsVisible),
     log: shallowReadonly(log),
 
     setDocument(uri, title) {
@@ -141,6 +143,10 @@ export function createFakeGuest(options: FakeGuestOptions = {}): FakeGuest {
     },
     focus(ids) {
       note(ids.length ? `focus ${ids.map(shortId).join(', ')}` : 'focus none');
+    },
+    showHighlights(visible) {
+      highlightsVisible.value = visible;
+      note(visible ? 'show highlights' : 'hide highlights');
     },
     scrollTo(id) {
       note(`scroll to ${shortId(id)}`);

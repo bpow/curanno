@@ -53,6 +53,8 @@ export interface Guest {
   readonly hovered: Readonly<Ref<readonly string[]>>;
   /** Annotations not sent to a page that shows their document, by IRI (ADR 0025). */
   readonly withheld: Readonly<Ref<ReadonlyMap<string, Withheld>>>;
+  /** Whether the pages show highlights; the user can hide them. */
+  readonly highlightsVisible: Readonly<Ref<boolean>>;
 
   /**
    * Asks the guests showing `documentUri` (every guest when omitted) to
@@ -64,10 +66,12 @@ export interface Guest {
   unanchor(ids: string[]): void;
   /** Emphasises these annotations' highlights in the page (sidebar hover). */
   focus(ids: string[]): void;
+  /** Shows or hides the highlights in every frame, including frames that connect later. */
+  showHighlights(visible: boolean): void;
   /** Scrolls the frame showing the annotation to its first highlight. */
   scrollTo(id: string): void;
   clearSelection(): void;
-  /** Asks the page to hide this sidebar; the bookmarklet or extension shows it again. */
+  /** Asks the page to hide this sidebar; the tab it leaves on the page's edge shows it again. */
   closeSidebar(): void;
   /**
    * Lets pages on `pageOrigin` be sent the annotations made on `source`,
