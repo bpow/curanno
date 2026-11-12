@@ -30,7 +30,7 @@ describe('App', () => {
     await useAuthStore().init();
     const wrapper = mount(App);
     await flushPromises();
-    expect(wrapper.find('h1').text()).toBe('Annotations');
+    expect(wrapper.find('h1').text()).toBe('CurAnno');
     expect(wrapper.find('.user-menu button').text()).toBe('Log in');
     expect(wrapper.text()).toContain('Log in to annotate');
     expect(wrapper.text()).toContain('No annotations on this document yet');

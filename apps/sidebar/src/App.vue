@@ -49,7 +49,7 @@ useGuestSync(guest, store);
 
 <template>
   <header class="toolbar">
-    <h1>Annotations</h1>
+    <h1>CurAnno</h1>
     <div class="view-controls" role="group" aria-label="Display">
       <button
         type="button"
