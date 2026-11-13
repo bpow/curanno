@@ -3,22 +3,8 @@
  * placeholder and the browser tests. Files are looked up in each root in
  * turn; `pages` maps a URL path to literal content.
  */
-import { createReadStream } from 'node:fs';
-import { stat } from 'node:fs/promises';
 import http from 'node:http';
-import path from 'node:path';
-
-const TYPES: Record<string, string> = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8',
-  '.map': 'application/json',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json',
-  '.pdf': 'application/pdf',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-};
+import sirv from 'sirv';
 
 export interface ServeOptions {
   roots: string[];
@@ -34,44 +20,32 @@ export interface StaticServer {
   close: () => Promise<void>;
 }
 
-async function resolveFile(roots: string[], urlPath: string): Promise<string | null> {
-  const rel = path.normalize(decodeURIComponent(urlPath)).replace(/^(\.\.[/\\])+/, '');
-  for (const base of roots) {
-    const file = path.join(base, rel === '/' || rel === '.' ? 'index.html' : rel);
-    if (!file.startsWith(base)) continue;
-    try {
-      if ((await stat(file)).isFile()) return file;
-    } catch {
-      // next root
-    }
-  }
-  return null;
-}
-
 export async function serve(options: ServeOptions): Promise<StaticServer> {
   const hostname = options.host.includes(':') ? `[${options.host}]` : options.host;
+  // Read from disk on every request: the bundle is rebuilt while the server runs.
+  const roots = options.roots.map((root) =>
+    sirv(root, {
+      dev: true,
+      // Cross-origin reads, so the PDF viewer on another origin can load corpus files.
+      setHeaders: (res) => res.setHeader('access-control-allow-origin', '*'),
+    }),
+  );
   const server = http.createServer((req, res) => {
     const url = new URL(req.url ?? '/', `http://${hostname}`);
     const page = options.pages?.[url.pathname];
     if (page !== undefined) {
       void Promise.resolve(typeof page === 'function' ? page() : page).then((body) => {
-        res.writeHead(200, { 'content-type': TYPES['.html'] as string });
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
         res.end(body);
       });
       return;
     }
-    void resolveFile(options.roots, url.pathname).then((file) => {
-      if (!file) {
-        res.writeHead(404).end('not found');
-        return;
-      }
-      // Cross-origin reads, so the PDF viewer on another origin can load corpus files.
-      res.writeHead(200, {
-        'content-type': TYPES[path.extname(file)] ?? 'application/octet-stream',
-        'access-control-allow-origin': '*',
-      });
-      createReadStream(file).pipe(res);
-    });
+    const tryRoot = (index: number): void => {
+      const root = roots[index];
+      if (root) root(req, res, () => tryRoot(index + 1));
+      else res.writeHead(404).end('not found');
+    };
+    tryRoot(0);
   });
   await new Promise<void>((resolve) => server.listen(options.port ?? 0, options.host, resolve));
   const address = server.address();
