@@ -179,9 +179,12 @@ export async function stubViewerConfig(context: BrowserContext): Promise<void> {
 
 /**
  * The sidebar's `config.json`. It names the issuer and the client the stored
- * session belongs to, which the build's defaults may not.
+ * session belongs to, which the build's defaults may not; `extra` adds to it.
  */
-async function stubSidebarConfig(context: BrowserContext): Promise<void> {
+export async function stubSidebarConfig(
+  context: BrowserContext,
+  extra: Record<string, unknown> = {},
+): Promise<void> {
   await context.route(`${SIDEBAR_URL}config.json`, (route) =>
     route.fulfill(
       json({
@@ -189,6 +192,7 @@ async function stubSidebarConfig(context: BrowserContext): Promise<void> {
         oidcClientId: OIDC_CLIENT_ID,
         apiUrl: '',
         pdfViewerOrigin: VIEWER_ORIGIN,
+        ...extra,
       }),
     ),
   );
