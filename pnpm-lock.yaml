@@ -237,6 +237,22 @@ importers:
         specifier: ^7.13.0
         version: 7.13.0(typescript@6.0.3)
 
+  packages/extract:
+    dependencies:
+      '@curanno/model':
+        specifier: workspace:*
+        version: link:../model
+    devDependencies:
+      ajv:
+        specifier: ^8.20.0
+        version: 8.20.0
+      ajv-formats:
+        specifier: ^3.0.1
+        version: 3.0.1(ajv@8.20.0)
+      happy-dom:
+        specifier: ^21.0.4
+        version: 21.0.4
+
   packages/guest:
     dependencies:
       '@curanno/model':
