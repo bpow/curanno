@@ -1,8 +1,7 @@
-import type { components } from '@curanno/api-client';
+import { type components, unwrap } from '@curanno/api-client';
 import { defineStore } from 'pinia';
 import { shallowRef } from 'vue';
 import { useApi } from '../api/client';
-import { unwrap } from '../api/problems';
 
 export type Ontology = components['schemas']['Ontology'];
 

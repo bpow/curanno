@@ -7,6 +7,7 @@ import createClient, { type Client, type Middleware } from 'openapi-fetch';
 import type { paths } from './schema.js';
 
 export type * from './schema.js';
+export { ApiError, problemFrom, toProblem, unwrap } from './problems.js';
 
 export interface ApiClientOptions {
   /** Origin and base path of the API, for example `https://curanno.example`. */

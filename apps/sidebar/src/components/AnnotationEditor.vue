@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import type { AclEntry, PrincipalRef } from '@curanno/api-client';
+import type { AclEntry, PrincipalRef, Problem } from '@curanno/api-client';
 import type { JsonValue, Permission, ValidationError } from '@curanno/model';
 import { computed, ref, shallowRef, watch } from 'vue';
 import type { AnnotationDraft } from '../api/annotations';
-import type { Problem } from '../api/problems';
 import { useProfilesStore } from '../stores/profiles';
 import AclEditor from './AclEditor.vue';
 import ProblemAlert from './ProblemAlert.vue';
