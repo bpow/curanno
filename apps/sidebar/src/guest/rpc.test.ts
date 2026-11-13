@@ -234,6 +234,69 @@ describe('the RPC guest', () => {
     expect(t.guest.anchoring.value.size).toBe(0);
   });
 
+  it('asks a guest that can report text for it, and takes only its answer', async () => {
+    const t = await connected();
+    expect(t.guest.textDocuments.value.size).toBe(0);
+    // The default guest did not say it reports text.
+    t.port.send({ type: 'document.report', document: ARTICLE });
+    await flush();
+    expect(await t.guest.requestText(ARTICLE.uri)).toBeUndefined();
+
+    t.port.send({
+      type: 'guest.hello',
+      guestId: 'g1',
+      capabilities: { highlights: 'css-highlight', text: true },
+    });
+    await flush();
+    expect([...t.guest.textDocuments.value]).toEqual([ARTICLE.uri]);
+    expect(await t.guest.requestText('https://host-page.test/other')).toBeUndefined();
+
+    const answer = t.guest.requestText(ARTICLE.uri);
+    await flush();
+    const request = t.port.received.at(-1) as { type: string; requestId: string };
+    expect(request.type).toBe('text.request');
+    // A report for another request id is ignored.
+    t.port.send({ type: 'text.report', requestId: 'other', scopes: [{ text: 'wrong' }] });
+    t.port.send({
+      type: 'text.report',
+      requestId: request.requestId,
+      scopes: [{ text: 'onetwo', blockStarts: [3] }],
+    });
+    expect(await answer).toEqual([{ text: 'onetwo', blockStarts: [3] }]);
+  });
+
+  it('gives up on a text request when the guest goes away or is silent', async () => {
+    const t = await connected({ textTimeoutMs: 50 });
+    t.port.send({
+      type: 'guest.hello',
+      guestId: 'g1',
+      capabilities: { highlights: 'css-highlight', text: true },
+    });
+    t.port.send({ type: 'document.report', document: ARTICLE });
+    await flush();
+    await expect(t.guest.requestText(ARTICLE.uri)).rejects.toThrow(/did not report/);
+    const pending = t.guest.requestText(ARTICLE.uri);
+    t.guest.close();
+    await expect(pending).rejects.toThrow(/went away/);
+  });
+
+  it('passes the suggested style through to the guest', async () => {
+    const t = await connected();
+    t.port.send({ type: 'document.report', document: ARTICLE });
+    await flush();
+    t.guest.anchor(
+      [{ id: 'urn:uuid:s1', target: ARTICLE.uri, style: 'suggested', public: false }],
+      ARTICLE.uri,
+    );
+    await flush();
+    expect(t.port.received.at(-1)).toEqual(
+      envelope({
+        type: 'annotations.anchor',
+        requests: [{ id: 'urn:uuid:s1', target: ARTICLE.uri, style: 'suggested' }],
+      }),
+    );
+  });
+
   it('delivers highlight activations to subscribers until they unsubscribe', async () => {
     const t = await connected();
     const seen: string[][] = [];

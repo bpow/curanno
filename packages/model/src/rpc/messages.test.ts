@@ -7,6 +7,7 @@ import {
   type AnnotationsAnchorMessage,
   type GuestConnectMessage,
   type SelectionChangedMessage,
+  type TextReportMessage,
 } from './messages.js';
 
 describe('envelope', () => {
@@ -93,5 +94,39 @@ describe('guards', () => {
       parseGuestMessage(envelope({ type: 'selection.changed', selection: null })),
     ).toBeDefined();
     expect(parseGuestMessage(envelope({ type: 'selection.changed' }))).toBeUndefined();
+  });
+
+  it('check text requests, reports and the suggested style', () => {
+    expect(parseSidebarMessage(envelope({ type: 'text.request', requestId: 'r1' }))).toBeDefined();
+    expect(parseSidebarMessage(envelope({ type: 'text.request' }))).toBeUndefined();
+    const report = envelope<TextReportMessage>({
+      type: 'text.report',
+      requestId: 'r1',
+      scopes: [
+        { text: 'page one', page: 1 },
+        { text: 'onetwo', blockStarts: [3] },
+      ],
+    });
+    expect(parseGuestMessage(report)).toEqual(report);
+    for (const scopes of [
+      [{ text: 1 }],
+      [{ text: 'x', page: 0 }],
+      [{ text: 'x', blockStarts: [-1] }],
+      [{ text: 'x', blockStarts: 'all' }],
+      'text',
+    ]) {
+      expect(
+        parseGuestMessage(envelope({ type: 'text.report', requestId: 'r1', scopes })),
+      ).toBeUndefined();
+    }
+    const suggested = { id: 'urn:uuid:1', target: 'https://example.org/p', style: 'suggested' };
+    expect(
+      parseSidebarMessage(envelope({ type: 'annotations.anchor', requests: [suggested] })),
+    ).toBeDefined();
+    expect(
+      parseSidebarMessage(
+        envelope({ type: 'annotations.anchor', requests: [{ ...suggested, style: 'loud' }] }),
+      ),
+    ).toBeUndefined();
   });
 });

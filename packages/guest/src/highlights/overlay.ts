@@ -15,8 +15,11 @@ const STYLE = `
 .hl { position: absolute; background: rgba(255, 230, 0, 0.45); mix-blend-mode: multiply;
   border-bottom: 1px solid rgba(200, 160, 0, 0.9); box-sizing: border-box; }
 .hl.focus { background: rgba(255, 170, 0, 0.75); border-bottom-color: rgb(160, 90, 0); }
+.hl.suggested { background: rgba(80, 140, 255, 0.12); border-bottom: 2px dashed rgb(40, 90, 200); }
+.hl.suggested.focus { background: rgba(80, 140, 255, 0.35); }
 @media (forced-colors: active) {
   .hl { forced-color-adjust: none; background: transparent; border-bottom: 2px double CanvasText; }
+  .hl.suggested { border-bottom: 2px dashed CanvasText; }
 }
 `;
 
@@ -47,7 +50,9 @@ export function createOverlayRenderer(doc: Document, root: Element): HighlightRe
         for (const rect of Array.from(range.getClientRects())) {
           if (rect.width === 0 || rect.height === 0) continue;
           const box = doc.createElement('div');
-          box.className = isFocused ? 'hl focus' : 'hl';
+          box.className = ['hl', isFocused && 'focus', entry.suggested && 'suggested']
+            .filter(Boolean)
+            .join(' ');
           box.style.left = `${rect.left}px`;
           box.style.top = `${rect.top}px`;
           box.style.width = `${rect.width}px`;

@@ -197,4 +197,47 @@ describe('guest and fake sidebar', () => {
     ).toBe(0);
     expect(await page.evaluate(() => CSS.highlights.size)).toBe(0);
   });
+
+  it('reports the page text when asked, and draws suggestions apart from annotations', async () => {
+    const hello = await messages('guest.hello');
+    expect(hello[0]).toMatchObject({ capabilities: { text: true } });
+    await sidebar.waitForFunction(() => window.__fakeSidebar.document !== undefined);
+    const report = await sidebar.evaluate(() => {
+      const fake = window.__fakeSidebar;
+      const next = fake.next('text.report');
+      fake.requestText('r1');
+      return next;
+    });
+    expect(report.requestId).toBe('r1');
+    expect(report.scopes).toHaveLength(1);
+    const [scope] = report.scopes;
+    const paragraph = await page.evaluate(
+      () => document.querySelector('p')?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
+    );
+    expect(paragraph.length).toBeGreaterThan(10);
+    expect(scope?.text).toContain(paragraph);
+    const start = scope?.blockStarts?.[0];
+    expect(start).toBeGreaterThan(0);
+
+    const exact = scope?.text.slice(start, (start ?? 0) + 20) ?? '';
+    await sidebar.evaluate(
+      ([exact, source]) =>
+        window.__fakeSidebar.anchor([
+          {
+            id: 'urn:uuid:suggested-1',
+            style: 'suggested',
+            target: { source, selector: [{ type: 'TextQuoteSelector', exact }] },
+          },
+        ]),
+      [exact, PAGE_URL()] as const,
+    );
+    await sidebar.waitForFunction(() => window.__fakeSidebar.anchoring.has('urn:uuid:suggested-1'));
+    const drawn = await page.evaluate(() => ({
+      suggested: [...(CSS.highlights.get('curanno-suggestion') ?? [])].map((r) =>
+        (r as Range).toString(),
+      ),
+      annotations: [...(CSS.highlights.get('curanno-annotation') ?? [])].length,
+    }));
+    expect(drawn).toEqual({ suggested: [exact], annotations: 0 });
+  });
 });

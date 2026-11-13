@@ -45,6 +45,7 @@ export function parseWindowMessage(data: unknown): WindowMessage | undefined {
 
 function isAnchorRequest(value: unknown): value is AnchorRequest {
   if (!isDict(value) || typeof value['id'] !== 'string') return false;
+  if (value['style'] !== undefined && value['style'] !== 'suggested') return false;
   const target = value['target'];
   const one = (t: unknown): boolean => typeof t === 'string' || isDict(t);
   return Array.isArray(target) ? target.every(one) : one(target);
@@ -72,6 +73,8 @@ export function parseSidebarMessage(data: unknown): SidebarMessage | undefined {
       return typeof data['visible'] === 'boolean' ? ok() : undefined;
     case 'scroll.to':
       return typeof data['id'] === 'string' ? ok() : undefined;
+    case 'text.request':
+      return typeof data['requestId'] === 'string' ? ok() : undefined;
     case 'sidebar.error':
       return typeof data['message'] === 'string' ? ok() : undefined;
     default:
@@ -108,6 +111,17 @@ function isAnchoringResult(value: unknown): value is AnchoringResult {
   );
 }
 
+function isScopeText(value: unknown): boolean {
+  if (!isDict(value) || typeof value['text'] !== 'string') return false;
+  const starts = value['blockStarts'];
+  const page = value['page'];
+  return (
+    (starts === undefined ||
+      (Array.isArray(starts) && starts.every((n) => Number.isInteger(n) && (n as number) >= 0))) &&
+    (page === undefined || (Number.isInteger(page) && (page as number) > 0))
+  );
+}
+
 function isSelection(value: unknown): value is GuestSelection {
   return (
     isDict(value) &&
@@ -141,6 +155,12 @@ export function parseGuestMessage(data: unknown): GuestMessage | undefined {
       return isStringArray(data['ids']) ? ok() : undefined;
     case 'sidebar.visibility':
       return typeof data['open'] === 'boolean' ? ok() : undefined;
+    case 'text.report':
+      return typeof data['requestId'] === 'string' &&
+        Array.isArray(data['scopes']) &&
+        data['scopes'].every(isScopeText)
+        ? ok()
+        : undefined;
     case 'guest.error':
       return typeof data['message'] === 'string' ? ok() : undefined;
     default:

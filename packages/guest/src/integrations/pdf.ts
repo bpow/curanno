@@ -17,6 +17,7 @@ import {
   pageFragmentSelector,
   pageOfFragment,
   type GuestDocument,
+  type GuestScopeText,
   type Selector,
   type TargetAnchoringResult,
   type TextRange,
@@ -107,6 +108,15 @@ export class PdfIntegration implements DocumentIntegration {
       ...(fingerprint ? { pdfFingerprint: fingerprint } : {}),
     }).map(({ uri, relation }) => ({ uri, relation }));
     return { uri: url, ...(title ? { title } : {}), links };
+  }
+
+  /** Every page's text from its text content, rendered or not, so the whole PDF is covered. */
+  async text(): Promise<GuestScopeText[]> {
+    const scopes: GuestScopeText[] = [];
+    for (let page = 1; page <= this.options.document.numPages; page++) {
+      scopes.push({ text: (await this.textScope(page)).map.text, page });
+    }
+    return scopes;
   }
 
   prepare(): void {

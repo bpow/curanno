@@ -33,6 +33,7 @@ import {
   type AnchoringState,
   type FrameWindow,
   type GuestMessage,
+  type GuestScopeText,
   type GuestRole,
   type Payload,
   type SidebarErrorMessage,
@@ -79,6 +80,8 @@ export interface RpcGuestOptions {
    * that start later, and frames that went away are forgotten. Default 1 s.
    */
   announceIntervalMs?: number;
+  /** How long `requestText` waits for the guest's report. Default 30 s. */
+  textTimeoutMs?: number;
   /** Which origins' annotations the user allowed on which pages. Default: the session's. */
   consent?: ConsentStore;
 }
@@ -112,6 +115,8 @@ interface GuestEntry {
   port: PortLike;
   listener: (event: { data: unknown }) => void;
   connected: boolean;
+  /** Whether the guest said it answers `text.request`. */
+  text: boolean;
   document: GuestDocument | undefined;
   /** Results this guest reported, by IRI. */
   anchoring: Map<string, AnchoringState>;
@@ -120,6 +125,13 @@ interface GuestEntry {
   /** IRIs kept from this guest, with the origin they were made on. */
   withheld: Map<string, string>;
   hovered: string[];
+}
+
+interface PendingText {
+  entry: GuestEntry;
+  resolve: (scopes: GuestScopeText[]) => void;
+  reject: (err: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
 }
 
 const STATE_RANK: Record<AnchoringState, number> = {
@@ -157,6 +169,9 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
   const hovered = shallowRef<readonly string[]>([]);
   const withheld = shallowRef<ReadonlyMap<string, Withheld>>(new Map());
   const highlightsVisible = shallowRef(true);
+  const textDocuments = shallowRef<ReadonlySet<string>>(new Set());
+  /** Text requests awaiting their report, by request id. */
+  const pendingText = new Map<string, PendingText>();
   const guestOrigin = shallowRef<string>();
   const connected = shallowRef(false);
   const guests = shallowRef<readonly ConnectedGuest[]>([]);
@@ -214,6 +229,9 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
       }
     }
     documents.value = docs;
+    textDocuments.value = new Set(
+      list.flatMap((e) => (e.connected && e.text && e.document ? [e.document.uri] : [])),
+    );
     const merged = new Map<string, AnchoringState>();
     for (const e of list) {
       for (const [id, state] of e.anchoring) {
@@ -263,7 +281,11 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
         entry.withheld.delete(request.id);
         entry.asked.add(request.id);
         // The protocol's request only: whether it is public is the sidebar's business.
-        allowed.push({ id: request.id, target: request.target });
+        allowed.push({
+          id: request.id,
+          target: request.target,
+          ...(request.style ? { style: request.style } : {}),
+        });
       } else {
         entry.withheld.set(request.id, source);
         // One that may no longer go, say because it stopped being public, takes its highlight along.
@@ -277,7 +299,18 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
     if (allowed.length) send(entry, { type: 'annotations.anchor', requests: allowed });
   }
 
+  function settleText(id: string): PendingText | undefined {
+    const pending = pendingText.get(id);
+    if (!pending) return undefined;
+    pendingText.delete(id);
+    clearTimeout(pending.timer);
+    return pending;
+  }
+
   function drop(entry: GuestEntry): void {
+    for (const [id, pending] of [...pendingText]) {
+      if (pending.entry === entry) settleText(id)?.reject(new Error('the page went away'));
+    }
     entry.port.removeEventListener('message', entry.listener);
     entry.port.close();
     entries.delete(entry.id);
@@ -323,6 +356,7 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
       port: next,
       listener: (e) => onPortMessage(entry, e.data),
       connected: false,
+      text: false,
       document: undefined,
       anchoring: new Map(),
       asked: new Set(),
@@ -349,6 +383,7 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
       if (!highlightsVisible.value)
         post(entry.port, { type: 'highlights.visible', visible: false });
       entry.connected = true;
+      entry.text = message.capabilities.text === true;
       publish();
       return;
     }
@@ -400,6 +435,12 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
         break;
       case 'sidebar.visibility':
         break;
+      case 'text.report':
+        // Only the guest that was asked can answer.
+        if (pendingText.get(message.requestId)?.entry === entry) {
+          settleText(message.requestId)?.resolve(message.scopes);
+        }
+        break;
       case 'guest.error':
         console.warn(`[guest ${entry.id}] ${message.message}`, message.inReplyTo ?? '');
         break;
@@ -444,6 +485,7 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
     hovered: shallowReadonly(hovered),
     withheld: shallowReadonly(withheld),
     highlightsVisible: shallowReadonly(highlightsVisible),
+    textDocuments: shallowReadonly(textDocuments),
     guestOrigin: shallowReadonly(guestOrigin),
     connected: shallowReadonly(connected),
     guests: shallowReadonly(guests),
@@ -462,6 +504,18 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
         }
       }
       publish();
+    },
+    requestText(documentUri) {
+      const entry = ordered().find((e) => e.connected && e.text && e.document?.uri === documentUri);
+      if (!entry) return Promise.resolve(undefined);
+      const requestId = randomId();
+      return new Promise<GuestScopeText[]>((resolve, reject) => {
+        const timer = setTimeout(() => {
+          settleText(requestId)?.reject(new Error('the page did not report its text'));
+        }, options.textTimeoutMs ?? 30_000);
+        pendingText.set(requestId, { entry, resolve, reject, timer });
+        send(entry, { type: 'text.request', requestId });
+      });
     },
     unanchor(ids) {
       for (const id of ids) {

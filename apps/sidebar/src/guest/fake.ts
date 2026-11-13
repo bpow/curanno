@@ -5,13 +5,15 @@
  * calls are logged so a developer can see the sidebar's side of the
  * conversation.
  */
-import type { AnchoringState } from '@curanno/model';
+import type { AnchoringState, GuestScopeText } from '@curanno/model';
 import { computed, ref, shallowReadonly, shallowRef, type Ref } from 'vue';
 import { createSessionConsent, foreignSources, originKey } from './disclosure';
 import type { AnchorRequest, DocumentSelection, Guest, GuestDocument, Withheld } from './types';
 
 export interface FakeGuestOptions {
   document?: GuestDocument;
+  /** What `requestText` answers; without it the fake reports no text. */
+  text?: GuestScopeText[];
 }
 
 export interface FakeGuest extends Guest {
@@ -21,6 +23,8 @@ export interface FakeGuest extends Guest {
   select(quote: string, context?: { prefix?: string; suffix?: string }): void;
   /** Overrides the result the next `anchor()` reports for an annotation. */
   setAnchoringResult(id: string, state: AnchoringState): void;
+  /** Sets what `requestText` answers for the document; undefined reports none. */
+  setText(scopes: GuestScopeText[] | undefined): void;
   /** Pretends the user hovered or clicked highlights in the page. */
   hover(ids: string[]): void;
   activate(ids: string[]): void;
@@ -44,6 +48,10 @@ export function createFakeGuest(options: FakeGuestOptions = {}): FakeGuest {
   // The same rule as for a real page (ADR 0025), with the document's origin as the page's.
   const withheld = shallowRef<ReadonlyMap<string, Withheld>>(new Map());
   const highlightsVisible = shallowRef(true);
+  const text = shallowRef<GuestScopeText[] | undefined>(options.text);
+  const textDocuments = computed<ReadonlySet<string>>(
+    () => new Set(text.value && document.value ? [document.value.uri] : []),
+  );
   const consent = createSessionConsent(null);
   const kept = new Map<string, AnchorRequest>();
   const pageOrigin = (): string => {
@@ -67,6 +75,7 @@ export function createFakeGuest(options: FakeGuestOptions = {}): FakeGuest {
     hovered: shallowReadonly(hovered),
     withheld: shallowReadonly(withheld),
     highlightsVisible: shallowReadonly(highlightsVisible),
+    textDocuments,
     log: shallowReadonly(log),
 
     setDocument(uri, title) {
@@ -91,6 +100,13 @@ export function createFakeGuest(options: FakeGuestOptions = {}): FakeGuest {
           },
         },
       };
+    },
+    setText(scopes) {
+      text.value = scopes;
+    },
+    requestText(documentUri) {
+      note('text request');
+      return Promise.resolve(textDocuments.value.has(documentUri) ? text.value : undefined);
     },
     setAnchoringResult(id, state) {
       overrides.set(id, state);

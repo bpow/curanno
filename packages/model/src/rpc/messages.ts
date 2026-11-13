@@ -74,6 +74,8 @@ export type GuestRole = 'host' | 'sub';
 
 export interface GuestCapabilities {
   highlights: HighlightTechnique;
+  /** Answers `text.request` (ADR 0033). Guests built before it leave this out. */
+  text?: boolean;
 }
 
 /** One identifier the page exposes, as `POST /x/documents` takes it. */
@@ -109,6 +111,8 @@ export interface AnchorRequest {
    * (ADR 0010); the guest does not know the difference.
    */
   target: OneOrMany<Target>;
+  /** `suggested`: a suggestion not saved yet, drawn apart from annotations (ADR 0033). */
+  style?: 'suggested';
 }
 
 /** The states a guest reports; `repaired` is the sidebar's to apply. */
@@ -141,6 +145,19 @@ export interface AnchoringResult {
   state: GuestAnchoringState;
   /** One entry per target, in the request's order. */
   targets: TargetAnchoringResult[];
+}
+
+/**
+ * The text of one text-model scope (ADR 0033): the body of a page, or one
+ * page of a PDF.
+ */
+export interface GuestScopeText {
+  /** The scope's normalized text (text model, sections 4–7). */
+  text: string;
+  /** Code point offsets where blocks begin, for readers of the text; selectors never use them. */
+  blockStarts?: number[];
+  /** The 1-based PDF page the scope is; absent for a page's body. */
+  page?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -191,6 +208,13 @@ export interface SidebarVisibilityMessage extends RpcEnvelope {
   open: boolean;
 }
 
+/** The document's text, answering the `text.request` with the same id. */
+export interface TextReportMessage extends RpcEnvelope {
+  type: 'text.report';
+  requestId: string;
+  scopes: GuestScopeText[];
+}
+
 export interface GuestErrorMessage extends RpcEnvelope {
   type: 'guest.error';
   message: string;
@@ -206,6 +230,7 @@ export type GuestMessage =
   | HighlightsHoveredMessage
   | HighlightsActivatedMessage
   | SidebarVisibilityMessage
+  | TextReportMessage
   | GuestErrorMessage;
 
 // ---------------------------------------------------------------------------
@@ -251,6 +276,12 @@ export interface SelectionClearMessage extends RpcEnvelope {
   type: 'selection.clear';
 }
 
+/** Report the document's text; sent only to a guest whose capabilities include `text`. */
+export interface TextRequestMessage extends RpcEnvelope {
+  type: 'text.request';
+  requestId: string;
+}
+
 export interface SidebarOpenMessage extends RpcEnvelope {
   type: 'sidebar.open';
 }
@@ -277,6 +308,7 @@ export type SidebarMessage =
   | HighlightsVisibleMessage
   | ScrollToMessage
   | SelectionClearMessage
+  | TextRequestMessage
   | SidebarOpenMessage
   | SidebarCloseMessage
   | SidebarToggleMessage
