@@ -149,6 +149,9 @@ importers:
       '@curanno/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@curanno/extract':
+        specifier: workspace:*
+        version: link:../../packages/extract
       '@curanno/model':
         specifier: workspace:*
         version: link:../../packages/model
