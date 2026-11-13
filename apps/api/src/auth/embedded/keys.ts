@@ -34,10 +34,12 @@ export async function loadSigningKeys(db: Kysely<Database>, secret: string): Pro
     });
     rows = await readKeys(db);
   }
-  const keys = rows.map((row) => ({
-    ...(JSON.parse(unseal(secret, row.private_jwk_encrypted)) as JWK),
-    kid: row.kid,
-  }));
+  const keys = await Promise.all(
+    rows.map(async (row) => ({
+      ...(JSON.parse(await unseal(secret, row.private_jwk_encrypted)) as JWK),
+      kid: row.kid,
+    })),
+  );
   return {
     private: keys,
     public: { keys: rows.map((row) => row.public_jwk as JWK) },
@@ -102,7 +104,7 @@ async function insertKey(trx: Kysely<Database>, secret: string): Promise<string>
       kid,
       algorithm: ALGORITHM,
       public_jwk: JSON.stringify(publicJwk),
-      private_jwk_encrypted: seal(secret, JSON.stringify(privateJwk)),
+      private_jwk_encrypted: await seal(secret, JSON.stringify(privateJwk)),
     })
     .execute();
   return kid;
