@@ -27,6 +27,7 @@ export {
 export {
   GuestConnection,
   type Connection,
+  type ConnectionOptions,
   type GuestConnectionOptions,
   type PortLike,
 } from './rpc/connection.js';
