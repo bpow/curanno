@@ -6,9 +6,20 @@ import {
   TagsInputItemText,
   TagsInputRoot,
 } from 'reka-ui';
+import { useId } from 'vue';
 
-defineProps<{ modelValue: string[] }>();
+const props = defineProps<{
+  modelValue: string[];
+  name: string;
+  inputId?: string | undefined;
+  /** Accessible name, when no `<label for>` points at `inputId`. */
+  label?: string | undefined;
+  placeholder?: string | undefined;
+  required?: boolean | undefined;
+}>();
 const emit = defineEmits<{ 'update:modelValue': [tags: string[]] }>();
+
+const id = props.inputId ?? useId();
 
 const trimmed = (text: string): string => text.trim();
 
@@ -20,6 +31,7 @@ function update(tags: string[]): void {
 
 <template>
   <TagsInputRoot
+    :id="id"
     class="tags"
     :model-value="modelValue"
     :convert-value="trimmed"
@@ -31,7 +43,14 @@ function update(tags: string[]): void {
       <TagsInputItemText />
       <TagsInputItemDelete class="remove">×</TagsInputItemDelete>
     </TagsInputItem>
-    <TagsInputInput name="tag" placeholder="Add tag" aria-label="Add tag" />
+    <!-- The input empties as each tag is added, so only an empty list leaves it unanswered. -->
+    <TagsInputInput
+      :name="name"
+      :placeholder="placeholder ?? ''"
+      :aria-label="label"
+      :required="required && modelValue.length === 0"
+      :aria-required="required || undefined"
+    />
   </TagsInputRoot>
 </template>
 

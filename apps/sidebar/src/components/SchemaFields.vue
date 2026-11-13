@@ -2,6 +2,7 @@
 import type { JsonValue, ValidationError } from '@curanno/model';
 import { computed } from 'vue';
 import type { SchemaField, Term } from '../profiles/schema';
+import TagInput from './TagInput.vue';
 import TermListInput from './TermListInput.vue';
 
 const props = defineProps<{
@@ -54,17 +55,13 @@ function set(name: string, next: JsonValue | undefined): void {
   emit('update:modelValue', copy);
 }
 
-function setList(name: string, text: string): void {
-  const list = text
-    .split(/[\n,]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  set(name, list.length ? list : undefined);
+function strings(name: string): string[] {
+  const current = value.value[name];
+  return Array.isArray(current) ? current.map(String) : [];
 }
 
-function listText(name: string): string {
-  const current = value.value[name];
-  return Array.isArray(current) ? current.map(String).join(', ') : '';
+function setStrings(name: string, list: string[]): void {
+  set(name, list.length ? list : undefined);
 }
 
 function setNumber(name: string, text: string): void {
@@ -174,15 +171,13 @@ function removeItem(name: string, index: number): void {
         :model-value="terms(field.name)"
         @update:model-value="setTerms(field.name, $event)"
       />
-      <input
+      <TagInput
         v-else-if="field.kind === 'string-list'"
-        :id="`field-${nameOf(field)}`"
-        type="text"
+        :input-id="`field-${nameOf(field)}`"
         :name="nameOf(field)"
         :required="field.required"
-        placeholder="Comma-separated"
-        :value="listText(field.name)"
-        @change="setList(field.name, ($event.target as HTMLInputElement).value)"
+        :model-value="strings(field.name)"
+        @update:model-value="setStrings(field.name, $event)"
       />
       <textarea
         v-else-if="field.kind === 'textarea'"

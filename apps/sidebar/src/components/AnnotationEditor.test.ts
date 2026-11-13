@@ -30,13 +30,20 @@ describe('AnnotationEditor', () => {
     const wrapper = mount(AnnotationEditor, { props: { draft: { text: '', tags: [] } } });
     await wrapper.find('select[name="profile"]').setValue(profileIri);
     await wrapper.find('select[name="kind"]').setValue('case');
-    await wrapper.find('input[name="identifiers"]').setValue('not a curie');
+    const identifiers = wrapper.find('input[name="identifiers"]');
+    const addIdentifier = async (text: string) => {
+      await identifiers.setValue(text);
+      await identifiers.trigger('keydown', { key: 'Enter' });
+      await flushPromises();
+    };
+    await addIdentifier('not a curie');
     await wrapper.find('form').trigger('submit');
     await flushPromises();
     expect(wrapper.emitted('save')).toBeUndefined();
     expect(wrapper.text()).toContain('must match pattern');
 
-    await wrapper.find('input[name="identifiers"]').setValue('PMID:12345');
+    await wrapper.find('.tag button').trigger('click');
+    await addIdentifier('PMID:12345');
     await wrapper.find('form').trigger('submit');
     expect(wrapper.emitted('save')).toEqual([
       [
