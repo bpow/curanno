@@ -220,7 +220,7 @@ export interface TextualBody {
   processingLanguage?: string;
   textDirection?: TextDirection;
   purpose?: OneOrMany<Purpose>;
-  creator?: string | Agent;
+  creator?: OneOrMany<string | Agent>;
   created?: string;
   modified?: string;
 }
@@ -235,7 +235,7 @@ export interface StructuredBody {
   value: JsonValue;
   id?: string;
   purpose?: OneOrMany<Purpose>;
-  creator?: string | Agent;
+  creator?: OneOrMany<string | Agent>;
   created?: string;
   modified?: string;
 }

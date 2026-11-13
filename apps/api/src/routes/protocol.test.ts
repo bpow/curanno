@@ -335,6 +335,32 @@ describe.skipIf(!databaseUrl)('W3C protocol', () => {
       expect(res.json()).toMatchObject({ body: { type: 'StructuredBody', profile } });
     });
 
+    it('keeps the creators a body names, a model and a person among them (ADR 0034)', async () => {
+      const creator = [
+        { type: 'Software', name: 'curanno-extract', nickname: 'llama3.1:8b / prompt 1' },
+        { type: 'Person', id: 'https://annotations.test/x/users/someone' },
+      ];
+      const res = await ctx.as(alice, {
+        method: 'POST',
+        url: '/annotations/',
+        headers: LD_JSON,
+        payload: annotationOn(PAGE, 'x', {
+          body: {
+            type: 'StructuredBody',
+            profile,
+            value: { kind: 'case' },
+            creator,
+            created: '2026-11-13T12:00:00.000Z',
+          },
+        }),
+      });
+      expect(res.statusCode).toBe(201);
+      expect(res.json()).toMatchObject({
+        body: { creator, created: '2026-11-13T12:00:00.000Z' },
+        creator: { type: 'Person' },
+      });
+    });
+
     it('rejects a schema violation with a useful error', async () => {
       const res = await ctx.as(alice, {
         method: 'POST',

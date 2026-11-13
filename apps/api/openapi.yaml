@@ -2332,6 +2332,12 @@ components:
             - type: string
               format: iri
             - $ref: '#/components/schemas/Agent'
+            - type: array
+              items:
+                anyOf:
+                  - type: string
+                    format: iri
+                  - $ref: '#/components/schemas/Agent'
         created:
           type: string
           format: date-time
@@ -2368,6 +2374,12 @@ components:
             - type: string
               format: iri
             - $ref: '#/components/schemas/Agent'
+            - type: array
+              items:
+                anyOf:
+                  - type: string
+                    format: iri
+                  - $ref: '#/components/schemas/Agent'
         created:
           type: string
           format: date-time

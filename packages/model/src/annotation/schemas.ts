@@ -231,10 +231,12 @@ export const AnchoredTarget = schema('AnchoredTarget', {
   properties: { ...specificResourceProperties, anchoring: ref('Anchoring') },
 });
 
+// A body may have several creators, for example a model and the curator who edited its value (ADR 0034).
+const agent: JsonSchema = { anyOf: [iri, ref('Agent')] };
 const embeddedBodyCommon: JsonSchema = {
   id: iri,
   purpose: oneOrMany(ref('Motivation')),
-  creator: { anyOf: [iri, ref('Agent')] },
+  creator: { anyOf: [iri, ref('Agent'), { type: 'array', items: agent }] },
   created: dateTime,
   modified: dateTime,
 };
