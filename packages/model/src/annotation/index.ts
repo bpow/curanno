@@ -7,3 +7,4 @@ export {
   extensionContextIri,
 } from './context.js';
 export * from './read.js';
+export * from './pdf-fragment.js';

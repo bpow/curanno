@@ -14,6 +14,8 @@
  */
 import {
   deriveDocumentUris,
+  pageFragmentSelector,
+  pageOfFragment,
   type GuestDocument,
   type Selector,
   type TargetAnchoringResult,
@@ -26,8 +28,7 @@ import { pageTextScope, type PdfTextItem, type VirtualNode } from './pdf-text.js
 import { describeSelection } from './selection.js';
 import type { AnchoredTarget, DescribedSelection, DocumentIntegration } from './types.js';
 
-/** The `conformsTo` of a page fragment (RFC 3778, `page=N`). */
-export const PDF_FRAGMENT_CONFORMS_TO = 'http://tools.ietf.org/rfc/rfc3778';
+export { PDF_FRAGMENT_CONFORMS_TO, pageFragmentSelector, pageOfFragment } from '@curanno/model';
 
 export interface PdfPageLike {
   getTextContent(options: {
@@ -63,22 +64,6 @@ export interface PdfIntegrationOptions {
   url: string;
   title?: string;
   anchoring?: AnchorOptions;
-}
-
-/** The page a fragment selector names, when it is a page fragment. */
-export function pageOfFragment(value: string): number | undefined {
-  const match = /^page=(\d+)(?:$|&)/.exec(value);
-  const page = match ? Number(match[1]) : NaN;
-  return Number.isInteger(page) && page > 0 ? page : undefined;
-}
-
-export function pageFragmentSelector(page: number, refinedBy: Selector[]): Selector {
-  return {
-    type: 'FragmentSelector',
-    conformsTo: PDF_FRAGMENT_CONFORMS_TO,
-    value: `page=${page}`,
-    refinedBy,
-  };
 }
 
 /** The `urn:x-pdf:` identifier for a PDF without a URL. */
