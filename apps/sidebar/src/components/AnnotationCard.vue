@@ -2,20 +2,21 @@
 import type { Annotation } from '@curanno/api-client';
 import { computed, ref } from 'vue';
 import {
+  anchoringOf,
   annotationUuid,
-  buildInput,
-  can,
   commentOf,
-  creatorName,
-  creatorUserId,
-  draftOf,
-  isEdited,
+  creatorOf,
   quoteOf,
-  rebuildInput,
-  repairInput,
-  storedAnchoring,
   structuredBodies,
   tagsOf,
+} from '@curanno/model';
+import {
+  buildInput,
+  can,
+  draftOf,
+  isEdited,
+  rebuildInput,
+  repairInput,
   type AnnotationDraft,
 } from '../api/annotations';
 import { toProblem, type Problem } from '../api/problems';
@@ -47,11 +48,12 @@ const editDraft = ref<AnnotationDraft>(draftOf(props.annotation));
 const replyDraft = ref<AnnotationDraft>({ text: '', tags: [] });
 
 const quote = computed(() => quoteOf(props.annotation));
+const creator = computed(() => creatorOf(props.annotation));
 const comment = computed(() => commentOf(props.annotation));
 const tags = computed(() => tagsOf(props.annotation));
 const structured = computed(() => structuredBodies(props.annotation));
 const anchoring = computed(
-  () => guest.anchoring.value.get(props.annotation.id) ?? storedAnchoring(props.annotation),
+  () => guest.anchoring.value.get(props.annotation.id) ?? anchoringOf(props.annotation),
 );
 const hovered = computed(() => guest.hovered.value.includes(props.annotation.id));
 /** Made on another site and not sent to this page (ADR 0025). */
@@ -195,14 +197,14 @@ async function repair(): Promise<void> {
     class="card"
     :class="{ reply, hovered }"
     tabindex="-1"
-    :aria-label="`Annotation by ${creatorName(annotation)}`"
+    :aria-label="`Annotation by ${creator.name}`"
     @mouseenter="guest.focus([annotation.id])"
     @mouseleave="guest.focus([])"
     @focusin="guest.focus([annotation.id])"
     @focusout="onFocusOut"
   >
     <header>
-      <span class="creator">{{ creatorName(annotation) }}</span>
+      <span class="creator">{{ creator.name }}</span>
       <time :datetime="annotation.created" class="muted">{{ formatTime(annotation.created) }}</time>
       <span v-if="isEdited(annotation)" class="muted" :title="formatTime(annotation.modified)">
         (edited)
@@ -312,7 +314,7 @@ async function repair(): Promise<void> {
     <SharingPanel
       v-if="mode === 'share'"
       :annotation-id="annotationUuid(annotation.id)"
-      :creator-id="creatorUserId(annotation)"
+      :creator-id="creator.userId"
     />
   </article>
 </template>

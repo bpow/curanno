@@ -6,6 +6,7 @@
  */
 import {
   isIri,
+  toArray,
   type AnchoringRepair,
   type AnchoringState,
   type AnnotationInput,
@@ -129,11 +130,6 @@ function parseTarget(target: Target, path: string): ParsedTarget {
     repair: null,
     data: { ...rest, [TARGET_SHAPE]: 'external' satisfies TargetShape },
   };
-}
-
-export function toArray<T>(value: T | T[] | undefined): T[] {
-  if (value === undefined) return [];
-  return Array.isArray(value) ? value : [value];
 }
 
 /** Deterministic JSON for comparing selectors regardless of key order. */

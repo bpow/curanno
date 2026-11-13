@@ -8,13 +8,13 @@ import {
   commentOf,
   creatorOf,
   documentOf,
-  excerpt,
   motivationsOf,
-  parentOf,
+  parentIri,
   quoteOf,
   structuredBodies,
   tagsOf,
-} from '../annotations/view';
+} from '@curanno/model';
+import { excerpt } from '../annotations/view';
 import { formatDate } from '../util/time';
 
 const props = defineProps<{ annotation: Annotation; link?: boolean }>();
@@ -22,7 +22,10 @@ const props = defineProps<{ annotation: Annotation; link?: boolean }>();
 const id = computed(() => annotationUuid(props.annotation.id));
 const creator = computed(() => creatorOf(props.annotation));
 const document = computed(() => documentOf(props.annotation));
-const parent = computed(() => parentOf(props.annotation));
+const parent = computed(() => {
+  const iri = parentIri(props.annotation);
+  return iri && annotationUuid(iri);
+});
 const quote = computed(() => quoteOf(props.annotation));
 const comment = computed(() => commentOf(props.annotation));
 const tags = computed(() => tagsOf(props.annotation));

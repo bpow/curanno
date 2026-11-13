@@ -1,132 +1,22 @@
 /**
- * Reading and building annotations in the shapes the W3C model allows
- * (one-or-many everywhere) for what the sidebar shows and edits: a comment,
- * tags, structured bodies, the quoted text and the anchoring state.
+ * Building annotations from what the sidebar edits (a comment, tags and a
+ * structured body), plus the per-annotation checks its cards make. Reading
+ * annotations is in `@curanno/model`.
  */
 import type { AclEntry, Annotation, AnnotationInput } from '@curanno/api-client';
-import type {
-  AnchoringRepair,
-  AnchoringState,
-  Body,
-  JsonValue,
-  Motivation,
-  OneOrMany,
-  Selector,
-  StructuredBody,
-  Target,
-  TextualBody,
+import {
+  commentOf,
+  structuredBodies,
+  tagsOf,
+  targetsOf,
+  type AnchoringRepair,
+  type Body,
+  type JsonValue,
+  type Motivation,
+  type OneOrMany,
+  type Selector,
+  type Target,
 } from '@curanno/model';
-
-const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
-const ANNOTATION_IRI = new RegExp(`/annotations/(${UUID})$`, 'i');
-const USER_IRI = new RegExp(`/x/users/(${UUID})$`, 'i');
-
-export function toArray<T>(value: OneOrMany<T> | undefined): T[] {
-  if (value === undefined) return [];
-  return Array.isArray(value) ? value : [value];
-}
-
-/** The identifier the API's path parameters take, from an annotation IRI. */
-export function annotationUuid(iri: string): string {
-  return ANNOTATION_IRI.exec(iri)?.[1] ?? iri;
-}
-
-function sourceOf(target: Target): string | undefined {
-  if (typeof target === 'string') return target;
-  if ('source' in target)
-    return typeof target.source === 'string' ? target.source : target.source.id;
-  if ('id' in target) return target.id;
-  return undefined;
-}
-
-/** The IRI of the annotation this one replies to, when a target is an annotation of this server. */
-export function parentIri(annotation: Annotation): string | undefined {
-  for (const target of toArray(annotation.target as OneOrMany<Target>)) {
-    const source = sourceOf(target);
-    if (source && ANNOTATION_IRI.test(source)) return source;
-  }
-  return undefined;
-}
-
-export function bodiesOf(annotation: Annotation): Body[] {
-  return toArray(annotation.body as OneOrMany<Body> | undefined);
-}
-
-function purposesOf(body: TextualBody | StructuredBody): string[] {
-  return toArray(body.purpose);
-}
-
-export function textualBodies(annotation: Annotation): TextualBody[] {
-  return bodiesOf(annotation).filter(
-    (b): b is TextualBody => typeof b === 'object' && b.type === 'TextualBody',
-  );
-}
-
-export function structuredBodies(annotation: Annotation): StructuredBody[] {
-  return bodiesOf(annotation).filter(
-    (b): b is StructuredBody => typeof b === 'object' && b.type === 'StructuredBody',
-  );
-}
-
-/** The comment: the first textual body that is not a tag, or `bodyValue`. */
-export function commentOf(annotation: Annotation): string {
-  const body = textualBodies(annotation).find((b) => !purposesOf(b).includes('tagging'));
-  return body?.value ?? annotation.bodyValue ?? '';
-}
-
-export function tagsOf(annotation: Annotation): string[] {
-  return textualBodies(annotation)
-    .filter((b) => purposesOf(b).includes('tagging'))
-    .map((b) => b.value);
-}
-
-export function targetsOf(annotation: Annotation): Target[] {
-  return toArray(annotation.target as OneOrMany<Target>);
-}
-
-function selectorsOf(target: Target): Selector[] {
-  if (typeof target !== 'object' || !('selector' in target)) return [];
-  const flat: Selector[] = [];
-  const visit = (s: Selector): void => {
-    flat.push(s);
-    for (const inner of toArray(s.refinedBy)) visit(inner);
-  };
-  for (const s of toArray(target.selector as OneOrMany<Selector> | undefined)) visit(s);
-  return flat;
-}
-
-/** The quoted text of the first target that has a TextQuoteSelector. */
-export function quoteOf(annotation: Annotation): string | undefined {
-  for (const target of targetsOf(annotation)) {
-    for (const s of selectorsOf(target)) {
-      if (s.type === 'TextQuoteSelector') return s.exact;
-    }
-  }
-  return undefined;
-}
-
-/** The anchoring state the server stores for the first specific-resource target. */
-export function storedAnchoring(annotation: Annotation): AnchoringState | undefined {
-  for (const target of targetsOf(annotation)) {
-    if (typeof target === 'object' && 'anchoring' in target && target.anchoring) {
-      return target.anchoring.state;
-    }
-  }
-  return undefined;
-}
-
-export function creatorName(annotation: Annotation): string {
-  const creator = annotation.creator;
-  if (typeof creator === 'string') return creator;
-  const name = toArray(creator?.name)[0];
-  return name ?? creator?.nickname ?? creator?.id ?? 'Unknown';
-}
-
-/** The user id behind `creator`, when it is a user of this server. */
-export function creatorUserId(annotation: Annotation): string | undefined {
-  const id = typeof annotation.creator === 'string' ? annotation.creator : annotation.creator?.id;
-  return id ? USER_IRI.exec(id)?.[1] : undefined;
-}
 
 export function can(annotation: Annotation, permission: 'read' | 'update' | 'delete' | 'share') {
   return annotation.permissions?.includes(permission) ?? false;
