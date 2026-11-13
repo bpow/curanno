@@ -5,8 +5,8 @@
   "description": "Sidebar app (Vue 3 + Vite) served from our origin in an iframe",
   "type": "module",
   "scripts": {
-    "dev": "tsc -b ../../packages/model ../../packages/api-client && vite",
-    "build": "tsc -b ../../packages/model ../../packages/api-client && vite build",
+    "dev": "tsc -b ../../packages/model ../../packages/api-client ../../packages/extract && vite",
+    "build": "tsc -b ../../packages/model ../../packages/api-client ../../packages/extract && vite build",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
     "test": "vitest run",
@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@curanno/api-client": "workspace:*",
+    "@curanno/extract": "workspace:*",
     "@curanno/model": "workspace:*",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",

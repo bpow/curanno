@@ -6,6 +6,8 @@ interface ImportMetaEnv {
   readonly VITE_OIDC_ISSUER?: string;
   readonly VITE_OIDC_CLIENT_ID?: string;
   readonly VITE_PDF_VIEWER_ORIGIN?: string;
+  /** Development: suggestion endpoints as `EXTRACT_ENDPOINTS` gives them (ADR 0032). */
+  readonly VITE_EXTRACT_ENDPOINTS?: string;
 }
 
 interface ImportMeta {
