@@ -128,7 +128,11 @@ afterEach(() => {
 });
 
 async function connected(
-  options: { announceIntervalMs?: number; consent?: ReturnType<typeof createSessionConsent> } = {},
+  options: {
+    announceIntervalMs?: number;
+    textTimeoutMs?: number;
+    consent?: ReturnType<typeof createSessionConsent>;
+  } = {},
 ) {
   const w = sidebarWindow();
   const guest = createRpcGuest({ window: w.win, consent: createSessionConsent(null), ...options });
