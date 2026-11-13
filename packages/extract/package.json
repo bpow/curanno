@@ -1,0 +1,33 @@
+{
+  "name": "@curanno/extract",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Annotation suggestions from a language model behind an OpenAI-compatible endpoint",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "default": "./dist/testing.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "eval": "tsc -b ../model . && node scripts/eval.ts"
+  },
+  "dependencies": {
+    "@curanno/model": "workspace:*"
+  },
+  "devDependencies": {
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "happy-dom": "^21.0.4"
+  }
+}

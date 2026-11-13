@@ -1,0 +1,17 @@
+{
+  "profile": "https://curanno.example/profiles/case-individual/1",
+  "expected": [
+    {
+      "quote": "The proband, a girl, had her first seizure at 6 months of age during a fever.",
+      "value": {
+        "case": "The proband",
+        "casePresentingHpos": ["Febrile seizure", "Global developmental delay"],
+        "caseNotHpos": ["Ataxia"],
+        "casePreviousTesting": "Chromosomal microarray, normal",
+        "genotypingMethod": "Gene panel",
+        "familyInfo": "No family history of epilepsy; parents not consanguineous; variant de novo",
+        "variants": [{ "geneName": "SCN1A", "variant": "NM_001165963.4:c.2836C>T" }]
+      }
+    }
+  ]
+}

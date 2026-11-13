@@ -1,9 +1,20 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/model" },
-    { "path": "packages/api-client" },
-    { "path": "packages/guest" },
-    { "path": "apps/api" }
+    {
+      "path": "packages/model"
+    },
+    {
+      "path": "packages/api-client"
+    },
+    {
+      "path": "packages/extract"
+    },
+    {
+      "path": "packages/guest"
+    },
+    {
+      "path": "apps/api"
+    }
   ]
 }
