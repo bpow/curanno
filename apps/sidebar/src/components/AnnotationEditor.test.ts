@@ -78,7 +78,7 @@ describe('AnnotationEditor', () => {
     await wrapper.find('input[name="principal"]').setValue('bob');
     await new Promise((r) => setTimeout(r, 250));
     await flushPromises();
-    await wrapper.find('.candidates button').trigger('click');
+    await wrapper.find('[role="option"]').trigger('click');
     await wrapper.find('input[aria-label="update for Bob"]').setValue(true);
     await wrapper.find('form').trigger('submit');
     expect(wrapper.emitted('save')).toEqual([

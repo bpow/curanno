@@ -81,7 +81,7 @@ test('alice annotates, shares with bob, and bob follows the changes live', async
   // Alice grants bob read; bob's sidebar learns about it over the event stream.
   await aliceCard.getByRole('button', { name: 'Share' }).click();
   await alice.getByLabel('Share with').fill('bob');
-  await alice.getByRole('button', { name: 'Bob Reviewer' }).click();
+  await alice.getByRole('option', { name: 'Bob Reviewer' }).click();
   await expect(alice.getByLabel('read for Bob Reviewer')).toBeChecked();
   const bobCard = bob.locator('article.card').first();
   await expect(bobCard).toContainText('Segregation evidence from the family study');
@@ -132,7 +132,7 @@ test('alice and bob share annotations and replies as they post them', async ({ b
   await alice.getByLabel('Comment').fill('Shared from the start');
   await alice.getByText('Sharing').click();
   await alice.getByLabel('Share with').fill('bob');
-  await alice.getByRole('button', { name: 'Bob Reviewer' }).click();
+  await alice.getByRole('option', { name: 'Bob Reviewer' }).click();
   await expect(alice.getByLabel('read for Bob Reviewer')).toBeChecked();
   await alice.getByRole('button', { name: 'Post' }).click();
 
@@ -152,7 +152,7 @@ test('alice and bob share annotations and replies as they post them', async ({ b
   await bob.getByLabel('Comment').fill('Seen, thanks.');
   await bob.getByText('Sharing').click();
   await bob.getByLabel('Share with').fill('alice');
-  await bob.getByRole('button', { name: /^Alice/ }).click();
+  await bob.getByRole('option', { name: /^Alice/ }).click();
   await bob.getByRole('button', { name: 'Reply', exact: true }).last().click();
   await expect(bob.locator('article.card.reply')).toContainText('Seen, thanks.');
   await expect(alice.locator('article.card.reply')).toContainText('Seen, thanks.');

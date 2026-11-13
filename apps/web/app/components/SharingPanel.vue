@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { AclEntry, Permission, PrincipalRef } from '@curanno/api-client';
 import { PERMISSIONS } from '@curanno/model';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useApi } from '../api/client';
 import { useAction, useRequest } from '../composables/request';
+import PrincipalPicker from './PrincipalPicker.vue';
 import ProblemAlert from './ProblemAlert.vue';
 
 const props = defineProps<{
@@ -63,29 +64,12 @@ async function toggle(principal: PrincipalRef, permission: Permission, grant: bo
   await changed();
 }
 
-const query = ref('');
-const candidates = ref<PrincipalRef[]>([]);
-const searching = ref(false);
+/** Principals already in the table are not offered again. */
+const offer = (p: PrincipalRef): boolean => !rows.value.some((r) => r.principal.id === p.id);
 
-watch(query, async (q) => {
-  if (!q.trim()) {
-    candidates.value = [];
-    return;
-  }
-  searching.value = true;
-  const result = await api.GET('/x/principals', { params: { query: { q: q.trim(), limit: 10 } } });
-  searching.value = false;
-  if (query.value !== q) return;
-  const present = new Set(rows.value.map((r) => r.principal.id));
-  candidates.value = (result.data ?? []).filter((p) => !present.has(p.id));
-});
-
-async function share(principal: PrincipalRef): Promise<void> {
+async function share(principal: PrincipalRef): Promise<boolean> {
   await toggle(principal, 'read', true);
-  if (!action.problem.value) {
-    query.value = '';
-    candidates.value = [];
-  }
+  return !action.problem.value;
 }
 
 const has = (entries: AclEntry[] | null, id: string, permission: Permission): boolean =>
@@ -125,40 +109,17 @@ const has = (entries: AclEntry[] | null, id: string, permission: Permission): bo
     </table>
     <p v-else-if="acl.pending.value" class="muted">Loading permissions…</p>
 
-    <form class="inline" @submit.prevent>
-      <label class="field">
-        Share with
-        <input
-          v-model="query"
-          type="search"
-          placeholder="User, group, public…"
-          autocomplete="off"
-        />
-      </label>
-      <ul
-        v-if="candidates.length > 0"
-        class="candidates"
-        role="listbox"
-        aria-label="Principals found"
-      >
-        <li v-for="candidate in candidates" :key="candidate.id">
-          <button type="button" :disabled="action.busy.value" @click="share(candidate)">
-            {{ nameOf(candidate) }} <span class="badge">{{ candidate.kind }}</span>
-          </button>
-        </li>
-      </ul>
-      <span v-else-if="query.trim() && !searching" class="muted">No principals match.</span>
-    </form>
+    <PrincipalPicker
+      label="Share with"
+      placeholder="User, group, public…"
+      no-match="No principals match."
+      :offer="offer"
+      :busy="action.busy.value"
+      :add="share"
+    >
+      <template #default="{ principal }">
+        {{ nameOf(principal) }} <span class="badge">{{ principal.kind }}</span>
+      </template>
+    </PrincipalPicker>
   </section>
 </template>
-
-<style scoped>
-.candidates {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 0;
-  padding: 0;
-}
-</style>

@@ -99,10 +99,10 @@ describe('SharingPanel', () => {
     await wrapper.find('input[name="principal"]').setValue('review');
     await new Promise((r) => setTimeout(r, 250));
     await flushPromises();
-    const candidates = wrapper.findAll('.candidates button').map((b) => b.text());
+    const candidates = wrapper.findAll('[role="option"]').map((b) => b.text());
     expect(candidates).toEqual(['Group: reviewers']);
 
-    await wrapper.find('.candidates button').trigger('click');
+    await wrapper.find('[role="option"]').trigger('click');
     await flushPromises();
     expect(api.calls.find((c) => c.method === 'POST')?.body).toEqual({
       principal: reviewers.id,
@@ -115,9 +115,7 @@ describe('SharingPanel', () => {
     await wrapper.find('input[name="principal"]').setValue('pub');
     await new Promise((r) => setTimeout(r, 250));
     await flushPromises();
-    expect(wrapper.findAll('.candidates button').map((b) => b.text())).toEqual([
-      'Everyone (public)',
-    ]);
+    expect(wrapper.findAll('[role="option"]').map((b) => b.text())).toEqual(['Everyone (public)']);
   });
 
   it('surfaces a problem from the API', async () => {

@@ -1,5 +1,5 @@
 /**
- * The tag and ontology-term inputs, driven in a real browser: their list and
+ * The tag, ontology-term and principal inputs, driven in a real browser: their list and
  * tag behaviour is Reka UI's, which the unit tests' DOM does not run far
  * enough to show (no option is ever highlighted there).
  */
@@ -188,4 +188,36 @@ test('Enter takes the highlighted term, and typed text is kept once the list is 
       { label: 'syncope' },
     ]),
   );
+});
+
+test('the principal search picks with Enter and does not post the form', async ({ context }) => {
+  const page = await openComposer(context);
+  const people = [
+    { id: '77777777-7777-4777-8777-777777777777', kind: 'user', name: 'Bob Reviewer' },
+    { id: '88888888-8888-4888-8888-888888888888', kind: 'group', name: 'reviewers' },
+  ];
+  await context.route(`${SIDEBAR_ORIGIN}/x/principals*`, (route) => route.fulfill(json(people)));
+  await page.getByText('Sharing').click();
+  const input = page.getByLabel('Share with');
+  const options = page.locator('.candidates [role="option"]');
+
+  await input.pressSequentially('rev');
+  await expect(options).toHaveText(['Bob Reviewer', 'Group: reviewers']);
+  await expect
+    .poll(() => input.getAttribute('aria-activedescendant'))
+    .toBe(await options.nth(0).getAttribute('id'));
+  await input.press('ArrowDown');
+  await input.press('Enter');
+  await expect(page.getByLabel('read for Group: reviewers')).toBeChecked();
+  await expect(input).toHaveValue('');
+  await expect(options).toHaveCount(0);
+  await expect(input).not.toHaveAttribute('aria-activedescendant');
+  await expect(page.getByLabel('Comment')).toBeVisible();
+
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'])
+    .analyze();
+  expect(
+    results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(', ')}`),
+  ).toEqual([]);
 });
