@@ -14,6 +14,7 @@ export {
 export {
   DOCUMENT_URI_RELATIONS,
   deriveDocumentUris,
+  rankDocumentUris,
   resolveLink,
   type DocumentUri,
   type DocumentUriRelation,
