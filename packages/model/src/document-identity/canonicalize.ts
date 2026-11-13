@@ -5,7 +5,10 @@
  * beside it.
  */
 
-/** Query parameters that track visits rather than identify content. */
+/**
+ * Query parameters that track visits or grant short-lived access rather
+ * than identify content. Names are matched case-insensitively.
+ */
 export const TRACKING_PARAMETERS: ReadonlySet<string> = new Set([
   'fbclid',
   'gclid',
@@ -19,6 +22,9 @@ export const TRACKING_PARAMETERS: ReadonlySet<string> = new Set([
   '_gl',
   '_hsenc',
   '_hsmi',
+  // Signed-link and access tokens: the same file fetched twice gets a new one.
+  'x-amz-security-token',
+  'resourcekey',
 ]);
 
 const UNRESERVED = /%(4[1-9A-F]|5[0-9A]|6[1-9A-F]|7[0-9A]|3[0-9]|2[DE]|5F|7E)/gi;

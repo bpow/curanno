@@ -18,6 +18,11 @@ describe('canonicalizeUri', () => {
     ['https://example.org/p?b=2&a=1', 'https://example.org/p?a=1&b=2'],
     ['https://example.org/p?utm_source=x&id=7&fbclid=y', 'https://example.org/p?id=7'],
     ['https://example.org/p?utm_source=x', 'https://example.org/p'],
+    [
+      'https://bucket.example/r.pdf?X-Amz-Security-Token=abc&id=7',
+      'https://bucket.example/r.pdf?id=7',
+    ],
+    ['https://drive.example/file/d/1?resourcekey=0-xyz', 'https://drive.example/file/d/1'],
     ['https://example.org/%7Euser/%7e/%2fa', 'https://example.org/~user/~/%2Fa'],
     ['https://user:pw@example.org/p', 'https://example.org/p'],
     ['https://münchen.example/straße', 'https://xn--mnchen-3ya.example/stra%C3%9Fe'],
