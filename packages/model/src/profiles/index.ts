@@ -11,8 +11,6 @@ export {
 export { addProfileKeywords, type KeywordRegistry, type OntologyLookup } from './keywords.js';
 export {
   ProfileRegistry,
-  isStructuredBody,
-  isTextualBody,
   type BodyProfile,
   type CompiledSchema,
   type SchemaCompiler,
