@@ -32,7 +32,7 @@ For `http` and `https` URLs:
 3. Host is lower-cased and IDNA-encoded, and the default port removed (the URL parser does this).
 4. Credentials and the fragment are removed.
 5. In the path, percent-encoded unreserved characters are decoded and remaining escapes are upper-cased. Dot segments are resolved by the parser. Trailing slashes are kept: `/a/` and `/a` stay different, since servers may serve different resources.
-6. Query parameters whose names start with `utm_`, and a fixed list of click identifiers (`fbclid`, `gclid`, `dclid`, `msclkid`, `yclid`, `igshid`, `mc_cid`, `mc_eid`, `_ga`, `_gl`, `_hsenc`, `_hsmi`), are removed. The remaining parameters are sorted by name then value. An empty query is removed.
+6. Query parameters whose names start with `utm_`, a fixed list of click identifiers (`fbclid`, `gclid`, `dclid`, `msclkid`, `yclid`, `igshid`, `mc_cid`, `mc_eid`, `_ga`, `_gl`, `_hsenc`, `_hsmi`), and short-lived access tokens (`x-amz-security-token`, `resourcekey`) are removed, matching names case-insensitively. The remaining parameters are sorted by name then value. An empty query is removed.
 
 Other schemes:
 
