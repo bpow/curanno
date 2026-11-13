@@ -2,7 +2,7 @@ import type { Body, BodyProfile, Motivation, ValidationError } from '@curanno/mo
 import { defineStore } from 'pinia';
 import { ref, shallowRef } from 'vue';
 import { useApi } from '../api/client';
-import { toProblem, unwrap, type Problem } from '../api/problems';
+import { toProblem, unwrap, type Problem } from '@curanno/api-client';
 import { createRegistry, toModelProfile } from '../profiles/schema';
 
 export const useProfilesStore = defineStore('profiles', () => {

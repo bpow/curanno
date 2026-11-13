@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import type { AclEntry, PrincipalRef } from '@curanno/api-client';
+import {
+  type AclEntry,
+  type PrincipalRef,
+  toProblem,
+  unwrap,
+  type Problem,
+} from '@curanno/api-client';
 import type { Permission } from '@curanno/model';
 import { onMounted, ref } from 'vue';
 import { useApi } from '../api/client';
-import { toProblem, unwrap, type Problem } from '../api/problems';
 import AclEditor from './AclEditor.vue';
 import ProblemAlert from './ProblemAlert.vue';
 

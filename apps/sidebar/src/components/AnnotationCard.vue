@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Annotation } from '@curanno/api-client';
+import { type Annotation, toProblem, type Problem } from '@curanno/api-client';
 import { computed, ref } from 'vue';
 import {
   anchoringOf,
@@ -19,7 +19,6 @@ import {
   repairInput,
   type AnnotationDraft,
 } from '../api/annotations';
-import { toProblem, type Problem } from '../api/problems';
 import { useAuthStore } from '../auth/store';
 import { useGuest } from '../guest';
 import { useAnnotationsStore } from '../stores/annotations';
