@@ -6,13 +6,7 @@
  * against. Nothing here carries a body, a tag, a creator or a token: the
  * guest sees annotation identifiers and selectors only.
  */
-import type {
-  AnchoringState,
-  OneOrMany,
-  Selector,
-  SpecificResource,
-  Target,
-} from '../annotation/types.js';
+import type { AnchoringState, OneOrMany, SpecificResource, Target } from '../annotation/types.js';
 import type { DocumentUriRelation } from '../document-identity/identity.js';
 import type { TextRange } from '../text-model/selectors.js';
 
@@ -298,10 +292,4 @@ export type Payload<M extends RpcEnvelope> = M extends RpcEnvelope
 /** Add the envelope to a message payload. */
 export function envelope<M extends RpcEnvelope>(payload: Payload<M>): M {
   return { protocol: RPC_PROTOCOL, version: RPC_PROTOCOL_VERSION, ...payload } as unknown as M;
-}
-
-/** The selectors of a target, or none for an IRI or a resource without selectors. */
-export function selectorsOfTarget(target: Target): Selector[] {
-  if (typeof target === 'string' || !('selector' in target) || !target.selector) return [];
-  return Array.isArray(target.selector) ? target.selector : [target.selector];
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { definePageMeta, useRoute } from '#imports';
-import { bodiesOf, creatorOf, sourceOf, targetsOf, toArray } from '@curanno/model';
+import { bodiesOf, creatorOf, selectorsOfTarget, sourceOf, targetsOf } from '@curanno/model';
 import { type BodyView, viewBody } from '../../annotations/view';
 import { useApi } from '../../api/client';
 import AnnotationSummary from '../../components/AnnotationSummary.vue';
@@ -32,10 +32,7 @@ const raw = computed(() => JSON.stringify(annotation.data.value, null, 2));
 
 function describeTarget(target: ReturnType<typeof targetsOf>[number]): string {
   if (typeof target === 'string') return target;
-  const parts: string[] = [];
-  if ('selector' in target) {
-    for (const s of toArray(target.selector as never)) parts.push((s as { type: string }).type);
-  }
+  const parts: string[] = selectorsOfTarget(target).map((s) => s.type);
   if ('anchoring' in target && target.anchoring) parts.push(`anchoring: ${target.anchoring.state}`);
   return parts.join(', ');
 }
