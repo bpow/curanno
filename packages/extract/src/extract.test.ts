@@ -8,7 +8,7 @@ import {
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 import { EndpointError } from './endpoint.js';
-import { extract, softwareAgent, type ExtractOptions } from './extract.js';
+import { extract, softwareAgent, stableStringify, type ExtractOptions } from './extract.js';
 import { PROMPT_VERSION } from './prompt.js';
 import { answer, createFakeEndpoint, documentOf } from './testing.js';
 
@@ -260,5 +260,12 @@ describe('extract', () => {
       name: 'curanno-extract',
       nickname: `llama3.1:8b / prompt ${PROMPT_VERSION}`,
     });
+  });
+
+  it('compares values whatever order their keys are in', () => {
+    expect(stableStringify({ b: [1, { d: 1, c: 2 }], a: null })).toBe(
+      stableStringify({ a: null, b: [1, { c: 2, d: 1 }] }),
+    );
+    expect(stableStringify({ a: 1 })).not.toBe(stableStringify({ a: '1' }));
   });
 });

@@ -25,6 +25,7 @@ export {
   GENERATOR_NAME,
   extract,
   softwareAgent,
+  stableStringify,
   type ExtractOptions,
   type ExtractionInput,
   type ExtractionResult,

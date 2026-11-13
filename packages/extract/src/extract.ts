@@ -126,11 +126,15 @@ function prune(value: unknown): unknown {
   return value;
 }
 
-function stable(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(stable).join(',')}]`;
+/** JSON with object keys sorted, so equal values compare equal whatever order their keys came in. */
+export function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
   if (typeof value === 'object' && value !== null) {
-    const keys = Object.keys(value).sort();
-    return `{${keys.map((k) => `${JSON.stringify(k)}:${stable((value as Record<string, unknown>)[k])}`).join(',')}}`;
+    const record = value as Record<string, unknown>;
+    const entries = Object.keys(record)
+      .sort()
+      .map((k) => `${JSON.stringify(k)}:${stableStringify(record[k])}`);
+    return `{${entries.join(',')}}`;
   }
   return JSON.stringify(value);
 }
@@ -210,7 +214,7 @@ export async function extract(
         start: utf16ToCodePoint(source, located.start),
         end: utf16ToCodePoint(source, located.end),
       };
-      const dedupe = `${key}\n${range.start}\n${range.end}\n${stable(value)}`;
+      const dedupe = `${key}\n${range.start}\n${range.end}\n${stableStringify(value)}`;
       if (seen.has(dedupe)) continue;
       seen.add(dedupe);
       found.push({
