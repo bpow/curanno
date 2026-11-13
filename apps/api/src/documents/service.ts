@@ -9,6 +9,7 @@ import {
   canonicalizeUri,
   dcIdentifierUri,
   pdfFingerprintUri,
+  rankDocumentUris,
   resolveLink,
   type DocumentUri,
   type DocumentUriRelation,
@@ -19,18 +20,6 @@ import { isoDate } from '../annotations/serialize.js';
 
 export type DocumentMetadata = components['schemas']['DocumentMetadata'];
 export type DocumentJson = components['schemas']['Document'];
-
-/** Relations in order of trust; the first wins when two give the same normalized URI. */
-const PRECEDENCE: DocumentUriRelation[] = [
-  'self',
-  'pdf_fingerprint',
-  'canonical',
-  'doi',
-  'dc_identifier',
-  'og_url',
-  'shortlink',
-  'pdf_url',
-];
 
 /** Apply the normalization and guards of docs/document-identity.md to reported links. */
 export function normalizeLinks(metadata: DocumentMetadata): DocumentUri[] {
@@ -72,11 +61,7 @@ export function normalizeLinks(metadata: DocumentMetadata): DocumentUri[] {
         break;
     }
   }
-  candidates.sort((a, b) => PRECEDENCE.indexOf(a.relation) - PRECEDENCE.indexOf(b.relation));
-  const seen = new Set<string>();
-  return candidates.filter((c) =>
-    seen.has(c.normalized) ? false : (seen.add(c.normalized), true),
-  );
+  return rankDocumentUris(candidates);
 }
 
 export interface RegisterResult {

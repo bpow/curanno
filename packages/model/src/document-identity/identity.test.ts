@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deriveDocumentUris, resolveLink } from './identity.js';
+import { deriveDocumentUris, rankDocumentUris, resolveLink } from './identity.js';
 
 describe('deriveDocumentUris', () => {
   it('collects every identifier a page reports, normalized, in precedence order', () => {
@@ -83,5 +83,16 @@ describe('resolveLink', () => {
   it('returns null for empty input', () => {
     expect(resolveLink(undefined, 'https://h.example/')).toBeNull();
     expect(resolveLink(' ', 'https://h.example/')).toBeNull();
+  });
+});
+
+describe('rankDocumentUris', () => {
+  it('keeps the most trusted relation for a shared normalized URI, in trust order', () => {
+    const ranked = rankDocumentUris([
+      { uri: 'https://a.test/s', normalized: 'https://a.test/s', relation: 'shortlink' },
+      { uri: 'https://a.test/x', normalized: 'https://a.test/x', relation: 'og_url' },
+      { uri: 'https://a.test/x/', normalized: 'https://a.test/x', relation: 'canonical' },
+    ]);
+    expect(ranked.map((u) => u.relation)).toEqual(['canonical', 'shortlink']);
   });
 });

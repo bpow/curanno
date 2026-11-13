@@ -95,9 +95,16 @@ export function deriveDocumentUris(page: PageMetadata): DocumentUri[] {
   add(page.shortlink, 'shortlink', resolveLink(page.shortlink, page.url));
   add(page.pdfUrl, 'pdf_url', resolveLink(page.pdfUrl, page.url));
 
-  candidates.sort((a, b) => PRECEDENCE.indexOf(a.relation) - PRECEDENCE.indexOf(b.relation));
+  return rankDocumentUris(candidates);
+}
+
+/** Orders URIs by trust and keeps the most trusted of those sharing a normalized form. */
+export function rankDocumentUris(candidates: DocumentUri[]): DocumentUri[] {
+  const ranked = [...candidates].sort(
+    (a, b) => PRECEDENCE.indexOf(a.relation) - PRECEDENCE.indexOf(b.relation),
+  );
   const seen = new Set<string>();
-  return candidates.filter((c) => {
+  return ranked.filter((c) => {
     if (seen.has(c.normalized)) return false;
     seen.add(c.normalized);
     return true;
