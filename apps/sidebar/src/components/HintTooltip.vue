@@ -2,11 +2,13 @@
 import { TooltipContent, TooltipPortal, TooltipRoot, TooltipTrigger } from 'reka-ui';
 
 defineProps<{ text: string }>();
+// The root renders nothing, so what a wrapping as-child trigger passes goes on to the button.
+defineOptions({ inheritAttrs: false });
 </script>
 
 <template>
   <TooltipRoot>
-    <TooltipTrigger as-child>
+    <TooltipTrigger as-child v-bind="$attrs">
       <slot />
     </TooltipTrigger>
     <TooltipPortal>

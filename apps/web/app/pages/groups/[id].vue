@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { definePageMeta, navigateTo, useRoute } from '#imports';
 import { useApi } from '../../api/client';
+import ConfirmDialog from '../../components/ConfirmDialog.vue';
 import MembershipEditor from '../../components/MembershipEditor.vue';
 import ProblemAlert from '../../components/ProblemAlert.vue';
 import { useAuth } from '../../composables/auth';
@@ -43,12 +44,6 @@ async function save(): Promise<void> {
 }
 
 async function remove(): Promise<void> {
-  if (
-    !window.confirm(
-      `Delete the group “${group.data.value?.name}”? Permissions granted to it are removed.`,
-    )
-  )
-    return;
   await edit.perform(() => api.DELETE('/x/groups/{id}', { params: { path: { id: id.value } } }));
   if (!edit.problem.value) await navigateTo('/groups');
 }
@@ -82,9 +77,14 @@ async function remove(): Promise<void> {
             <input v-model="description" type="text" />
           </label>
           <button type="submit" class="primary" :disabled="edit.busy.value">Save</button>
-          <button type="button" class="danger" :disabled="edit.busy.value" @click="remove">
-            Delete group
-          </button>
+          <ConfirmDialog
+            :title="`Delete the group “${group.data.value.name}”?`"
+            description="Permissions granted to it are removed."
+            action="Delete group"
+            @confirm="remove"
+          >
+            <button type="button" class="danger" :disabled="edit.busy.value">Delete group</button>
+          </ConfirmDialog>
         </form>
         <ProblemAlert :problem="edit.problem.value" />
       </template>

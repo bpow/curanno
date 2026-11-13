@@ -106,6 +106,13 @@ export async function stubApi(context: BrowserContext, pageUrl: string): Promise
       };
       stub.calls.push(call);
       const key = `${call.method} ${url.pathname}`;
+      const one = /^\/annotations\/([0-9a-f-]{36})$/.exec(url.pathname);
+      const stored = one && stub.annotations.get(`${API_ORIGIN}${url.pathname}`);
+      if (stored && call.method === 'GET') return route.fulfill(json(stored, 200, { etag: '"1"' }));
+      if (stored && call.method === 'DELETE') {
+        stub.annotations.delete(`${API_ORIGIN}${url.pathname}`);
+        return route.fulfill({ status: 204 });
+      }
       switch (key) {
         case 'GET /x/profiles':
           return route.fulfill(json([]));

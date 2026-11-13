@@ -108,8 +108,8 @@ test('alice annotates, shares with bob, and bob follows the changes live', async
   await expect(alice.locator('article.card.reply')).toHaveCount(0);
 
   // Alice deletes; bob's copy disappears.
-  alice.once('dialog', (dialog) => void dialog.accept());
   await aliceCard.getByRole('button', { name: 'Delete' }).click();
+  await alice.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
   await expect(alice.locator('article.card:not(.reply)')).toHaveCount(0);
   await expect(bob.locator('article.card:not(.reply)')).toHaveCount(0);
   await expect(bobGuestCalls).toContainText('unanchor 1');

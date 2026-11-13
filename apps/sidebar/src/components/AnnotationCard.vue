@@ -28,6 +28,7 @@ import { formatTime } from '../util/time';
 import AnchoringBadge from './AnchoringBadge.vue';
 import AnnotationEditor from './AnnotationEditor.vue';
 import AppIcon from './AppIcon.vue';
+import ConfirmDialog from './ConfirmDialog.vue';
 import HintTooltip from './HintTooltip.vue';
 import ProblemAlert from './ProblemAlert.vue';
 import SharingPanel from './SharingPanel.vue';
@@ -146,7 +147,6 @@ async function saveReply(draft: AnnotationDraft): Promise<void> {
 }
 
 async function remove(): Promise<void> {
-  if (!window.confirm('Delete this annotation?')) return;
   busy.value = true;
   try {
     const current = await store.fetch(props.annotation.id);
@@ -278,11 +278,19 @@ async function repair(): Promise<void> {
           <AppIcon name="share" />
         </ToolbarButton>
       </HintTooltip>
-      <HintTooltip v-if="can(annotation, 'delete')" text="Delete">
-        <ToolbarButton class="icon danger" aria-label="Delete" :disabled="busy" @click="remove">
-          <AppIcon name="delete" />
-        </ToolbarButton>
-      </HintTooltip>
+      <ConfirmDialog
+        v-if="can(annotation, 'delete')"
+        title="Delete this annotation?"
+        description="This cannot be undone."
+        action="Delete"
+        @confirm="remove"
+      >
+        <HintTooltip text="Delete">
+          <ToolbarButton class="icon danger" aria-label="Delete" :disabled="busy">
+            <AppIcon name="delete" />
+          </ToolbarButton>
+        </HintTooltip>
+      </ConfirmDialog>
       <ToolbarButton v-if="repairable" class="link" :disabled="busy" @click="repair">
         Repair with selection
       </ToolbarButton>

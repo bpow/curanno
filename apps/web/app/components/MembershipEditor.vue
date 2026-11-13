@@ -4,6 +4,7 @@ import { NuxtLink } from '#components';
 import { useApi } from '../api/client';
 import { useAction, useRequest } from '../composables/request';
 import { formatDate } from '../util/time';
+import ConfirmDialog from './ConfirmDialog.vue';
 import PrincipalPicker from './PrincipalPicker.vue';
 import ProblemAlert from './ProblemAlert.vue';
 
@@ -55,8 +56,6 @@ async function setRole(member: Membership, role: GroupRole): Promise<void> {
 }
 
 async function remove(member: Membership): Promise<void> {
-  const name = member.user.displayName ?? member.user.id;
-  if (!window.confirm(`Remove ${name} from the group?`)) return;
   await action.perform(() =>
     api.DELETE('/x/groups/{id}/members/{userId}', {
       params: { path: { id: props.groupId, userId: member.user.id } },
@@ -103,15 +102,23 @@ const canRemove = (member: Membership): boolean =>
           </td>
           <td class="muted">{{ formatDate(member.addedAt) }}</td>
           <td v-if="canManage || currentUserId">
-            <button
+            <ConfirmDialog
               v-if="canRemove(member)"
-              type="button"
-              class="link danger"
-              :disabled="action.busy.value"
-              @click="remove(member)"
+              :title="
+                member.user.id === currentUserId
+                  ? 'Leave the group?'
+                  : `Remove ${member.user.displayName ?? member.user.id} from the group?`
+              "
+              :description="`Permissions granted to the group stop applying to ${
+                member.user.id === currentUserId ? 'you' : 'them'
+              }.`"
+              :action="member.user.id === currentUserId ? 'Leave' : 'Remove'"
+              @confirm="remove(member)"
             >
-              {{ member.user.id === currentUserId ? 'Leave' : 'Remove' }}
-            </button>
+              <button type="button" class="link danger" :disabled="action.busy.value">
+                {{ member.user.id === currentUserId ? 'Leave' : 'Remove' }}
+              </button>
+            </ConfirmDialog>
           </td>
         </tr>
         <tr v-if="members.data.value.length === 0">
