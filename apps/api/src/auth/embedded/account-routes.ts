@@ -25,7 +25,7 @@ import {
 } from './accounts.js';
 import { revokeSessions } from './adapter.js';
 import { addEmail, listEmails, makePrimary, removeEmail, verifyEmail } from './emails.js';
-import { emailField, field, requireSameOrigin } from './http.js';
+import { accepts, body, EMAIL, requireSameOrigin, text } from './http.js';
 import { accountLink, addressInUse } from './invites.js';
 import type { Mailer } from './mail.js';
 import { tellAdministrators } from './notify.js';
@@ -45,6 +45,11 @@ export interface AccountRouteOptions {
   autoApproveDomains: string[];
   maxPending: number;
 }
+
+const PASSWORD = text(MAX_PASSWORD_LENGTH);
+const TOKEN = text(200);
+const withEmail = accepts({ email: EMAIL });
+const withToken = accepts({ token: TOKEN });
 
 export function registerAccountRoutes(app: FastifyInstance, options: AccountRouteOptions): void {
   const { db, throttle, mailer, origin, signup, autoApproveDomains, maxPending, upstream } =
@@ -85,13 +90,17 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     };
   });
 
-  app.post('/idp/signup', async (request, reply) => {
+  const signupBody = accepts({ email: EMAIL, password: PASSWORD, displayName: text(200) });
+  app.post('/idp/signup', signupBody, async (request, reply) => {
     guard(request, reply);
     if (signup === 'closed') throw forbidden('Accounts are created by invitation here.');
-    const email = emailField(request.body);
-    const password = field(request.body, 'password', MAX_PASSWORD_LENGTH);
-    const displayName = field(request.body, 'displayName', 200).trim();
-    const rawNote = (request.body as { note?: unknown }).note;
+    const sent = body<{ email: string; password: string; displayName: string; note?: unknown }>(
+      request,
+    );
+    const email = sent.email.trim();
+    const password = sent.password;
+    const displayName = sent.displayName.trim();
+    const rawNote = sent.note;
     const note = typeof rawNote === 'string' ? rawNote.slice(0, 1000) : undefined;
     const byAddress = address(request);
     const byEmail = throttle.key('email', email);
@@ -152,11 +161,11 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     return reply.code(202).send({ status });
   });
 
-  app.post('/idp/invite/peek', async (request, reply) => {
+  app.post('/idp/invite/peek', withToken, async (request, reply) => {
     guard(request, reply);
     const key = address(request);
     await throttle.check([LIMITS.tokenPerAddress, key]);
-    const found = await peekToken(db, 'invite', field(request.body, 'token', 200));
+    const found = await peekToken(db, 'invite', body<{ token: string }>(request).token);
     if (!found) {
       await throttle.record('token-failed', [key]);
       throw badRequest('This link has expired or was already used.');
@@ -164,11 +173,14 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     return { email: found.email };
   });
 
-  app.post('/idp/invite/accept', async (request, reply) => {
+  const inviteBody = accepts({ token: TOKEN, password: PASSWORD, displayName: text(200, 0) });
+  app.post('/idp/invite/accept', inviteBody, async (request, reply) => {
     guard(request, reply);
-    const token = field(request.body, 'token', 200);
-    const password = field(request.body, 'password', MAX_PASSWORD_LENGTH);
-    const displayName = field(request.body, 'displayName', 200, 0);
+    const { token, password, displayName } = body<{
+      token: string;
+      password: string;
+      displayName: string;
+    }>(request);
     const key = address(request);
     await throttle.check([LIMITS.tokenPerAddress, key]);
     let principalId: string | undefined;
@@ -186,9 +198,9 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     return reply.code(201).send({});
   });
 
-  app.post('/idp/reset/request', async (request, reply) => {
+  app.post('/idp/reset/request', withEmail, async (request, reply) => {
     guard(request, reply);
-    const email = emailField(request.body);
+    const email = body<{ email: string }>(request).email.trim();
     const byAddress = address(request);
     const byEmail = throttle.key('email', email);
     // The same answer whatever happens, including being over the limit: nothing to learn here.
@@ -218,10 +230,10 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     return accepted();
   });
 
-  app.post('/idp/reset/complete', async (request, reply) => {
+  const resetBody = accepts({ token: TOKEN, password: PASSWORD });
+  app.post('/idp/reset/complete', resetBody, async (request, reply) => {
     guard(request, reply);
-    const token = field(request.body, 'token', 200);
-    const password = field(request.body, 'password', MAX_PASSWORD_LENGTH);
+    const { token, password } = body<{ token: string; password: string }>(request);
     // Check the password before using the link up, so a too-short one can be retyped.
     try {
       checkLength(password);
@@ -237,9 +249,9 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     return {};
   });
 
-  app.post('/idp/email/verify', async (request, reply) => {
+  app.post('/idp/email/verify', withToken, async (request, reply) => {
     guard(request, reply);
-    const used = await useToken(request, 'verify', field(request.body, 'token', 200));
+    const used = await useToken(request, 'verify', body<{ token: string }>(request).token);
     const principalId = used.principalId;
     if (
       !principalId ||
@@ -283,11 +295,11 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     };
   });
 
-  app.post('/idp/password', async (request, reply) => {
+  const passwordBody = accepts({ current: PASSWORD, next: PASSWORD });
+  app.post('/idp/password', passwordBody, async (request, reply) => {
     guard(request, reply);
     const { userId } = requireUser(request);
-    const current = field(request.body, 'current', MAX_PASSWORD_LENGTH);
-    const next = field(request.body, 'next', MAX_PASSWORD_LENGTH);
+    const { current, next } = body<{ current: string; next: string }>(request);
     const key = throttle.key('user', userId);
     await throttle.check([LIMITS.passwordPerUser, key]);
     if (!(await checkCurrentPassword(db, userId, current))) {
@@ -304,12 +316,12 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     return {};
   });
 
-  app.post('/idp/emails', async (request, reply) => {
+  app.post('/idp/emails', withEmail, async (request, reply) => {
     guard(request, reply);
     const { userId } = requireUser(request);
     if (!mailer)
       throw serviceUnavailable('This server cannot send mail, so it cannot verify addresses.');
-    const email = emailField(request.body);
+    const email = body<{ email: string }>(request).email.trim();
     const key = throttle.key('user', userId);
     await throttle.check([LIMITS.verifyPerUser, key]);
     await throttle.record('verify-requested', [key], { principalId: userId });
@@ -328,20 +340,20 @@ export function registerAccountRoutes(app: FastifyInstance, options: AccountRout
     return reply.code(202).send({});
   });
 
-  app.post('/idp/emails/primary', async (request, reply) => {
+  app.post('/idp/emails/primary', withEmail, async (request, reply) => {
     guard(request, reply);
     const { userId } = requireUser(request);
-    const email = emailField(request.body);
+    const email = body<{ email: string }>(request).email.trim();
     if (!(await db.transaction().execute((trx) => makePrimary(trx, userId, email)))) {
       throw notFound('No such verified address');
     }
     return {};
   });
 
-  app.post('/idp/emails/remove', async (request, reply) => {
+  app.post('/idp/emails/remove', withEmail, async (request, reply) => {
     guard(request, reply);
     const { userId } = requireUser(request);
-    const email = emailField(request.body);
+    const email = body<{ email: string }>(request).email.trim();
     if (!(await db.transaction().execute((trx) => removeEmail(trx, userId, email)))) {
       throw notFound('No such address, or it is the primary one');
     }

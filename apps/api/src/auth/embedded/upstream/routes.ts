@@ -15,8 +15,9 @@ import { requireUser } from '../../plugin.js';
 import { badRequest, conflict, notFound, Problem } from '../../../problems.js';
 import { checkCurrentPassword } from '../accounts.js';
 import { readCookie, setCookie } from '../cookies.js';
-import { field, requireSameOrigin } from '../http.js';
+import { accepts, body, requireSameOrigin, text } from '../http.js';
 import { interactionFor } from '../interaction.js';
+import { MAX_PASSWORD_LENGTH } from '../password.js';
 import { LIMITS, type Throttle } from '../throttle.js';
 import type { Upstream } from './service.js';
 
@@ -127,7 +128,8 @@ export function registerUpstreamRoutes(app: FastifyInstance, options: UpstreamRo
       .where('principal_id', '=', userId)
       .executeTakeFirst();
     if (hasPassword) {
-      const password = field(request.body, 'password', 1024);
+      const { password } = body<{ password?: string }>(request);
+      if (password === undefined) throw badRequest('password is required');
       if (!(await checkCurrentPassword(db, userId, password))) {
         await throttle.record('password-failed', [key], { principalId: userId });
         throw badRequest('The password is not right.');
@@ -143,7 +145,10 @@ export function registerUpstreamRoutes(app: FastifyInstance, options: UpstreamRo
     }
   }
 
-  app.post('/idp/links/:providerId/start', async (request, reply) => {
+  // Asked for only when the account has a password (`reauthenticate`), so not required here.
+  const withPassword = accepts({ password: text(MAX_PASSWORD_LENGTH) }, []);
+
+  app.post('/idp/links/:providerId/start', withPassword, async (request, reply) => {
     requireSameOrigin(request, origin);
     reply.header('cache-control', 'no-store');
     const providerId = chosen(request);
@@ -159,7 +164,7 @@ export function registerUpstreamRoutes(app: FastifyInstance, options: UpstreamRo
     return { url };
   });
 
-  app.post('/idp/links/:providerId/unlink', async (request, reply) => {
+  app.post('/idp/links/:providerId/unlink', withPassword, async (request, reply) => {
     requireSameOrigin(request, origin);
     reply.header('cache-control', 'no-store');
     const { providerId } = request.params as { providerId: string };
