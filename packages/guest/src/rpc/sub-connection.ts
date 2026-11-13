@@ -9,146 +9,29 @@
  * else, and the sidebar learns this frame's origin from the browser. The
  * page around this frame takes no part in it.
  */
-import {
-  RPC_PROTOCOL_VERSION,
-  envelope,
-  isFrameOf,
-  parseSidebarMessage,
-  parseWindowMessage,
-  type GuestCapabilities,
-  type GuestConnectMessage,
-  type GuestErrorMessage,
-  type GuestHelloMessage,
-  type GuestMessage,
-  type Payload,
-  type SidebarMessage,
-} from '@curanno/model';
-import type { Connection, PortLike } from './connection.js';
+import { RPC_PROTOCOL_VERSION, isFrameOf, parseWindowMessage } from '@curanno/model';
+import { PortConnection, type ConnectionOptions, type SidebarWindowLike } from './connection.js';
 
-/** The subset of the sidebar's `WindowProxy` the connection posts to. */
-interface SidebarWindowLike {
-  postMessage(message: unknown, targetOrigin: string, transfer?: Transferable[]): void;
-}
+export type SubGuestConnectionOptions = ConnectionOptions;
 
-export interface SubGuestConnectionOptions {
-  /** The frame's own window. */
-  window: Window;
-  /** The origin the sidebar is served from; the only origin accepted. */
-  sidebarOrigin: string;
-  guestId: string;
-  capabilities: GuestCapabilities;
-  onMessage: (message: SidebarMessage) => void;
-  onConnected?: () => void;
-  /** Makes the channel; tests inject one. */
-  createChannel?: () => { port1: PortLike; port2: unknown };
-}
-
-export class SubGuestConnection implements Connection {
-  private readonly options: SubGuestConnectionOptions;
-  private readonly listener: (event: MessageEvent) => void;
-  private port: PortLike | undefined;
-  private portListener: ((event: { data: unknown }) => void) | undefined;
+export class SubGuestConnection extends PortConnection<SubGuestConnectionOptions> {
   /** The `sidebar.ready` instance the current port was offered to. */
   private instance: string | undefined;
-  private ready = false;
-  private closed = false;
 
-  constructor(options: SubGuestConnectionOptions) {
-    this.options = options;
-    this.listener = (event) => this.onWindowMessage(event);
-    options.window.addEventListener('message', this.listener);
-  }
-
-  get connected(): boolean {
-    return this.ready;
-  }
-
-  send(message: Payload<GuestMessage>): boolean {
-    if (!this.port || (!this.ready && message.type !== 'guest.hello')) return false;
-    this.port.postMessage(envelope(message));
-    return true;
-  }
-
-  error(message: string, inReplyTo?: string): void {
-    const payload: Payload<GuestErrorMessage> = { type: 'guest.error', message };
-    if (inReplyTo !== undefined) payload.inReplyTo = inReplyTo;
-    this.send(payload);
-  }
-
-  close(): void {
-    this.closed = true;
-    this.options.window.removeEventListener('message', this.listener);
-    this.dropPort();
-  }
-
-  private onWindowMessage(event: MessageEvent): void {
-    if (this.closed) return;
+  protected onWindowMessage(event: MessageEvent): void {
     if (event.origin !== this.options.sidebarOrigin) return;
     if (!isFrameOf(event.source, this.options.window.top)) return;
     const message = parseWindowMessage(event.data);
     if (message?.type !== 'sidebar.ready' || message.version !== RPC_PROTOCOL_VERSION) return;
     // The sidebar repeats itself for frames that start later; a new instance means it reloaded.
     if (this.port && message.instance === this.instance) return;
-    this.connect(event.source as unknown as SidebarWindowLike, message.instance);
+    if (this.connect(event.source as unknown as SidebarWindowLike)) {
+      this.instance = message.instance;
+    }
   }
 
-  private connect(sidebar: SidebarWindowLike, instance: string): void {
-    this.dropPort();
-    const channel = this.options.createChannel?.() ?? new MessageChannel();
-    const port = channel.port1;
-    this.port = port;
-    this.instance = instance;
-    this.portListener = (event) => this.onPortMessage(port, event.data);
-    port.addEventListener('message', this.portListener);
-    port.start?.();
-    const connect = envelope<GuestConnectMessage>({
-      type: 'guest.connect',
-      guestId: this.options.guestId,
-    });
-    try {
-      sidebar.postMessage(connect, this.options.sidebarOrigin, [channel.port2 as Transferable]);
-    } catch {
-      // The sidebar went away meanwhile; the next `sidebar.ready` tries again.
-      this.dropPort();
-      return;
-    }
-    const hello: Payload<GuestHelloMessage> = {
-      type: 'guest.hello',
-      guestId: this.options.guestId,
-      capabilities: this.options.capabilities,
-    };
-    this.send(hello);
-  }
-
-  private onPortMessage(port: PortLike, data: unknown): void {
-    if (port !== this.port) return;
-    const message = parseSidebarMessage(data);
-    if (!message) return;
-    if (message.version !== RPC_PROTOCOL_VERSION) {
-      port.postMessage(
-        envelope<GuestErrorMessage>({
-          type: 'guest.error',
-          message: `unsupported protocol version ${message.version}`,
-        }),
-      );
-      return;
-    }
-    if (message.type === 'sidebar.hello') {
-      const first = !this.ready;
-      this.ready = true;
-      if (first) this.options.onConnected?.();
-      return;
-    }
-    if (!this.ready) return;
-    this.options.onMessage(message);
-  }
-
-  private dropPort(): void {
-    if (this.port && this.portListener) this.port.removeEventListener('message', this.portListener);
-    this.port?.close();
-    this.port = undefined;
-    this.portListener = undefined;
+  protected override dropPort(): void {
+    super.dropPort();
     this.instance = undefined;
-    this.ready = false;
   }
 }
