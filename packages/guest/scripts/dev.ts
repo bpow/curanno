@@ -12,6 +12,7 @@
  */
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { parseArgs } from 'node:util';
 import { bookmarkletUrl, validateSidebar } from '@curanno/guest';
 import { devPort } from '../../../dev-ports.ts';
 import { BUILD_DIR, watchGuest } from './bundle.ts';
@@ -23,12 +24,11 @@ const CORPUS_DIR = path.join(PACKAGE_DIR, 'corpus');
 const HOST_PORT = devPort('GUEST_PORT');
 const GUEST_PORT = devPort('GUEST_BUNDLE_PORT');
 
-function option(args: string[], name: string): string | undefined {
-  const index = args.indexOf(name);
-  return index >= 0 ? args[index + 1] : undefined;
-}
-
-const args = process.argv.slice(2);
+const { values: args } = parseArgs({
+  // pnpm passes on the `--` in `pnpm <script> -- --flag`.
+  args: process.argv.slice(2).filter((a) => a !== '--'),
+  options: { 'sidebar-origin': { type: 'string' }, 'sidebar-path': { type: 'string' } },
+});
 const stop = await watchGuest({ minify: false });
 const guestServer = await serve({
   host: 'localhost',
@@ -36,10 +36,9 @@ const guestServer = await serve({
   roots: [DEV_DIR, BUILD_DIR],
 });
 const bundleUrl = `${guestServer.origin}/guest.js`;
-const sidebarOrigin = option(args, '--sidebar-origin') ?? guestServer.origin;
+const sidebarOrigin = args['sidebar-origin'] ?? guestServer.origin;
 const sidebarPath =
-  option(args, '--sidebar-path') ??
-  (sidebarOrigin === guestServer.origin ? '/sidebar.html' : '/sidebar/');
+  args['sidebar-path'] ?? (sidebarOrigin === guestServer.origin ? '/sidebar.html' : '/sidebar/');
 const problem = validateSidebar(sidebarOrigin, sidebarPath);
 if (problem) {
   console.error(problem);

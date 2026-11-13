@@ -10,23 +10,25 @@
  */
 import { access } from 'node:fs/promises';
 import path from 'node:path';
+import { parseArgs } from 'node:util';
 import { serve } from './serve.ts';
 
 const PACKAGE_DIR = path.resolve(import.meta.dirname, '..');
 const CORPUS_DIR = path.join(PACKAGE_DIR, 'corpus');
 const BUILD_DIR = path.join(PACKAGE_DIR, 'build');
 
-function option(args: string[], name: string): string | undefined {
-  const index = args.indexOf(name);
-  return index >= 0 ? args[index + 1] : undefined;
-}
-
-const args = process.argv.slice(2);
-const host = option(args, '--host') ?? '127.0.0.1';
-const port = Number(option(args, '--port') ?? 0);
-const extraRoots = args.flatMap((a, i) =>
-  a === '--root' ? [path.resolve(args[i + 1] ?? '')] : [],
-);
+const { values: args } = parseArgs({
+  // pnpm passes on the `--` in `pnpm <script> -- --flag`.
+  args: process.argv.slice(2).filter((a) => a !== '--'),
+  options: {
+    host: { type: 'string', default: '127.0.0.1' },
+    port: { type: 'string', default: '0' },
+    root: { type: 'string', multiple: true, default: [] },
+  },
+});
+const host = args.host;
+const port = Number(args.port);
+const extraRoots = args.root.map((root) => path.resolve(root));
 
 try {
   await access(path.join(BUILD_DIR, 'guest.js'));

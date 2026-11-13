@@ -15,6 +15,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
 import { writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
+import { parseArgs } from 'node:util';
 import autocannon from 'autocannon';
 import { SignJWT, exportJWK, generateKeyPair } from 'jose';
 import pg from 'pg';
@@ -26,7 +27,6 @@ import {
   LOAD_ISSUER,
   SEARCH_TERM_RANKS,
   numberArg,
-  parseArgs,
   vocabulary,
 } from './load-common.ts';
 
@@ -80,16 +80,26 @@ interface Measurement {
   total?: number;
 }
 
-const args = parseArgs(process.argv.slice(2));
-const databaseUrl = (args['database-url'] as string | undefined) ?? process.env['DATABASE_URL'];
+const { values: args } = parseArgs({
+  // pnpm passes on the `--` in `pnpm <script> -- --flag`.
+  args: process.argv.slice(2).filter((a) => a !== '--'),
+  options: {
+    'database-url': { type: 'string' },
+    duration: { type: 'string' },
+    connections: { type: 'string' },
+    only: { type: 'string' },
+    out: { type: 'string' },
+    'no-explain': { type: 'boolean' },
+  },
+});
+const databaseUrl = args['database-url'] ?? process.env['DATABASE_URL'];
 if (!databaseUrl) {
   console.error('DATABASE_URL is not set');
   process.exit(1);
 }
 const duration = numberArg(args, 'duration', 10);
 const connections = numberArg(args, 'connections', 10);
-const only = typeof args['only'] === 'string' ? args['only'] : undefined;
-const out = typeof args['out'] === 'string' ? args['out'] : undefined;
+const { only, out } = args;
 
 const client = new pg.Client({ connectionString: databaseUrl });
 await client.connect();

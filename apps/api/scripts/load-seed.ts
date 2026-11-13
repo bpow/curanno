@@ -15,6 +15,7 @@
  * unless --truncate is given, which removes every user, group, document and
  * annotation (body profiles stay).
  */
+import { parseArgs } from 'node:util';
 import pg from 'pg';
 import { migrate } from '../src/db/migrate.ts';
 import {
@@ -25,7 +26,6 @@ import {
   groupName,
   hashSeed,
   numberArg,
-  parseArgs,
   randomInt,
   rng,
   userSubject,
@@ -513,8 +513,21 @@ function elapsed(since: number): string {
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
-  const args = parseArgs(process.argv.slice(2));
-  const url = (args['database-url'] as string | undefined) ?? process.env['DATABASE_URL'];
+  const { values: args } = parseArgs({
+    // pnpm passes on the `--` in `pnpm <script> -- --flag`.
+    args: process.argv.slice(2).filter((a) => a !== '--'),
+    options: {
+      'database-url': { type: 'string' },
+      annotations: { type: 'string' },
+      documents: { type: 'string' },
+      users: { type: 'string' },
+      groups: { type: 'string' },
+      seed: { type: 'string' },
+      batch: { type: 'string' },
+      truncate: { type: 'boolean' },
+    },
+  });
+  const url = args['database-url'] ?? process.env['DATABASE_URL'];
   if (!url) {
     console.error('DATABASE_URL is not set');
     process.exit(1);

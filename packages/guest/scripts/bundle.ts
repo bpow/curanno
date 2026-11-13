@@ -8,6 +8,7 @@
  *   pnpm --filter @curanno/guest bundle [--out-dir dir] [--no-minify] [--watch]
  */
 import path from 'node:path';
+import { parseArgs } from 'node:util';
 import * as esbuild from 'esbuild';
 
 const PACKAGE_DIR = path.resolve(import.meta.dirname, '..');
@@ -64,13 +65,20 @@ export async function watchGuest(options: BundleOptions = {}): Promise<() => Pro
 }
 
 if (process.argv[1] === import.meta.filename) {
-  const args = process.argv.slice(2);
-  const outIndex = args.indexOf('--out-dir');
+  const { values: args } = parseArgs({
+    // pnpm passes on the `--` in `pnpm <script> -- --flag`.
+    args: process.argv.slice(2).filter((a) => a !== '--'),
+    options: {
+      'out-dir': { type: 'string' },
+      'no-minify': { type: 'boolean' },
+      watch: { type: 'boolean' },
+    },
+  });
   const options: BundleOptions = {
-    minify: !args.includes('--no-minify'),
-    ...(outIndex >= 0 ? { outDir: path.resolve(args[outIndex + 1] ?? BUILD_DIR) } : {}),
+    minify: !args['no-minify'],
+    ...(args['out-dir'] !== undefined ? { outDir: path.resolve(args['out-dir']) } : {}),
   };
-  if (args.includes('--watch')) {
+  if (args.watch) {
     await watchGuest(options);
     console.log(`watching; bundles in ${options.outDir ?? BUILD_DIR}`);
   } else {
