@@ -81,12 +81,17 @@ export async function complete(
     );
   }
   const body = (await response.json().catch(() => undefined)) as
-    { choices?: { message?: { content?: unknown } }[] } | undefined;
-  const content = body?.choices?.[0]?.message?.content;
-  if (typeof content !== 'string') {
-    throw new EndpointError(`${endpoint.url} returned no message content`);
+    { choices?: { message?: Record<string, unknown> }[] } | undefined;
+  const message = body?.choices?.[0]?.message ?? {};
+  const content = message['content'];
+  if (typeof content === 'string' && content.trim()) return content;
+  // LM Studio puts a reasoning model's constrained answer in the reasoning field and leaves
+  // content empty; the answer is still JSON under the schema, so it is used when content has none.
+  for (const field of ['reasoning_content', 'reasoning']) {
+    const reasoning = message[field];
+    if (typeof reasoning === 'string' && reasoning.trim()) return reasoning;
   }
-  return content;
+  throw new EndpointError(`${endpoint.url} returned no message content`);
 }
 
 export interface RawSuggestion {

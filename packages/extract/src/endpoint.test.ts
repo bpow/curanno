@@ -52,4 +52,21 @@ describe('complete', () => {
     expect((error as EndpointError).status).toBe(404);
     expect((error as Error).message).toContain('model "m" not found');
   });
+
+  it("takes a reasoning model's answer from the reasoning field when content is empty", async () => {
+    const reply = (message: Record<string, unknown>) =>
+      (() => Promise.resolve(Response.json({ choices: [{ message }] }))) as typeof fetch;
+    const json = '{"suggestions":[]}';
+    expect(
+      await complete(endpoint, request, { fetch: reply({ content: '', reasoning_content: json }) }),
+    ).toBe(json);
+    expect(
+      await complete(endpoint, request, {
+        fetch: reply({ content: json, reasoning: 'Let me think' }),
+      }),
+    ).toBe(json);
+    await expect(complete(endpoint, request, { fetch: reply({ content: '' }) })).rejects.toThrow(
+      /no message content/,
+    );
+  });
 });
