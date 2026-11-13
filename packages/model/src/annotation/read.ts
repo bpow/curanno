@@ -105,21 +105,27 @@ export function parentIri(annotation: AnnotationLike): string | undefined {
     .find((s) => s !== undefined && ANNOTATION_IRI.test(s));
 }
 
-function selectorsOf(target: Target): Selector[] {
-  if (typeof target !== 'object' || !('selector' in target)) return [];
+/** The selectors of a target, or none for an IRI or a resource without selectors. */
+export function selectorsOfTarget(target: Target): Selector[] {
+  if (typeof target === 'string' || !('selector' in target)) return [];
+  return toArray(target.selector);
+}
+
+/** A target's selectors and, depth first, every selector refining them. */
+function refinedSelectorsOf(target: Target): Selector[] {
   const flat: Selector[] = [];
   const visit = (s: Selector): void => {
     flat.push(s);
     for (const inner of toArray(s.refinedBy)) visit(inner);
   };
-  for (const s of toArray(target.selector)) visit(s);
+  for (const s of selectorsOfTarget(target)) visit(s);
   return flat;
 }
 
 /** The quoted text of the first target that has a TextQuoteSelector. */
 export function quoteOf(annotation: AnnotationLike): string | undefined {
   for (const target of targetsOf(annotation)) {
-    for (const s of selectorsOf(target)) {
+    for (const s of refinedSelectorsOf(target)) {
       if (s.type === 'TextQuoteSelector') return s.exact;
     }
   }

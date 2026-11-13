@@ -7,6 +7,7 @@ import {
   documentOf,
   parentIri,
   quoteOf,
+  selectorsOfTarget,
   sourcesOf,
   tagsOf,
 } from './read.js';
@@ -74,5 +75,16 @@ describe('reading annotations', () => {
     expect(creatorOf({ creator: { id: 'https://elsewhere.test/me', nickname: 'ada' } })).toEqual({
       name: 'ada',
     });
+  });
+});
+
+describe('selectorsOfTarget', () => {
+  it('returns the selectors of a specific resource and none otherwise', () => {
+    expect(selectorsOfTarget('https://example.org/p')).toEqual([]);
+    expect(selectorsOfTarget({ id: 'https://example.org/p' })).toEqual([]);
+    expect(
+      selectorsOfTarget({ source: 'x', selector: { type: 'TextQuoteSelector', exact: 'q' } }),
+    ).toEqual([{ type: 'TextQuoteSelector', exact: 'q' }]);
+    expect(selectorsOfTarget({ source: 'x', selector: [] })).toEqual([]);
   });
 });

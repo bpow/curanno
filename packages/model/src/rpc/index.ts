@@ -14,7 +14,6 @@ export {
   RPC_PROTOCOL,
   RPC_PROTOCOL_VERSION,
   envelope,
-  selectorsOfTarget,
   type AnchorRequest,
   type AnchorVia,
   type AnchoringResult,

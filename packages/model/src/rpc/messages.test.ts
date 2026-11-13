@@ -4,7 +4,6 @@ import {
   RPC_PROTOCOL,
   RPC_PROTOCOL_VERSION,
   envelope,
-  selectorsOfTarget,
   type AnnotationsAnchorMessage,
   type GuestConnectMessage,
   type SelectionChangedMessage,
@@ -94,16 +93,5 @@ describe('guards', () => {
       parseGuestMessage(envelope({ type: 'selection.changed', selection: null })),
     ).toBeDefined();
     expect(parseGuestMessage(envelope({ type: 'selection.changed' }))).toBeUndefined();
-  });
-});
-
-describe('selectorsOfTarget', () => {
-  it('returns the selectors of a specific resource and none otherwise', () => {
-    expect(selectorsOfTarget('https://example.org/p')).toEqual([]);
-    expect(selectorsOfTarget({ id: 'https://example.org/p' })).toEqual([]);
-    expect(
-      selectorsOfTarget({ source: 'x', selector: { type: 'TextQuoteSelector', exact: 'q' } }),
-    ).toEqual([{ type: 'TextQuoteSelector', exact: 'q' }]);
-    expect(selectorsOfTarget({ source: 'x', selector: [] })).toEqual([]);
   });
 });
