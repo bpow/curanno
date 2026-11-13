@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import TextualBodyEditor from './TextualBodyEditor.vue';
 
@@ -9,14 +9,31 @@ describe('TextualBodyEditor', () => {
     expect(wrapper.emitted('update:modelValue')).toEqual([['A note']]);
   });
 
-  it('adds tags on Enter and comma, ignores duplicates, and removes them', async () => {
+  it('adds tags on Enter and a typed comma, trimmed, ignores duplicates, and removes them', async () => {
     const wrapper = mount(TextualBodyEditor, { props: { modelValue: '', tags: ['one'] } });
     const input = wrapper.find('input[name="tag"]');
-    await input.setValue('two, one');
+    const last = () => wrapper.emitted('update:tags')?.at(-1);
+    await input.setValue(' two ');
     await input.trigger('keydown', { key: 'Enter' });
-    expect(wrapper.emitted('update:tags')?.at(-1)).toEqual([['one', 'two']]);
+    await flushPromises();
+    expect(last()).toEqual([['one', 'two']]);
+    expect((input.element as HTMLInputElement).value).toBe('');
 
-    await wrapper.find('button[aria-label="Remove tag one"]').trigger('click');
-    expect(wrapper.emitted('update:tags')?.at(-1)).toEqual([[]]);
+    (input.element as HTMLInputElement).value = 'three,';
+    await input.trigger('input', { data: ',' });
+    expect(last()).toEqual([['one', 'two', 'three']]);
+
+    await input.setValue('one');
+    await input.trigger('keydown', { key: 'Enter' });
+    await flushPromises();
+    expect(wrapper.emitted('update:tags')).toHaveLength(2);
+
+    // The tag's button is named by the tag's text.
+    const tag = wrapper.find('.tag');
+    expect(tag.find('button').attributes('aria-labelledby')).toBe(
+      tag.find('span').attributes('id'),
+    );
+    await tag.find('button').trigger('click');
+    expect(last()).toEqual([['two', 'three']]);
   });
 });
