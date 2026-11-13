@@ -50,7 +50,7 @@ export const BLOCK_ELEMENTS: ReadonlySet<string> = new Set([
 
 function isBlock<N>(adapter: TextTreeAdapter<N>, node: N): boolean {
   const display = adapter.display?.(node);
-  if (display !== undefined && display !== null) return !/^(inline|contents|none)/.test(display);
+  if (display) return !/^(inline|contents|none)/.test(display);
   return BLOCK_ELEMENTS.has(adapter.tagName(node));
 }
 
