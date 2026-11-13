@@ -1038,7 +1038,7 @@ export interface components {
             /** Format: iri */
             id?: string;
             purpose?: components["schemas"]["Motivation"] | components["schemas"]["Motivation"][];
-            creator?: string | components["schemas"]["Agent"];
+            creator?: string | components["schemas"]["Agent"] | (string | components["schemas"]["Agent"])[];
             /** Format: date-time */
             created?: string;
             /** Format: date-time */
@@ -1056,7 +1056,7 @@ export interface components {
             /** Format: iri */
             id?: string;
             purpose?: components["schemas"]["Motivation"] | components["schemas"]["Motivation"][];
-            creator?: string | components["schemas"]["Agent"];
+            creator?: string | components["schemas"]["Agent"] | (string | components["schemas"]["Agent"])[];
             /** Format: date-time */
             created?: string;
             /** Format: date-time */
