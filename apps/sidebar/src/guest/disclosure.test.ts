@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSessionConsent, foreignSources, originKey, sourcesOf } from './disclosure';
+import { createSessionConsent, foreignSources, originKey } from './disclosure';
 
 describe('originKey', () => {
   it('compares web origins by host and port, whatever the scheme', () => {
@@ -15,20 +15,13 @@ describe('originKey', () => {
 
 describe('foreignSources', () => {
   it('names the origins of targets that are not on the page', () => {
-    expect(sourcesOf('https://a.test/x')).toEqual(['https://a.test/x']);
-    expect(
-      sourcesOf([
-        { type: 'SpecificResource', source: 'https://a.test/x' },
-        { id: 'https://b.test/y' },
-      ] as never),
-    ).toEqual(['https://a.test/x', 'https://b.test/y']);
-
     const target = [
       { type: 'SpecificResource', source: 'http://a.test/one' },
       { type: 'SpecificResource', source: 'https://b.test/two' },
       { type: 'SpecificResource', source: 'urn:x-pdf:abc' },
+      { type: 'SpecificResource', source: { id: 'https://c.test/three' } },
     ] as never;
-    expect(foreignSources(target, 'a.test')).toEqual(['b.test', 'urn:x-pdf:abc']);
+    expect(foreignSources(target, 'a.test')).toEqual(['b.test', 'urn:x-pdf:abc', 'c.test']);
     expect(foreignSources('https://a.test/x', 'a.test')).toEqual([]);
     // An opaque page origin matches nothing.
     expect(foreignSources('https://a.test/x', null)).toEqual(['a.test']);

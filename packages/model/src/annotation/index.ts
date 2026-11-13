@@ -6,3 +6,4 @@ export {
   EXTENSION_CONTEXT_PATH,
   extensionContextIri,
 } from './context.js';
+export * from './read.js';

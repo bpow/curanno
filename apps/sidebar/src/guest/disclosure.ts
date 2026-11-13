@@ -9,7 +9,7 @@
  * or when the user allowed annotations from that origin on that page's
  * origin. The page's origin is the browser's report (ADR 0024).
  */
-import type { OneOrMany, Target } from '@curanno/model';
+import { sourcesOf, type OneOrMany, type Target } from '@curanno/model';
 
 /**
  * The key an origin is compared and remembered by: the host and port,
@@ -24,17 +24,6 @@ export function originKey(url: string): string | null {
   } catch {
     return null;
   }
-}
-
-/** The source IRIs an annotation's targets name. */
-export function sourcesOf(target: OneOrMany<Target>): string[] {
-  const targets = Array.isArray(target) ? target : [target];
-  return targets.flatMap((t): string[] => {
-    if (typeof t === 'string') return [t];
-    if ('source' in t && typeof t.source === 'string') return [t.source];
-    if ('id' in t && typeof t.id === 'string') return [t.id];
-    return [];
-  });
 }
 
 /**

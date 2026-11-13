@@ -6,7 +6,7 @@
  * the sidebar to the card and focuses it.
  */
 import { onUnmounted, watch } from 'vue';
-import { annotationUuid } from './api/annotations';
+import { annotationUuid } from '@curanno/model';
 import type { Guest } from './guest';
 import type { useAnnotationsStore } from './stores/annotations';
 

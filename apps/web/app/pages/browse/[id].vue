@@ -1,15 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { definePageMeta, useRoute } from '#imports';
-import {
-  bodiesOf,
-  creatorOf,
-  targetsOf,
-  sourceOf,
-  toArray,
-  type BodyView,
-  viewBody,
-} from '../../annotations/view';
+import { bodiesOf, creatorOf, sourceOf, targetsOf, toArray } from '@curanno/model';
+import { type BodyView, viewBody } from '../../annotations/view';
 import { useApi } from '../../api/client';
 import AnnotationSummary from '../../components/AnnotationSummary.vue';
 import ProblemAlert from '../../components/ProblemAlert.vue';

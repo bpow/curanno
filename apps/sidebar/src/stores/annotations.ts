@@ -11,7 +11,7 @@
 import type { AclEntry, Annotation, AnnotationInput } from '@curanno/api-client';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import { annotationUuid, parentIri } from '../api/annotations';
+import { annotationUuid, parentIri } from '@curanno/model';
 import { useApi } from '../api/client';
 import { ApiError, toProblem, unwrap, type Problem } from '../api/problems';
 import { subscribeAnnotationEvents, type LiveStatus } from '../events/subscribe';
