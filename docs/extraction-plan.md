@@ -1,6 +1,6 @@
 # Suggested annotations: extraction plan
 
-**Status:** Draft, 2026-11-13.
+**Status:** Implemented, 2026-11-13, in ADRs 0032–0034 and the commits that follow them. The status note at the end records what changed from this plan and what is still open.
 
 How the sidebar asks a language model for annotation suggestions on the open document. Each suggestion is a quote plus a structured body for a registered profile. The model runs behind a configured endpoint, which can be a local Ollama, so a deployment can keep document text on the user's machine. This plan covers what to build, in what order, and how we know each step works. The decisions it makes get ADRs before code (step 0).
 
@@ -181,3 +181,33 @@ Steps 2 and 3 can run in parallel once step 0 is done.
 | Profile schemas use features constrained decoders reject | Projection is tested over every built-in profile. Registered profiles that fail projection are shown as unavailable for suggestions, with the reason |
 | Prompt injection from page text | Section 4: no tools, verbatim anchoring, schema validation, a person reviews every suggestion |
 | Curators accept suggestions uncritically | No "accept all", provenance on every accepted body, and suggestions look different from saved annotations |
+
+## 10. Status note (2026-11-13)
+
+Steps 0 and 2 to 6 are done. What differs from the plan above:
+
+- **Paragraphs for the model.** The text model adds no separator between blocks, so `<p>one</p><p>two</p>` reads as `onetwo`. The guest now also reports where blocks start (`blockStarts` in the model package, a presentation hint only). The pipeline shows the model a view with blank lines at those places, chunks on them, and maps quote matches back to normalized offsets.
+- **Several body creators.** The schemas allowed one `creator` per body; they now allow a list, as the W3C model does, so an edited suggestion names both the model and the curator (ADR 0034).
+- **Reasoning models in LM Studio.** LM Studio leaves `content` empty and puts a reasoning model's constrained answer in `reasoning_content`. The endpoint client uses that field when `content` is empty.
+- **Endpoint configuration** is `{label, url, models?}`, with no `local` flag: `EXTRACT_LOCAL_ONLY` checks the host itself.
+
+Step 1 was done in part:
+
+- An OpenAI-compatible local server (LM Studio) was exercised through the eval CLI and through the real sidebar in Chromium.
+- Not yet tested: an https sidebar reaching loopback, Chromium's Local Network Access prompt inside the sidebar frame, and Safari. Until they are checked, the local path is proven only for a sidebar on loopback (S6 in the security review).
+
+First results on the synthetic corpus, case-individual profile:
+
+| Model (LM Studio) | Recall | Precision | Fields filled | Fields equal | Time per chunk |
+| --- | --- | --- | --- | --- | --- |
+| qwen/qwen3.6-35b-a3b | 3/3 | 3/3 | 93% | 47% | 10–115 s |
+| google/gemma-4-31b-qat | not measured | | | | over 5 min |
+
+Gemma's run stopped at Node's five-minute wait for response headers, which applies to the CLI and not to browsers. Streaming the response, or a longer timeout through undici, would let the CLI wait longer. "Fields equal" is strict: free-text fields rarely match a curator's wording exactly.
+
+Still open:
+
+- The rest of the step 1 spike, above.
+- A corpus of real, curator-annotated case reports to replace the synthetic one.
+- A hosted endpoint and its authentication (section 7).
+
