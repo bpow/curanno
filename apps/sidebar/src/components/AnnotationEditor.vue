@@ -64,7 +64,15 @@ function toggleGrant(principal: PrincipalRef, permission: Permission, grant: boo
 function submit(): void {
   const draft: AnnotationDraft = { text: text.value, tags: tags.value };
   if (profile.value) {
-    draft.structured = { profile: profile.value.iri, value: structuredValue.value };
+    // Who made the body stays with it while it keeps its profile (ADR 0034).
+    const { creator, created } =
+      props.draft.structured?.profile === profile.value.iri ? props.draft.structured : {};
+    draft.structured = {
+      profile: profile.value.iri,
+      value: structuredValue.value,
+      ...(creator !== undefined ? { creator } : {}),
+      ...(created !== undefined ? { created } : {}),
+    };
     errors.value = profiles.validate({
       type: 'StructuredBody',
       profile: profile.value.iri,

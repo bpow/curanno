@@ -1,6 +1,6 @@
 import type { Annotation } from '@curanno/api-client';
 import { describe, expect, it } from 'vitest';
-import { repairInput } from './annotations';
+import { draftOf, rebuildInput, repairInput } from './annotations';
 
 const PAGE = 'https://example.org/page';
 
@@ -47,5 +47,34 @@ describe('repairInput', () => {
         repair: { selector: { type: 'TextQuoteSelector', exact: 'new words' } },
       },
     });
+  });
+});
+
+describe('drafts of structured bodies', () => {
+  it('keep who made the body through an edit (ADR 0034)', () => {
+    const creator = [
+      { type: 'Software' as const, name: 'curanno-extract', nickname: 'm / prompt 1' },
+      { type: 'Person' as const, id: 'https://annotations.test/x/users/u-1' },
+    ];
+    const annotation = {
+      '@context': 'http://www.w3.org/ns/anno.jsonld',
+      id: 'https://annotations.test/annotations/11111111-1111-4111-8111-111111111111',
+      type: 'Annotation',
+      target: 'https://example.org/page',
+      body: {
+        type: 'StructuredBody',
+        profile: 'https://curanno.example/profiles/evidence-excerpt/1',
+        value: { kind: 'case' },
+        creator,
+        created: '2026-11-13T12:00:00.000Z',
+      },
+    } as unknown as Annotation;
+    const draft = draftOf(annotation);
+    expect(draft.structured).toMatchObject({ creator, created: '2026-11-13T12:00:00.000Z' });
+    const input = rebuildInput(annotation, {
+      ...draft,
+      structured: { ...draft.structured!, value: { kind: 'other' } },
+    });
+    expect(input.body).toMatchObject({ value: { kind: 'other' }, creator });
   });
 });

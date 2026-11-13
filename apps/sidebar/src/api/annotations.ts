@@ -9,6 +9,7 @@ import {
   structuredBodies,
   tagsOf,
   targetsOf,
+  type Agent,
   type AnchoringRepair,
   type Body,
   type JsonValue,
@@ -36,6 +37,9 @@ export function isEdited(annotation: Annotation): boolean {
 export interface StructuredDraft {
   profile: string;
   value: JsonValue;
+  /** Who made the body (ADR 0034): the model for an accepted suggestion; kept through edits. */
+  creator?: OneOrMany<string | Agent>;
+  created?: string;
 }
 
 /** What the editors work on. */
@@ -56,7 +60,16 @@ export function draftOf(annotation: Annotation): AnnotationDraft {
   return {
     text: commentOf(annotation),
     tags: tagsOf(annotation),
-    ...(structured ? { structured: { profile: structured.profile, value: structured.value } } : {}),
+    ...(structured
+      ? {
+          structured: {
+            profile: structured.profile,
+            value: structured.value,
+            ...(structured.creator !== undefined ? { creator: structured.creator } : {}),
+            ...(structured.created !== undefined ? { created: structured.created } : {}),
+          },
+        }
+      : {}),
   };
 }
 
@@ -65,11 +78,14 @@ function bodiesFrom(draft: AnnotationDraft, structuredPurpose?: Motivation): Bod
   const text = draft.text.trim();
   if (text) bodies.push({ type: 'TextualBody', value: text, purpose: 'commenting' });
   if (draft.structured) {
+    const { profile, value, creator, created } = draft.structured;
     bodies.push({
       type: 'StructuredBody',
-      profile: draft.structured.profile,
-      value: draft.structured.value,
+      profile,
+      value,
       ...(structuredPurpose ? { purpose: structuredPurpose } : {}),
+      ...(creator !== undefined ? { creator } : {}),
+      ...(created !== undefined ? { created } : {}),
     });
   }
   for (const tag of draft.tags) {
