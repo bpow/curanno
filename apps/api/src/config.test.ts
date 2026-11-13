@@ -108,4 +108,53 @@ describe('loadConfig', () => {
     );
     expect(() => loadConfig({ ...base, AUTH_MODE: 'magic' })).toThrow(/AUTH_MODE/);
   });
+
+  describe('suggestion endpoints', () => {
+    const external = { ...base, OIDC_ISSUER: 'https://idp.example', OIDC_CLIENT_ID: 'sidebar' };
+
+    it('are off by default', () => {
+      expect(loadConfig(external).extractEndpoints).toEqual([]);
+    });
+
+    it('are read from a JSON list, without trailing slashes', () => {
+      const config = loadConfig({
+        ...external,
+        EXTRACT_ENDPOINTS: JSON.stringify([
+          { label: 'This computer', url: 'http://localhost:11434/', models: ['llama3.1:8b'] },
+          { label: 'Lab server', url: 'https://llm.lab.example/v1' },
+        ]),
+      });
+      expect(config.extractEndpoints).toEqual([
+        { label: 'This computer', url: 'http://localhost:11434', models: ['llama3.1:8b'] },
+        { label: 'Lab server', url: 'https://llm.lab.example/v1', models: [] },
+      ]);
+    });
+
+    it('refuse malformed entries', () => {
+      const load = (value: unknown) =>
+        loadConfig({ ...external, EXTRACT_ENDPOINTS: JSON.stringify(value) });
+      expect(() => loadConfig({ ...external, EXTRACT_ENDPOINTS: '{' })).toThrow(/JSON array/);
+      expect(() => load({ url: 'http://localhost' })).toThrow(/JSON array/);
+      expect(() => load([{ url: 'http://localhost' }])).toThrow(/label is required/);
+      expect(() => load([{ label: 'x', url: 'ftp://host' }])).toThrow(/http or https/);
+      expect(() => load([{ label: 'x', url: 'https://u:p@host' }])).toThrow(/credentials/);
+      expect(() => load([{ label: 'x', url: 'https://host', models: [1] }])).toThrow(/models/);
+    });
+
+    it('can be held to loopback hosts', () => {
+      const env = (url: string) => ({
+        ...external,
+        EXTRACT_LOCAL_ONLY: 'true',
+        EXTRACT_ENDPOINTS: JSON.stringify([{ label: 'x', url }]),
+      });
+      for (const url of ['http://localhost:11434', 'http://127.0.0.1:8080', 'http://[::1]:1234']) {
+        expect(loadConfig(env(url)).extractEndpoints).toHaveLength(1);
+      }
+      expect(() => loadConfig(env('https://llm.lab.example'))).toThrow(/only loopback hosts/);
+      expect(() => loadConfig(env('http://localhost.evil.example'))).toThrow(/only loopback/);
+      expect(() => loadConfig({ ...external, EXTRACT_LOCAL_ONLY: 'yes' })).toThrow(
+        /EXTRACT_LOCAL_ONLY/,
+      );
+    });
+  });
 });

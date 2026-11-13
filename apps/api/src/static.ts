@@ -30,6 +30,8 @@ function originOf(url: string): string {
 /** The CSP of the sidebar: scripts and styles from itself, the API on its origin, the provider for sign-in. */
 export function sidebarPolicy(config: Config): string {
   const issuer = originOf(config.oidc.issuer);
+  // The only places document text may go for suggestions (ADR 0032).
+  const endpoints = [...new Set(config.extractEndpoints.map((e) => originOf(e.url)))];
   const ancestors = [...config.frameAncestors];
   if (config.pdfViewerOrigin && !ancestors.includes(config.pdfViewerOrigin)) {
     ancestors.push(config.pdfViewerOrigin);
@@ -40,7 +42,7 @@ export function sidebarPolicy(config: Config): string {
     "script-src 'self' 'unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data:",
-    `connect-src 'self' ${issuer}`.trim(),
+    ["connect-src 'self'", issuer, ...endpoints].filter(Boolean).join(' '),
     `frame-src ${issuer || "'none'"}`,
     `form-action 'self' ${issuer}`.trim(),
     "base-uri 'self'",
@@ -88,6 +90,7 @@ export async function installStatic(app: FastifyInstance, options: StaticOptions
         oidcClientId: config.oidc.clientId,
         apiUrl: '',
         pdfViewerOrigin: config.pdfViewerOrigin ?? '',
+        extractEndpoints: config.extractEndpoints,
       };
     });
     await app.register(async (scope) => {

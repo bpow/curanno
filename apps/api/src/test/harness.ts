@@ -72,7 +72,10 @@ export interface TestContextOptions {
   replayPageSize?: number;
   /** Serving the clients, the viewer origin, metrics: overrides of the test configuration. */
   config?: Partial<
-    Pick<Config, 'staticRoot' | 'frameAncestors' | 'pdfViewerOrigin' | 'metricsEnabled'>
+    Pick<
+      Config,
+      'staticRoot' | 'frameAncestors' | 'pdfViewerOrigin' | 'metricsEnabled' | 'extractEndpoints'
+    >
   >;
   /**
    * Run against this database as it is (already migrated, say a restored
@@ -121,6 +124,7 @@ export async function createTestContext(options: TestContextOptions = {}): Promi
     frameAncestors: ["'self'"],
     pdfViewerOrigin: undefined,
     metricsEnabled: true,
+    extractEndpoints: [],
     ...options.config,
   };
   const db = createDb(testUrl);

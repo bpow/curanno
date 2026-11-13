@@ -62,3 +62,7 @@ data:
   PDF_VIEWER_ORIGIN: {{ printf "https://%s" . | quote }}
   {{- end }}
   METRICS_ENABLED: {{ .Values.config.metricsEnabled | quote }}
+  {{- with .Values.extract.endpoints }}
+  EXTRACT_ENDPOINTS: {{ toJson . | quote }}
+  {{- end }}
+  EXTRACT_LOCAL_ONLY: {{ .Values.extract.localOnly | quote }}

@@ -40,6 +40,19 @@ config:
   # (see ingress.metrics below) or turn them off.
   metricsEnabled: true
 
+# Annotation suggestions from a language model (ADR 0032). Each endpoint is an
+# OpenAI-compatible API the sidebar sends document text to, from the curator's
+# browser; its origin is added to the sidebar's connect-src. Empty turns
+# suggestions off. localOnly refuses any endpoint that is not on loopback, so
+# document text stays on the curator's own machine, for example:
+#   endpoints:
+#     - label: This computer (Ollama)
+#       url: http://localhost:11434
+#       models: [llama3.1:8b]
+extract:
+  endpoints: []
+  localOnly: false
+
 # Browser extensions the sidebar may sign in through, on pages that cut off
 # its sign-in popup (ADR 0029). Registered as https://<id>.chromiumapp.org/
 # with the embedded issuer, or by zitadel.provision; with another provider,
