@@ -254,6 +254,23 @@ describe('extract', () => {
     expect(fake.requests).toHaveLength(1);
   });
 
+  it('drops an answer that arrives after the caller aborted', async () => {
+    const controller = new AbortController();
+    const fake = createFakeEndpoint(() => {
+      controller.abort();
+      return answer([
+        { quote: 'The variant was absent from gnomAD.', value: { kind: 'population' } },
+      ]);
+    });
+    await expect(
+      extract(
+        { scopes: [{ key: 'body', text: TEXT }], profile: evidenceExcerptProfile },
+        endpoint,
+        options(fake, { signal: controller.signal }),
+      ),
+    ).rejects.toThrow();
+  });
+
   it('names the model in the body creator', () => {
     expect(softwareAgent('llama3.1:8b')).toEqual({
       type: 'Software',

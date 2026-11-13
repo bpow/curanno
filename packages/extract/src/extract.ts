@@ -181,6 +181,8 @@ export async function extract(
         ...(options.fetch ? { fetch: options.fetch } : {}),
         signal: controller.signal,
       });
+      // An endpoint may answer after the caller gave up; its answer no longer counts.
+      controller.signal.throwIfAborted();
       const answer = parseAnswer(content);
       if (answer) return answer;
     }
