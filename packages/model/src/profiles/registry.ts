@@ -1,5 +1,6 @@
 import type { JsonSchema } from '../annotation/schemas.js';
-import type { Body, Purpose, StructuredBody, TextualBody } from '../annotation/types.js';
+import { isStructuredBody, isTextualBody, purposesOf } from '../annotation/read.js';
+import type { Body, Purpose } from '../annotation/types.js';
 
 /**
  * Body profile registry (docs/body-profiles.md). A profile binds a JSON
@@ -135,17 +136,4 @@ export class ProfileRegistry {
       })),
     };
   }
-}
-
-function purposesOf(body: { purpose?: Purpose | Purpose[] }): Purpose[] {
-  if (body.purpose === undefined) return [];
-  return Array.isArray(body.purpose) ? body.purpose : [body.purpose];
-}
-
-export function isStructuredBody(body: Body): body is StructuredBody {
-  return typeof body === 'object' && body !== null && body.type === 'StructuredBody';
-}
-
-export function isTextualBody(body: Body): body is TextualBody {
-  return typeof body === 'object' && body !== null && body.type === 'TextualBody';
 }

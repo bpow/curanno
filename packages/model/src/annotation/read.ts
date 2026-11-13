@@ -3,13 +3,13 @@
  * everywhere): bodies, comment, tags, targets, quote, creator and anchoring
  * state, for every client that shows annotations.
  */
-import { isStructuredBody, isTextualBody } from '../profiles/registry.js';
 import type {
   Agent,
   AnchoringState,
   Body,
   Motivation,
   OneOrMany,
+  Purpose,
   Selector,
   StructuredBody,
   Target,
@@ -46,6 +46,18 @@ export function bodiesOf(annotation: AnnotationLike): Body[] {
   return toArray(annotation.body as OneOrMany<Body> | undefined);
 }
 
+export function isStructuredBody(body: Body): body is StructuredBody {
+  return typeof body === 'object' && body !== null && body.type === 'StructuredBody';
+}
+
+export function isTextualBody(body: Body): body is TextualBody {
+  return typeof body === 'object' && body !== null && body.type === 'TextualBody';
+}
+
+export function purposesOf(body: { purpose?: OneOrMany<Purpose> | undefined }): Purpose[] {
+  return toArray(body.purpose);
+}
+
 export function textualBodies(annotation: AnnotationLike): TextualBody[] {
   return bodiesOf(annotation).filter(isTextualBody);
 }
@@ -53,8 +65,6 @@ export function textualBodies(annotation: AnnotationLike): TextualBody[] {
 export function structuredBodies(annotation: AnnotationLike): StructuredBody[] {
   return bodiesOf(annotation).filter(isStructuredBody);
 }
-
-const purposesOf = (body: TextualBody | StructuredBody): string[] => toArray(body.purpose);
 
 /** The comment: the first textual body that is not a tag, or `bodyValue`. */
 export function commentOf(annotation: AnnotationLike): string {
