@@ -71,6 +71,34 @@ test('the sidebar has no axe violations in any of its states', async ({ context 
   await expectNoViolations(page, 'the reply editor');
 });
 
+test('deleting asks first in a dialog that keeps focus and can be cancelled', async ({
+  context,
+}) => {
+  await seedSession(context);
+  await stubApi(context, PAGE_URL);
+  const page = await context.newPage();
+  await page.goto(`${SIDEBAR_URL}?uri=${encodeURIComponent(PAGE_URL)}`);
+  await page.getByRole('button', { name: 'New page note' }).click();
+  await page.getByLabel('Comment').fill('A note to delete');
+  await page.getByRole('button', { name: 'Post' }).click();
+  const card = page.locator('article.card', { hasText: 'A note to delete' });
+  const remove = card.getByRole('button', { name: 'Delete' });
+  const dialog = page.getByRole('alertdialog', { name: 'Delete this annotation?' });
+
+  await remove.click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused();
+  await expectNoViolations(page, 'the delete dialog');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(remove).toBeFocused();
+  await expect(card).toHaveCount(1);
+
+  await remove.click();
+  await dialog.getByRole('button', { name: 'Delete' }).click();
+  await expect(card).toHaveCount(0);
+});
+
 test('the sidebar has no axe violations with annotations from another site', async ({
   context,
 }) => {

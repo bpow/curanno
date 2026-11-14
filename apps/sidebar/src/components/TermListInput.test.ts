@@ -1,4 +1,4 @@
-import { flushPromises, mount } from '@vue/test-utils';
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Term } from '../profiles/schema';
@@ -8,8 +8,10 @@ import TermListInput from './TermListInput.vue';
 const hcm = { id: 'HP:0001639', label: 'Hypertrophic cardiomyopathy', synonym: 'HCM' };
 const cm = { id: 'HP:0001638', label: 'Cardiomyopathy' };
 
+// In the document, as Enter only takes a highlighted suggestion that is.
 function mountInput(modelValue: Term[] = []) {
   return mount(TermListInput, {
+    attachTo: document.body,
     props: {
       modelValue,
       ontology: { name: 'hp', root: 'HP:0000118' },
@@ -19,9 +21,11 @@ function mountInput(modelValue: Term[] = []) {
   });
 }
 
+/** Types, waits out the debounce and the lookup, and lets the list settle on its highlight. */
 async function type(wrapper: ReturnType<typeof mountInput>, text: string): Promise<void> {
   await wrapper.find('input').setValue(text);
   await vi.advanceTimersByTimeAsync(250);
+  await flushPromises();
   await flushPromises();
 }
 
@@ -35,6 +39,7 @@ describe('TermListInput', () => {
     );
   });
   afterEach(() => vi.useRealTimers());
+  enableAutoUnmount(afterEach);
 
   it('searches the ontology branch once the query is long enough', async () => {
     const wrapper = mountInput();
@@ -57,37 +62,65 @@ describe('TermListInput', () => {
     expect(wrapper.find('input').attributes('aria-expanded')).toBe('true');
   });
 
-  it('picks a suggestion with the keyboard and stores its ID and label', async () => {
+  it('highlights the first suggestion, moves with the arrows and stores the one Enter takes', async () => {
     const wrapper = mountInput();
     await type(wrapper, 'hcm');
     const input = wrapper.find('input');
+    const ids = wrapper.findAll('[role="option"]').map((o) => o.attributes('id'));
+    expect(input.attributes('aria-controls')).toBe(wrapper.find('.suggestions').attributes('id'));
+    expect(input.attributes('aria-activedescendant')).toBe(ids[0]);
     await input.trigger('keydown', { key: 'ArrowDown' });
-    await input.trigger('keydown', { key: 'ArrowDown' });
-    expect(input.attributes('aria-activedescendant')).toBe('field-phenotypes-suggestions-1');
+    expect(input.attributes('aria-activedescendant')).toBe(ids[1]);
     await input.trigger('keydown', { key: 'Enter' });
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
-      [{ id: 'HP:0001639', label: 'Hypertrophic cardiomyopathy' }],
+    await flushPromises();
+    expect(wrapper.emitted('update:modelValue')).toEqual([
+      [[{ id: 'HP:0001639', label: 'Hypertrophic cardiomyopathy' }]],
     ]);
     expect(wrapper.findAll('[role="option"]')).toHaveLength(0);
+    expect(input.element.value).toBe('');
   });
 
-  it('keeps text that matches no term, and skips duplicates', async () => {
-    const wrapper = mountInput([{ id: 'HP:0001638', label: 'Cardiomyopathy' }]);
-    await type(wrapper, 'exertional chest pain');
-    await wrapper.find('input').trigger('keydown', { key: 'Enter' });
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
-      [{ id: 'HP:0001638', label: 'Cardiomyopathy' }, { label: 'exertional chest pain' }],
-    ]);
-
+  it('takes the first suggestion on Enter alone, and does not repeat a term', async () => {
+    const wrapper = mountInput([{ id: 'HP:0001639', label: 'Hypertrophic cardiomyopathy' }]);
     await type(wrapper, 'cardio');
-    await wrapper.findAll('[role="option"]')[0]?.trigger('mousedown');
-    expect(wrapper.emitted('update:modelValue')).toHaveLength(1);
+    await wrapper.find('input').trigger('keydown', { key: 'Enter' });
+    await flushPromises();
+    const both = [
+      { id: 'HP:0001639', label: 'Hypertrophic cardiomyopathy' },
+      { id: 'HP:0001638', label: 'Cardiomyopathy' },
+    ];
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([both]);
+
+    await wrapper.setProps({ modelValue: both });
+    await type(wrapper, 'cardio');
+    await wrapper.findAll('[role="option"]')[0]?.trigger('click');
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([both]);
+    expect(wrapper.findAll('.term')).toHaveLength(2);
+  });
+
+  it('keeps text that matches no term, once whatever its case', async () => {
+    installFakeApi(() => json([]));
+    const wrapper = mountInput([{ id: 'HP:0001638', label: 'Cardiomyopathy' }]);
+    const withText = [
+      { id: 'HP:0001638', label: 'Cardiomyopathy' },
+      { label: 'exertional chest pain' },
+    ];
+    await type(wrapper, ' exertional chest pain ');
+    await wrapper.find('input').trigger('keydown', { key: 'Enter' });
+    await flushPromises();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([withText]);
+
+    await wrapper.setProps({ modelValue: withText });
+    await type(wrapper, 'Exertional Chest Pain');
+    await wrapper.find('input').trigger('keydown', { key: 'Enter' });
+    await flushPromises();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([withText]);
   });
 
   it('marks free text and removes terms', async () => {
     const wrapper = mountInput([{ id: 'HP:0001638', label: 'Cardiomyopathy' }, { label: 'odd' }]);
-    expect(wrapper.findAll('.term.text').map((t) => t.text())).toEqual(['odd ×']);
-    await wrapper.find('button[aria-label="Remove Cardiomyopathy"]').trigger('click');
+    expect(wrapper.findAll('.term.text').map((t) => t.text())).toEqual(['odd×']);
+    await wrapper.findAll('.term')[0]?.find('button').trigger('click');
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([[{ label: 'odd' }]]);
   });
 

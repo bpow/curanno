@@ -215,26 +215,9 @@ export class TextGenerator {
   }
 }
 
-/** Parses `--name value` and `--flag` arguments. */
-export function parseArgs(argv: string[]): Record<string, string | true> {
-  const out: Record<string, string | true> = {};
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i] as string;
-    if (!arg.startsWith('--')) throw new Error(`unexpected argument ${arg}`);
-    const eq = arg.indexOf('=');
-    if (eq !== -1) {
-      out[arg.slice(2, eq)] = arg.slice(eq + 1);
-    } else if (i + 1 < argv.length && !(argv[i + 1] as string).startsWith('--')) {
-      out[arg.slice(2)] = argv[++i] as string;
-    } else {
-      out[arg.slice(2)] = true;
-    }
-  }
-  return out;
-}
-
+/** A numeric option as `node:util`'s `parseArgs` read it, or the fallback when it was not given. */
 export function numberArg(
-  args: Record<string, string | true>,
+  args: Record<string, string | boolean | undefined>,
   name: string,
   fallback: number,
 ): number {

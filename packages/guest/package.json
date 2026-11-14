@@ -23,6 +23,7 @@
     "playwright": "1.64.1",
     "react": "19.3.1",
     "react-dom": "19.3.1",
+    "sirv": "^3.0.2",
     "vue": "3.5.44"
   },
   "scripts": {

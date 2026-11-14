@@ -5,6 +5,9 @@ import { API_KEY } from '../api/client';
 import { fakeApi, json, noContent, problem, type FakeApi } from '../test/fake-api';
 import SharingPanel from './SharingPanel.vue';
 
+/** Lets the search's debounce run out. */
+const debounced = () => new Promise((resolve) => setTimeout(resolve, 250));
+
 const ANNOTATION = '11111111-1111-4111-8111-111111111111';
 const alice: PrincipalRef = {
   id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -23,9 +26,11 @@ describe('SharingPanel', () => {
   let acl: AclEntry[];
   let api: FakeApi;
   let refuseRevokes = false;
+  let refuseGrants = false;
 
   beforeEach(() => {
     refuseRevokes = false;
+    refuseGrants = false;
     acl = [
       ...(['read', 'update', 'delete', 'share'] as const).map((permission) => ({
         principal: alice,
@@ -37,6 +42,7 @@ describe('SharingPanel', () => {
       const path = url.pathname;
       if (method === 'GET' && path === `/x/annotations/${ANNOTATION}/acl`) return json(acl);
       if (method === 'POST' && path === `/x/annotations/${ANNOTATION}/acl`) {
+        if (refuseGrants) return problem(403, 'Forbidden', 'the share permission is required');
         const grant = body as { principal: string; permission: AclEntry['permission'] };
         const principal = [alice, bob, reviewers, PUBLIC].find((p) => p.id === grant.principal);
         if (!principal) return problem(400, 'Bad Request', 'unknown principal');
@@ -99,8 +105,9 @@ describe('SharingPanel', () => {
     const wrapper = mountPanel();
     await flushPromises();
     await wrapper.find('input[type="search"]').setValue('rev');
+    await debounced();
     await flushPromises();
-    const found = wrapper.findAll('[role="listbox"] button');
+    const found = wrapper.findAll('[role="option"]');
     expect(found.map((b) => b.text())).toEqual(['reviewers group']);
     await found[0]!.trigger('click');
     await flushPromises();
@@ -112,14 +119,27 @@ describe('SharingPanel', () => {
     expect(wrapper.find<HTMLInputElement>('input[type="search"]').element.value).toBe('');
   });
 
+  it('keeps the search when a grant is refused, to try again', async () => {
+    refuseGrants = true;
+    const wrapper = mountPanel();
+    await flushPromises();
+    await wrapper.find('input[type="search"]').setValue('rev');
+    await debounced();
+    await flushPromises();
+    await wrapper.find('[role="option"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('[role="alert"]').text()).toContain('share permission');
+    expect(wrapper.find<HTMLInputElement>('input[type="search"]').element.value).toBe('rev');
+    expect(wrapper.findAll('[role="option"]').map((o) => o.text())).toEqual(['reviewers group']);
+  });
+
   it('offers the public pseudo-principal by its kind', async () => {
     const wrapper = mountPanel();
     await flushPromises();
     await wrapper.find('input[type="search"]').setValue('pub');
+    await debounced();
     await flushPromises();
-    expect(wrapper.findAll('[role="listbox"] button').map((b) => b.text())).toEqual([
-      'public public',
-    ]);
+    expect(wrapper.findAll('[role="option"]').map((b) => b.text())).toEqual(['public public']);
   });
 
   it('reports a refused revoke and shows the real state again', async () => {

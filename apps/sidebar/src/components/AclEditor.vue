@@ -7,7 +7,14 @@ import {
   type Problem,
 } from '@curanno/api-client';
 import { PERMISSIONS, type Permission } from '@curanno/model';
-import { computed, ref, watch } from 'vue';
+import {
+  AutocompleteContent,
+  AutocompleteInput,
+  AutocompleteItem,
+  AutocompleteRoot,
+} from 'reka-ui';
+import { computedAsync, promiseTimeout } from '@vueuse/core';
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue';
 import { useApi } from '../api/client';
 import ProblemAlert from './ProblemAlert.vue';
 
@@ -27,9 +34,12 @@ const emit = defineEmits<{
 
 const api = useApi();
 const query = ref('');
-const candidates = ref<PrincipalRef[]>([]);
-const searching = ref(false);
-const problem = ref<Problem>();
+/** Whether the list would show if it had anything in it: typing opens it, Escape and a pick close it. */
+const wanted = ref(false);
+const open = computed(() => wanted.value && candidates.value.length > 0);
+/** Reka keeps naming the last highlighted option after the list closes and it is gone. */
+const closedList = computed(() => (open.value ? {} : { 'aria-activedescendant': undefined }));
+const root = useTemplateRef<{ highlightFirstItem?: () => void }>('root');
 
 interface Row {
   principal: PrincipalRef;
@@ -73,33 +83,61 @@ function isLocked(principal: PrincipalRef): boolean {
   return principal.kind === 'user' && principal.id === props.lockedId;
 }
 
-let searchTimer: ReturnType<typeof setTimeout> | undefined;
-watch(query, (q) => {
-  clearTimeout(searchTimer);
-  if (!q.trim()) {
-    candidates.value = [];
-    return;
-  }
-  searchTimer = setTimeout(() => void search(q.trim()), 200);
+const loading = ref(false);
+/**
+ * The answer for the latest query only, once typing pauses: typing again cancels a
+ * search still waiting or in flight, and an empty query clears the list at once.
+ */
+const result = computedAsync(
+  async (onCancel): Promise<{ q: string; found: PrincipalRef[]; problem?: Problem }> => {
+    const q = query.value.trim();
+    if (!q) return { q, found: [] };
+    const abort = new AbortController();
+    onCancel(() => abort.abort());
+    await promiseTimeout(200);
+    if (abort.signal.aborted) return { q, found: [] };
+    try {
+      return {
+        q,
+        found: unwrap(
+          await api.GET('/x/principals', {
+            params: { query: { q, limit: 10 } },
+            signal: abort.signal,
+          }),
+        ),
+      };
+    } catch (err) {
+      return { q, found: [], problem: toProblem(err) };
+    }
+  },
+  { q: '', found: [] },
+  { evaluating: loading },
+);
+const searching = computed(
+  () => query.value.trim() !== '' && (loading.value || result.value.q !== query.value.trim()),
+);
+const problem = computed(() => (searching.value ? undefined : result.value.problem));
+/**
+ * Principals already in the table are not offered again, and nothing is offered while the
+ * answer is for earlier text, so Enter cannot take a match for what was typed before.
+ */
+const candidates = computed(() =>
+  searching.value
+    ? []
+    : result.value.found.filter((p) => !rows.value.some((r) => r.principal.id === p.id)),
+);
+
+// There is no free-text case, so Enter takes the first match unless another is chosen.
+watch(result, async () => {
+  await nextTick();
+  root.value?.highlightFirstItem?.();
 });
 
-async function search(q: string): Promise<void> {
-  searching.value = true;
-  try {
-    const found = unwrap(await api.GET('/x/principals', { params: { query: { q, limit: 10 } } }));
-    const present = new Set(rows.value.map((r) => r.principal.id));
-    candidates.value = found.filter((p) => !present.has(p.id));
-    problem.value = undefined;
-  } catch (err) {
-    problem.value = toProblem(err);
-  } finally {
-    searching.value = false;
-  }
-}
-
-function add(principal: PrincipalRef): void {
+function add(event: Event, principal: PrincipalRef): void {
+  // The pick becomes a row in the table; the input is not filled with it.
+  event.preventDefault();
   query.value = '';
-  candidates.value = [];
+  wanted.value = false;
   emit('toggle', principal, 'read', true);
 }
 </script>
@@ -134,22 +172,37 @@ function add(principal: PrincipalRef): void {
       </tbody>
     </table>
     <p v-else-if="!busy" class="muted">Only you can see this annotation.</p>
-    <div class="add">
-      <input
-        v-model="query"
-        type="search"
-        name="principal"
-        placeholder="Share with a user, group, public or authenticated…"
-        aria-label="Share with"
-        :disabled="busy"
-      />
-      <ul v-if="candidates.length" class="candidates" aria-label="Matching principals">
-        <li v-for="c in candidates" :key="c.id">
-          <button type="button" class="link" @click="add(c)">{{ label(c) }}</button>
-        </li>
-      </ul>
-      <p v-else-if="searching" class="muted">Searching…</p>
-    </div>
+    <AutocompleteRoot
+      ref="root"
+      v-model="query"
+      :open="open"
+      ignore-filter
+      @update:open="wanted = $event"
+    >
+      <div class="add">
+        <AutocompleteInput
+          type="search"
+          name="principal"
+          placeholder="Share with a user, group, public or authenticated…"
+          aria-label="Share with"
+          :disabled="busy"
+          v-bind="closedList"
+        />
+        <AutocompleteContent class="candidates" aria-label="Matching principals">
+          <AutocompleteItem
+            v-for="c in candidates"
+            :key="c.id"
+            :value="c.id"
+            :text-value="label(c)"
+            class="candidate"
+            @select="add($event, c)"
+          >
+            {{ label(c) }}
+          </AutocompleteItem>
+        </AutocompleteContent>
+      </div>
+      <p v-if="searching && !open" class="muted">Searching…</p>
+    </AutocompleteRoot>
     <ProblemAlert :problem="problem" />
   </div>
 </template>
@@ -186,15 +239,30 @@ input[type='checkbox'] {
   width: auto;
 }
 
-.candidates {
-  list-style: none;
-  margin: 0.2rem 0 0;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+.add {
+  position: relative;
 }
 
-.candidates li {
-  padding: 0.2rem 0.4rem;
+.add :deep(.candidates) {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 0.1rem 0 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.add :deep(.candidate) {
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
+
+.add :deep(.candidate[data-highlighted]) {
+  background: var(--surface-2);
 }
 </style>

@@ -1,5 +1,5 @@
 import { caseIndividualProfile, evidenceExcerptProfile, type BodyProfile } from '@curanno/model';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { describe, expect, it } from 'vitest';
 import StructuredBodyEditor from './StructuredBodyEditor.vue';
@@ -26,6 +26,20 @@ describe('StructuredBodyEditor', () => {
     expect(wrapper.find('input[name="identifiers"]').exists()).toBe(true);
   });
 
+  it('marks a required list field required until it has an item', async () => {
+    const profile: BodyProfile = {
+      ...evidenceExcerptProfile,
+      schema: { ...evidenceExcerptProfile.schema, required: ['kind', 'identifiers'] },
+    };
+    const wrapper = mount(StructuredBodyEditor, { props: { profile, modelValue: {} } });
+    const identifiers = () => wrapper.find('input[name="identifiers"]');
+    expect(identifiers().attributes('required')).toBeDefined();
+    expect(identifiers().attributes('aria-required')).toBe('true');
+    await wrapper.setProps({ modelValue: { identifiers: ['PMID:1'] } });
+    expect(identifiers().attributes('required')).toBeUndefined();
+    expect(identifiers().attributes('aria-required')).toBe('true');
+  });
+
   it('emits the value with enum, list and text fields set and empty ones dropped', async () => {
     const wrapper = mount(StructuredBodyEditor, {
       props: { profile: evidenceExcerptProfile, modelValue: { summary: 'old' } },
@@ -36,7 +50,17 @@ describe('StructuredBodyEditor', () => {
     ]);
 
     await wrapper.setProps({ modelValue: { summary: 'old', kind: 'case' } });
-    await wrapper.find('input[name="identifiers"]').setValue('PMID:1, HGNC:2');
+    const identifiers = wrapper.find('input[name="identifiers"]');
+    expect(wrapper.find(`label[for="${identifiers.attributes('id')}"]`).text()).toBe('identifiers');
+    await identifiers.setValue('PMID:1');
+    await identifiers.trigger('keydown', { key: 'Enter' });
+    await flushPromises();
+    await wrapper.setProps({
+      modelValue: { summary: 'old', kind: 'case', identifiers: ['PMID:1'] },
+    });
+    await identifiers.setValue('HGNC:2');
+    await identifiers.trigger('keydown', { key: 'Enter' });
+    await flushPromises();
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
       { summary: 'old', kind: 'case', identifiers: ['PMID:1', 'HGNC:2'] },
     ]);

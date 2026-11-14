@@ -1,9 +1,12 @@
 import type { Membership, PrincipalRef } from '@curanno/api-client';
 import { flushPromises, mount } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { API_KEY } from '../api/client';
 import { fakeApi, json, noContent, problem, type FakeApi } from '../test/fake-api';
 import MembershipEditor from './MembershipEditor.vue';
+
+/** Lets the search's debounce run out. */
+const debounced = () => new Promise((resolve) => setTimeout(resolve, 250));
 
 const GROUP = '11111111-1111-4111-8111-111111111111';
 const ALICE = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -58,7 +61,17 @@ describe('MembershipEditor', () => {
       return undefined;
     });
   });
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  // The dialog is drawn in a portal on the page, outside the component.
+  const dialog = () => document.querySelector('[role="alertdialog"]');
+  async function confirmDialog(): Promise<void> {
+    const action = [...(dialog()?.querySelectorAll('button') ?? [])].at(-1);
+    action?.click();
+    await flushPromises();
+  }
 
   function mountEditor(props: { canManage: boolean; currentUserId?: string }) {
     return mount(MembershipEditor, {
@@ -74,8 +87,9 @@ describe('MembershipEditor', () => {
     expect(wrapper.find('button').text()).toBe('Leave');
 
     await wrapper.find('input[type="search"]').setValue('bob');
+    await debounced();
     await flushPromises();
-    const candidates = wrapper.findAll('[role="listbox"] button');
+    const candidates = wrapper.findAll('[role="option"]');
     // Groups are not members; only users are offered.
     expect(candidates.map((b) => b.text())).toEqual(['Bob Reviewer']);
     await candidates[0]!.trigger('click');
@@ -102,9 +116,11 @@ describe('MembershipEditor', () => {
     expect(api.calls.find((c) => c.method === 'PUT')?.body).toEqual({ role: 'admin' });
     expect(members.find((m) => m.user.id === BOB)?.role).toBe('admin');
 
-    vi.stubGlobal('confirm', () => true);
     const remove = wrapper.findAll('button').find((b) => b.text() === 'Remove');
     await remove!.trigger('click');
+    expect(api.calls.find((c) => c.method === 'DELETE')).toBeUndefined();
+    expect(dialog()?.textContent).toContain('Remove Bob Reviewer from the group?');
+    await confirmDialog();
     await flushPromises();
     expect(api.calls.find((c) => c.method === 'DELETE')?.url.pathname).toBe(
       `/x/groups/${GROUP}/members/${BOB}`,
@@ -114,10 +130,11 @@ describe('MembershipEditor', () => {
 
   it('shows the problem the API reports', async () => {
     lastAdminGuard = true;
-    vi.stubGlobal('confirm', () => true);
     const wrapper = mountEditor({ canManage: true, currentUserId: ALICE });
     await flushPromises();
     await wrapper.find('button').trigger('click');
+    expect(dialog()?.textContent).toContain('Leave the group?');
+    await confirmDialog();
     await flushPromises();
     expect(wrapper.find('[role="alert"]').text()).toContain('at least one administrator');
     expect(wrapper.emitted('changed')).toBeUndefined();

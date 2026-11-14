@@ -17,7 +17,13 @@ const emit = defineEmits<{
       aria-label="Comment"
       @input="emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
     ></textarea>
-    <TagInput :model-value="tags" @update:model-value="emit('update:tags', $event)" />
+    <TagInput
+      :model-value="tags"
+      name="tag"
+      label="Add tag"
+      placeholder="Add tag"
+      @update:model-value="emit('update:tags', $event)"
+    />
   </div>
 </template>
 

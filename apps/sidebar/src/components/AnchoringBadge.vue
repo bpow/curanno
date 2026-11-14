@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AnchoringState } from '@curanno/model';
+import HintTooltip from './HintTooltip.vue';
 
 defineProps<{ state: AnchoringState | undefined }>();
 
@@ -12,9 +13,9 @@ const labels: Record<AnchoringState, string> = {
 </script>
 
 <template>
-  <span v-if="state && state !== 'anchored'" class="badge" :class="state" :title="labels[state]">
-    {{ state }}
-  </span>
+  <HintTooltip v-if="state && state !== 'anchored'" :text="labels[state]">
+    <span class="badge" :class="state" tabindex="0">{{ state }}</span>
+  </HintTooltip>
 </template>
 
 <style scoped>

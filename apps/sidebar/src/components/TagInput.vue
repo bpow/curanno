@@ -1,55 +1,57 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import {
+  TagsInputInput,
+  TagsInputItem,
+  TagsInputItemDelete,
+  TagsInputItemText,
+  TagsInputRoot,
+} from 'reka-ui';
+import { useId } from 'vue';
 
-const props = defineProps<{ modelValue: string[] }>();
+const props = defineProps<{
+  modelValue: string[];
+  name: string;
+  inputId?: string | undefined;
+  /** Accessible name, when no `<label for>` points at `inputId`. */
+  label?: string | undefined;
+  placeholder?: string | undefined;
+  required?: boolean | undefined;
+}>();
 const emit = defineEmits<{ 'update:modelValue': [tags: string[]] }>();
 
-const pending = ref('');
+const id = props.inputId ?? useId();
 
-function add(): void {
-  const tags = pending.value
-    .split(',')
-    .map((t) => t.trim())
-    .filter((t) => t && !props.modelValue.includes(t));
-  if (tags.length) emit('update:modelValue', [...props.modelValue, ...tags]);
-  pending.value = '';
-}
+const trimmed = (text: string): string => text.trim();
 
-function removeAt(index: number): void {
-  emit(
-    'update:modelValue',
-    props.modelValue.filter((_, i) => i !== index),
-  );
-}
-
-function onKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Enter' || event.key === ',') {
-    event.preventDefault();
-    add();
-  } else if (event.key === 'Backspace' && !pending.value && props.modelValue.length) {
-    removeAt(props.modelValue.length - 1);
-  }
+// Text that was only spaces trims to nothing, which is not a tag.
+function update(tags: string[]): void {
+  emit('update:modelValue', tags.filter(Boolean));
 }
 </script>
 
 <template>
-  <div class="tags">
-    <span v-for="(tag, i) in modelValue" :key="tag" class="tag">
-      {{ tag }}
-      <button type="button" class="remove" :aria-label="`Remove tag ${tag}`" @click="removeAt(i)">
-        ×
-      </button>
-    </span>
-    <input
-      v-model="pending"
-      type="text"
-      name="tag"
-      placeholder="Add tag"
-      aria-label="Add tag"
-      @keydown="onKeydown"
-      @blur="add"
+  <TagsInputRoot
+    :id="id"
+    class="tags"
+    :model-value="modelValue"
+    :convert-value="trimmed"
+    add-on-blur
+    add-on-paste
+    @update:model-value="update"
+  >
+    <TagsInputItem v-for="tag in modelValue" :key="tag" :value="tag" class="tag">
+      <TagsInputItemText />
+      <TagsInputItemDelete class="remove">×</TagsInputItemDelete>
+    </TagsInputItem>
+    <!-- The input empties as each tag is added, so only an empty list leaves it unanswered. -->
+    <TagsInputInput
+      :name="name"
+      :placeholder="placeholder ?? ''"
+      :aria-label="label"
+      :required="required && modelValue.length === 0"
+      :aria-required="required || undefined"
     />
-  </div>
+  </TagsInputRoot>
 </template>
 
 <style scoped>
@@ -67,6 +69,11 @@ function onKeydown(event: KeyboardEvent): void {
   border-radius: 999px;
   padding: 0 0.3rem 0 0.6rem;
   font-size: 0.9em;
+}
+
+.tag[data-state='active'] {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .remove {

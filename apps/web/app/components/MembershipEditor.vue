@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { GroupRole, Membership, PrincipalRef } from '@curanno/api-client';
-import { ref, watch } from 'vue';
 import { NuxtLink } from '#components';
 import { useApi } from '../api/client';
 import { useAction, useRequest } from '../composables/request';
 import { formatDate } from '../util/time';
+import ConfirmDialog from './ConfirmDialog.vue';
+import PrincipalPicker from './PrincipalPicker.vue';
 import ProblemAlert from './ProblemAlert.vue';
 
 const props = defineProps<{
@@ -23,40 +24,25 @@ const members = useRequest(
 );
 const action = useAction();
 
-const query = ref('');
-const candidates = ref<PrincipalRef[]>([]);
-const searching = ref(false);
-
-watch(query, async (q) => {
-  if (!q.trim()) {
-    candidates.value = [];
-    return;
-  }
-  searching.value = true;
-  const result = await api.GET('/x/principals', { params: { query: { q: q.trim(), limit: 10 } } });
-  searching.value = false;
-  if (query.value !== q) return;
-  const memberIds = new Set((members.data.value ?? []).map((m) => m.user.id));
-  candidates.value = (result.data ?? []).filter((p) => p.kind === 'user' && !memberIds.has(p.id));
-});
+/** Groups cannot be members, and members are not offered again. */
+const offer = (p: PrincipalRef): boolean =>
+  p.kind === 'user' && !(members.data.value ?? []).some((m) => m.user.id === p.id);
 
 async function changed(): Promise<void> {
   await members.run();
   emit('changed');
 }
 
-async function add(principal: PrincipalRef): Promise<void> {
-  const ok = await action.perform(() =>
+async function add(principal: PrincipalRef): Promise<boolean> {
+  await action.perform(() =>
     api.PUT('/x/groups/{id}/members/{userId}', {
       params: { path: { id: props.groupId, userId: principal.id } },
       body: { role: 'member' },
     }),
   );
-  if (ok !== undefined || !action.problem.value) {
-    query.value = '';
-    candidates.value = [];
-    await changed();
-  }
+  if (action.problem.value) return false;
+  await changed();
+  return true;
 }
 
 async function setRole(member: Membership, role: GroupRole): Promise<void> {
@@ -70,8 +56,6 @@ async function setRole(member: Membership, role: GroupRole): Promise<void> {
 }
 
 async function remove(member: Membership): Promise<void> {
-  const name = member.user.displayName ?? member.user.id;
-  if (!window.confirm(`Remove ${name} from the group?`)) return;
   await action.perform(() =>
     api.DELETE('/x/groups/{id}/members/{userId}', {
       params: { path: { id: props.groupId, userId: member.user.id } },
@@ -118,15 +102,23 @@ const canRemove = (member: Membership): boolean =>
           </td>
           <td class="muted">{{ formatDate(member.addedAt) }}</td>
           <td v-if="canManage || currentUserId">
-            <button
+            <ConfirmDialog
               v-if="canRemove(member)"
-              type="button"
-              class="link danger"
-              :disabled="action.busy.value"
-              @click="remove(member)"
+              :title="
+                member.user.id === currentUserId
+                  ? 'Leave the group?'
+                  : `Remove ${member.user.displayName ?? member.user.id} from the group?`
+              "
+              :description="`Permissions granted to the group stop applying to ${
+                member.user.id === currentUserId ? 'you' : 'them'
+              }.`"
+              :action="member.user.id === currentUserId ? 'Leave' : 'Remove'"
+              @confirm="remove(member)"
             >
-              {{ member.user.id === currentUserId ? 'Leave' : 'Remove' }}
-            </button>
+              <button type="button" class="link danger" :disabled="action.busy.value">
+                {{ member.user.id === currentUserId ? 'Leave' : 'Remove' }}
+              </button>
+            </ConfirmDialog>
           </td>
         </tr>
         <tr v-if="members.data.value.length === 0">
@@ -136,30 +128,14 @@ const canRemove = (member: Membership): boolean =>
     </table>
     <p v-else-if="members.pending.value" class="muted">Loading members…</p>
 
-    <form v-if="canManage" class="inline" @submit.prevent>
-      <label class="field">
-        Add member
-        <input v-model="query" type="search" placeholder="Name or email" autocomplete="off" />
-      </label>
-      <ul v-if="candidates.length > 0" class="candidates" role="listbox" aria-label="Users found">
-        <li v-for="candidate in candidates" :key="candidate.id">
-          <button type="button" :disabled="action.busy.value" @click="add(candidate)">
-            {{ candidate.name ?? candidate.id }}
-          </button>
-        </li>
-      </ul>
-      <span v-else-if="query.trim() && !searching" class="muted">No users match.</span>
-    </form>
+    <PrincipalPicker
+      v-if="canManage"
+      label="Add member"
+      placeholder="Name or email"
+      no-match="No users match."
+      :offer="offer"
+      :busy="action.busy.value"
+      :add="add"
+    />
   </section>
 </template>
-
-<style scoped>
-.candidates {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 0;
-  padding: 0;
-}
-</style>

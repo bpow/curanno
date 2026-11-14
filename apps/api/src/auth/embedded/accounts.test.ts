@@ -541,6 +541,45 @@ describe.skipIf(!databaseUrl)('embedded accounts', () => {
       expect(after.n).toBe(before.n);
     });
 
+    it('words a body that does not validate for the person, after the refusals that come first', async () => {
+      const detail = async (payload: unknown): Promise<unknown> => {
+        const res = await post('/idp/signup', payload, undefined, '10.4.0.7');
+        expect(res.statusCode).toBe(400);
+        expect(res.headers['content-type']).toContain('application/problem+json');
+        return res.json<{ detail: string }>().detail;
+      };
+      const valid = { email: ' padded@example.org ', password: PASSWORD, displayName: 'Padded' };
+      expect(await detail({ ...valid, email: 'not-an-email' })).toBe(
+        'email is not an email address',
+      );
+      expect(await detail({ ...valid, email: 7 })).toBe('email is required');
+      expect(await detail({ ...valid, password: undefined })).toBe('password is required');
+      expect(await detail({ ...valid, displayName: '' })).toBe('displayName is required');
+      expect(await detail({ ...valid, displayName: 'x'.repeat(201) })).toBe(
+        'displayName must be at most 200 characters',
+      );
+      // An address is trimmed, not refused, and a note of any shape is let through.
+      expect(
+        (await post('/idp/signup', { ...valid, note: 3 }, undefined, '10.4.0.7')).statusCode,
+      ).toBe(202);
+      const made = await ctx.db
+        .selectFrom('user_emails')
+        .select('email')
+        .where('email', '=', 'padded@example.org')
+        .execute();
+      expect(made).toHaveLength(1);
+      // A cross-site caller is refused before its body is looked at.
+      const crossSite = await app.inject({
+        method: 'POST',
+        url: '/idp/signup',
+        payload: {},
+        headers: { origin: 'https://evil.example', 'sec-fetch-site': 'cross-site' },
+      });
+      expect(crossSite.statusCode).toBe(403);
+      // Not signed in comes before a missing field too.
+      expect((await post('/idp/password', {})).statusCode).toBe(401);
+    });
+
     it('stops taking applications at the cap, and activates at once under open sign-up', async () => {
       const waiting = await ctx.db
         .selectFrom('applications')

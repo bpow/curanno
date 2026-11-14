@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { Toggle, ToolbarButton, ToolbarRoot, TooltipProvider } from 'reka-ui';
 import { watch } from 'vue';
 import { useAuthStore } from './auth/store';
 import AnnotationList from './components/AnnotationList.vue';
 import AnnotationComposer from './components/AnnotationComposer.vue';
 import AppIcon from './components/AppIcon.vue';
 import FakeGuestPanel from './components/FakeGuestPanel.vue';
+import HintTooltip from './components/HintTooltip.vue';
 import ProblemAlert from './components/ProblemAlert.vue';
 import UserMenu from './components/UserMenu.vue';
 import { createGuest, isFakeGuest, provideGuest } from './guest';
@@ -48,62 +50,66 @@ useGuestSync(guest, store);
 </script>
 
 <template>
-  <header class="toolbar">
-    <h1>CurAnno</h1>
-    <div class="view-controls" role="group" aria-label="Display">
-      <button
-        type="button"
-        class="icon"
-        :aria-pressed="!guest.highlightsVisible.value"
-        aria-label="Hide highlights"
-        :title="guest.highlightsVisible.value ? 'Hide highlights' : 'Show highlights'"
-        @click="guest.showHighlights(!guest.highlightsVisible.value)"
-      >
-        <AppIcon :name="guest.highlightsVisible.value ? 'eye' : 'eye-off'" />
-      </button>
-      <button
-        type="button"
-        class="icon"
-        aria-label="Smaller text"
-        title="Smaller text"
-        :disabled="!textSize.canShrink.value"
-        @click="textSize.shrink()"
-      >
-        <AppIcon name="text-smaller" />
-      </button>
-      <button
-        type="button"
-        class="icon"
-        aria-label="Larger text"
-        title="Larger text"
-        :disabled="!textSize.canGrow.value"
-        @click="textSize.grow()"
-      >
-        <AppIcon name="text-larger" />
-      </button>
-    </div>
-    <UserMenu />
-  </header>
-  <FakeGuestPanel v-if="isFakeGuest(guest)" :guest="guest" />
-  <p v-if="auth.error" class="alert" role="alert">{{ auth.error }}</p>
-  <main class="content" :style="{ fontSize: `${textSize.size.value}px` }">
-    <p v-if="guest.document.value" class="document muted" :title="guest.document.value.uri">
-      <span class="live" :class="store.live" aria-hidden="true"></span>
-      <span class="visually-hidden" role="status">Live updates: {{ store.live }}.</span>
-      {{ guest.document.value.title ?? guest.document.value.uri }}
-      <span v-if="guest.documents.value.length > 1" class="frames">
-        and {{ guest.documents.value.length - 1 }} framed document{{
-          guest.documents.value.length > 2 ? 's' : ''
-        }}
-      </span>
-    </p>
-    <ProblemAlert :problem="profiles.problem" />
-    <AnnotationComposer v-if="auth.status === 'authenticated' && guest.document.value" />
-    <p v-else-if="auth.status === 'anonymous'" class="muted">
-      Public annotations are shown. Log in to annotate.
-    </p>
-    <AnnotationList />
-  </main>
+  <TooltipProvider>
+    <header class="toolbar">
+      <h1>CurAnno</h1>
+      <ToolbarRoot class="view-controls" aria-label="Display">
+        <HintTooltip :text="guest.highlightsVisible.value ? 'Hide highlights' : 'Show highlights'">
+          <ToolbarButton as-child>
+            <Toggle
+              class="icon"
+              aria-label="Hide highlights"
+              :model-value="!guest.highlightsVisible.value"
+              @update:model-value="guest.showHighlights(!$event)"
+            >
+              <AppIcon :name="guest.highlightsVisible.value ? 'eye' : 'eye-off'" />
+            </Toggle>
+          </ToolbarButton>
+        </HintTooltip>
+        <HintTooltip text="Smaller text">
+          <ToolbarButton
+            class="icon"
+            aria-label="Smaller text"
+            :disabled="!textSize.canShrink.value"
+            @click="textSize.shrink()"
+          >
+            <AppIcon name="text-smaller" />
+          </ToolbarButton>
+        </HintTooltip>
+        <HintTooltip text="Larger text">
+          <ToolbarButton
+            class="icon"
+            aria-label="Larger text"
+            :disabled="!textSize.canGrow.value"
+            @click="textSize.grow()"
+          >
+            <AppIcon name="text-larger" />
+          </ToolbarButton>
+        </HintTooltip>
+      </ToolbarRoot>
+      <UserMenu />
+    </header>
+    <FakeGuestPanel v-if="isFakeGuest(guest)" :guest="guest" />
+    <p v-if="auth.error" class="alert" role="alert">{{ auth.error }}</p>
+    <main class="content" :style="{ fontSize: `${textSize.size.value}px` }">
+      <p v-if="guest.document.value" class="document muted" :title="guest.document.value.uri">
+        <span class="live" :class="store.live" aria-hidden="true"></span>
+        <span class="visually-hidden" role="status">Live updates: {{ store.live }}.</span>
+        {{ guest.document.value.title ?? guest.document.value.uri }}
+        <span v-if="guest.documents.value.length > 1" class="frames">
+          and {{ guest.documents.value.length - 1 }} framed document{{
+            guest.documents.value.length > 2 ? 's' : ''
+          }}
+        </span>
+      </p>
+      <ProblemAlert :problem="profiles.problem" />
+      <AnnotationComposer v-if="auth.status === 'authenticated' && guest.document.value" />
+      <p v-else-if="auth.status === 'anonymous'" class="muted">
+        Public annotations are shown. Log in to annotate.
+      </p>
+      <AnnotationList />
+    </main>
+  </TooltipProvider>
 </template>
 
 <style scoped>

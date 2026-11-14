@@ -7,18 +7,23 @@
  */
 // The built package: the scripts run under Node, which cannot load the
 // library's TypeScript sources directly. `pnpm build` first.
+import { parseArgs } from 'node:util';
 import { bookmarkletUrl, type BookmarkletOptions } from '@curanno/guest';
 
-function option(args: string[], name: string): string | undefined {
-  const index = args.indexOf(name);
-  return index >= 0 ? args[index + 1] : undefined;
-}
-
-const args = process.argv.slice(2);
-const bundleUrl = option(args, '--bundle-url');
-const sidebarOrigin = option(args, '--sidebar-origin');
-const sidebarPath = option(args, '--sidebar-path');
-const pdfViewerUrl = option(args, '--pdf-viewer-url');
+const { values: args } = parseArgs({
+  // pnpm passes on the `--` in `pnpm <script> -- --flag`.
+  args: process.argv.slice(2).filter((a) => a !== '--'),
+  options: {
+    'bundle-url': { type: 'string' },
+    'sidebar-origin': { type: 'string' },
+    'sidebar-path': { type: 'string' },
+    'pdf-viewer-url': { type: 'string' },
+  },
+});
+const bundleUrl = args['bundle-url'];
+const sidebarOrigin = args['sidebar-origin'];
+const sidebarPath = args['sidebar-path'];
+const pdfViewerUrl = args['pdf-viewer-url'];
 if (!bundleUrl || !sidebarOrigin) {
   console.error(
     'usage: bookmarklet --bundle-url <url> --sidebar-origin <origin> [--sidebar-path <path>] [--pdf-viewer-url <url>]',

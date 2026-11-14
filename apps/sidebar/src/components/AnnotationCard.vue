@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type Annotation, toProblem, type Problem } from '@curanno/api-client';
+import { ToolbarButton, ToolbarRoot } from 'reka-ui';
 import { computed, ref } from 'vue';
 import {
   anchoringOf,
@@ -27,6 +28,8 @@ import { formatTime } from '../util/time';
 import AnchoringBadge from './AnchoringBadge.vue';
 import AnnotationEditor from './AnnotationEditor.vue';
 import AppIcon from './AppIcon.vue';
+import ConfirmDialog from './ConfirmDialog.vue';
+import HintTooltip from './HintTooltip.vue';
 import ProblemAlert from './ProblemAlert.vue';
 import SharingPanel from './SharingPanel.vue';
 import StructuredBodyView from './StructuredBodyView.vue';
@@ -144,7 +147,6 @@ async function saveReply(draft: AnnotationDraft): Promise<void> {
 }
 
 async function remove(): Promise<void> {
-  if (!window.confirm('Delete this annotation?')) return;
   busy.value = true;
   try {
     const current = await store.fetch(props.annotation.id);
@@ -205,28 +207,24 @@ async function repair(): Promise<void> {
     <header>
       <span class="creator">{{ creator.name }}</span>
       <time :datetime="annotation.created" class="muted">{{ formatTime(annotation.created) }}</time>
-      <span v-if="isEdited(annotation)" class="muted" :title="formatTime(annotation.modified)">
-        (edited)
-      </span>
-      <span
+      <HintTooltip v-if="isEdited(annotation)" :text="`Edited ${formatTime(annotation.modified)}`">
+        <span class="muted" tabindex="0">(edited)</span>
+      </HintTooltip>
+      <HintTooltip
         v-if="!reply && withheld"
-        class="badge elsewhere"
-        :title="`Made on ${withheld.source}; not highlighted on this page`"
+        :text="`Made on ${withheld.source}; not highlighted on this page`"
       >
-        from {{ withheld.source }}
-      </span>
+        <span class="badge elsewhere" tabindex="0">from {{ withheld.source }}</span>
+      </HintTooltip>
       <AnchoringBadge v-else-if="!reply" :state="anchoring" />
     </header>
 
     <blockquote v-if="quote && !reply" class="quote">
-      <button
-        type="button"
-        class="quote-button"
-        :title="'Show in the page'"
-        @click="guest.scrollTo(annotation.id)"
-      >
-        {{ quote }}
-      </button>
+      <HintTooltip text="Show in the page">
+        <button type="button" class="quote-button" @click="guest.scrollTo(annotation.id)">
+          {{ quote }}
+        </button>
+      </HintTooltip>
     </blockquote>
 
     <template v-if="mode === 'edit'">
@@ -248,56 +246,55 @@ async function repair(): Promise<void> {
       <ProblemAlert v-if="problem" :problem="problem" />
     </template>
 
-    <footer v-if="auth.status === 'authenticated' && mode !== 'edit'" class="actions">
-      <button
-        type="button"
-        class="icon"
-        aria-label="Reply"
-        title="Reply"
-        :disabled="busy"
-        :aria-expanded="mode === 'reply'"
-        @click="setMode('reply')"
-      >
-        <AppIcon name="reply" />
-      </button>
-      <button
-        v-if="can(annotation, 'update')"
-        type="button"
-        class="icon"
-        aria-label="Edit"
-        title="Edit"
-        :disabled="busy"
-        @click="beginEdit"
-      >
-        <AppIcon name="edit" />
-      </button>
-      <button
-        v-if="can(annotation, 'share')"
-        type="button"
-        class="icon"
-        aria-label="Share"
-        title="Share"
-        :disabled="busy"
-        :aria-expanded="mode === 'share'"
-        @click="setMode('share')"
-      >
-        <AppIcon name="share" />
-      </button>
-      <button
+    <ToolbarRoot
+      v-if="auth.status === 'authenticated' && mode !== 'edit'"
+      class="actions"
+      aria-label="Actions"
+    >
+      <HintTooltip text="Reply">
+        <ToolbarButton
+          class="icon"
+          aria-label="Reply"
+          :disabled="busy"
+          :aria-expanded="mode === 'reply'"
+          @click="setMode('reply')"
+        >
+          <AppIcon name="reply" />
+        </ToolbarButton>
+      </HintTooltip>
+      <HintTooltip v-if="can(annotation, 'update')" text="Edit">
+        <ToolbarButton class="icon" aria-label="Edit" :disabled="busy" @click="beginEdit">
+          <AppIcon name="edit" />
+        </ToolbarButton>
+      </HintTooltip>
+      <HintTooltip v-if="can(annotation, 'share')" text="Share">
+        <ToolbarButton
+          class="icon"
+          aria-label="Share"
+          :disabled="busy"
+          :aria-expanded="mode === 'share'"
+          @click="setMode('share')"
+        >
+          <AppIcon name="share" />
+        </ToolbarButton>
+      </HintTooltip>
+      <ConfirmDialog
         v-if="can(annotation, 'delete')"
-        type="button"
-        class="icon danger"
-        aria-label="Delete"
-        title="Delete"
-        :disabled="busy"
-        @click="remove"
+        title="Delete this annotation?"
+        description="This cannot be undone."
+        action="Delete"
+        @confirm="remove"
       >
-        <AppIcon name="delete" />
-      </button>
-      <button v-if="repairable" type="button" class="link" :disabled="busy" @click="repair">
+        <HintTooltip text="Delete">
+          <ToolbarButton class="icon danger" aria-label="Delete" :disabled="busy">
+            <AppIcon name="delete" />
+          </ToolbarButton>
+        </HintTooltip>
+      </ConfirmDialog>
+      <ToolbarButton v-if="repairable" class="link" :disabled="busy" @click="repair">
         Repair with selection
-      </button>
-    </footer>
+      </ToolbarButton>
+    </ToolbarRoot>
 
     <AnnotationEditor
       v-if="mode === 'reply'"

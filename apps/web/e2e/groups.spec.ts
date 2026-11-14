@@ -69,8 +69,8 @@ test('alice creates a group and adds bob', async ({ page, request }) => {
 
   await page.getByLabel('Add member').fill('bob');
   await page
-    .getByRole('listbox', { name: 'Users found' })
-    .getByRole('button', { name: 'Bob Reviewer' })
+    .getByRole('listbox', { name: 'Add member: matches' })
+    .getByRole('option', { name: 'Bob Reviewer' })
     .click();
   await expect(page.getByRole('row', { name: /Bob Reviewer/ })).toBeVisible();
 

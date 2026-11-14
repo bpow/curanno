@@ -1,6 +1,18 @@
 <script setup lang="ts">
 import type { OntologyLookup } from '@curanno/model';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import {
+  AutocompleteContent,
+  AutocompleteInput,
+  AutocompleteItem,
+  AutocompleteRoot,
+  TagsInputInput,
+  TagsInputItem,
+  TagsInputItemDelete,
+  TagsInputItemText,
+  TagsInputRoot,
+} from 'reka-ui';
+import { computedAsync, promiseTimeout } from '@vueuse/core';
+import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { useApi } from '../api/client';
 import type { Term } from '../profiles/schema';
 import { useOntologiesStore } from '../stores/ontologies';
@@ -22,157 +34,148 @@ const emit = defineEmits<{ 'update:modelValue': [terms: Term[]] }>();
 const MIN_QUERY = 2;
 const DEBOUNCE_MS = 200;
 
+/** The text in the input. */
 const pending = ref('');
-const suggestions = ref<Suggestion[]>([]);
-const active = ref(-1);
+/**
+ * The answer for the latest text only, once typing pauses: typing again cancels a
+ * lookup still waiting or in flight, and text too short to look up clears the list at once.
+ */
+const lookup = computedAsync(
+  async (onCancel): Promise<{ q: string; suggestions: Suggestion[]; unavailable?: boolean }> => {
+    const q = pending.value.trim();
+    if (q.length < MIN_QUERY) return { q, suggestions: [] };
+    const { name, root: under } = props.ontology;
+    const abort = new AbortController();
+    onCancel(() => abort.abort());
+    await promiseTimeout(DEBOUNCE_MS);
+    if (abort.signal.aborted) return { q, suggestions: [] };
+    try {
+      const { data, response } = await useApi().GET('/x/ontologies/{name}/terms', {
+        params: { path: { name }, query: { q, limit: 10, ...(under ? { root: under } : {}) } },
+        signal: abort.signal,
+      });
+      return { q, suggestions: data ?? [], unavailable: !response.ok };
+    } catch {
+      return { q, suggestions: [], unavailable: true };
+    }
+  },
+  { q: '', suggestions: [] },
+);
+/**
+ * None while the answer is for earlier text: Enter then keeps what is typed rather than
+ * taking a suggestion for what was typed before.
+ */
+const suggestions = computed(() =>
+  lookup.value.q === pending.value.trim() ? lookup.value.suggestions : [],
+);
+/** Whether the last lookup made went unanswered; text too short to look up leaves it as it was. */
 const unavailable = ref(false);
-const listId = computed(() => `${props.inputId}-suggestions`);
+/** Whether the list would show if it had anything in it: typing opens it, Escape and a pick close it. */
+const wanted = ref(false);
+const open = computed(() => wanted.value && suggestions.value.length > 0);
+/** Reka keeps naming the last highlighted option after the list closes and it is gone. */
+const closedList = computed(() => (open.value ? {} : { 'aria-activedescendant': undefined }));
+/** What the list's root exposes for this: its first item becomes the highlighted one. */
+const root = useTemplateRef<{ highlightFirstItem?: () => void }>('root');
 const ontologies = useOntologiesStore();
 // The statement HPO's license asks for, with the release, and the same form for any other ontology.
 const source = computed(() => ontologies.byName(props.ontology.name));
 onMounted(() => void ontologies.ensureLoaded());
-const open = computed(() => suggestions.value.length > 0);
 
-let timer: ReturnType<typeof setTimeout> | undefined;
-let latest = 0;
-onBeforeUnmount(() => clearTimeout(timer));
+watch(lookup, async (result) => {
+  if (result.unavailable !== undefined) unavailable.value = result.unavailable;
+  // Enter takes the first suggestion unless another is chosen, whichever list just arrived.
+  await nextTick();
+  root.value?.highlightFirstItem?.();
+});
 
-function close(): void {
-  suggestions.value = [];
-  active.value = -1;
+/** The list without repeats: a term once per ID, text once whatever its case, nothing empty. */
+function unique(terms: Term[]): Term[] {
+  const seen = new Set<string>();
+  return terms.filter((term) => {
+    const key = term.id ? `id:${term.id}` : `text:${term.label.toLowerCase()}`;
+    if (!term.label || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
-async function lookup(q: string): Promise<void> {
-  const request = ++latest;
-  try {
-    const { data, response } = await useApi().GET('/x/ontologies/{name}/terms', {
-      params: {
-        path: { name: props.ontology.name },
-        query: { q, limit: 10, ...(props.ontology.root ? { root: props.ontology.root } : {}) },
-      },
-    });
-    if (request !== latest) return;
-    unavailable.value = !response.ok;
-    suggestions.value = data ?? [];
-  } catch {
-    if (request !== latest) return;
-    unavailable.value = true;
-    suggestions.value = [];
-  }
-  active.value = -1;
+function update(terms: Term[]): void {
+  emit('update:modelValue', unique(terms));
 }
 
-function onInput(): void {
-  clearTimeout(timer);
-  const q = pending.value.trim();
-  if (q.length < MIN_QUERY) {
-    latest++;
-    close();
-    return;
-  }
-  timer = setTimeout(() => void lookup(q), DEBOUNCE_MS);
-}
+/** Typed text that is kept as written: Enter with no suggestion highlighted, or leaving the field. */
+const asText = (text: string): Term => ({ label: text.trim() });
+const labelOf = (term: Term): string => term.label;
 
-function add(term: Term): void {
-  const taken = props.modelValue.some((t) =>
-    term.id ? t.id === term.id : !t.id && t.label.toLowerCase() === term.label.toLowerCase(),
-  );
-  if (!taken) emit('update:modelValue', [...props.modelValue, term]);
+function reset(): void {
   pending.value = '';
-  clearTimeout(timer);
-  latest++;
-  close();
+  wanted.value = false;
 }
 
-function pick(s: Suggestion): void {
-  add({ id: s.id, label: s.label });
-}
-
-function addText(): void {
-  const label = pending.value.trim();
-  if (label) add({ label });
-  else close();
-}
-
-function removeAt(index: number): void {
-  emit(
-    'update:modelValue',
-    props.modelValue.filter((_, i) => i !== index),
-  );
-}
-
-function onKeydown(event: KeyboardEvent): void {
-  const n = suggestions.value.length;
-  if (event.key === 'ArrowDown' && n) {
-    event.preventDefault();
-    active.value = (active.value + 1) % n;
-  } else if (event.key === 'ArrowUp' && n) {
-    event.preventDefault();
-    active.value = active.value <= 0 ? n - 1 : active.value - 1;
-  } else if (event.key === 'Enter') {
-    event.preventDefault();
-    const s = suggestions.value[active.value];
-    if (s) pick(s);
-    else addText();
-  } else if (event.key === 'Escape' && open.value) {
-    event.preventDefault();
-    close();
-  } else if (event.key === 'Backspace' && !pending.value && props.modelValue.length) {
-    removeAt(props.modelValue.length - 1);
-  }
+function pick(event: Event, s: Suggestion): void {
+  // The choice becomes a term in the list; the input is not filled with it.
+  event.preventDefault();
+  update([...props.modelValue, { id: s.id, label: s.label }]);
+  reset();
+  document.getElementById(props.inputId)?.focus();
 }
 </script>
 
 <template>
-  <div class="terms">
-    <span
-      v-for="(term, i) in modelValue"
-      :key="term.id ?? `text:${term.label}`"
-      class="term"
-      :class="{ text: !term.id }"
-      :title="term.id ? undefined : 'Not an ontology term: kept as written'"
-    >
-      {{ term.label }}<span v-if="term.id" class="id muted"> {{ term.id }}</span>
-      <button
-        type="button"
-        class="remove"
-        :aria-label="`Remove ${term.label}`"
-        @click="removeAt(i)"
-      >
-        ×
-      </button>
-    </span>
-    <div class="combo">
-      <input
+  <!-- The list is beside the tags, not inside them: each keeps a collection of its own items. -->
+  <AutocompleteRoot
+    ref="root"
+    v-model="pending"
+    :open="open"
+    ignore-filter
+    @update:open="wanted = $event"
+  >
+    <div class="anchor">
+      <TagsInputRoot
         :id="inputId"
-        v-model="pending"
-        type="text"
-        :name="name"
-        role="combobox"
-        autocomplete="off"
-        aria-autocomplete="list"
-        :aria-expanded="open"
-        :aria-controls="listId"
-        :aria-activedescendant="active >= 0 ? `${listId}-${active}` : undefined"
-        placeholder="Search or type a phenotype"
-        @input="onInput"
-        @keydown="onKeydown"
-        @blur="addText"
-      />
-      <ul v-show="open" :id="listId" role="listbox" class="suggestions">
-        <li
-          v-for="(s, i) in suggestions"
-          :id="`${listId}-${i}`"
+        class="terms"
+        :model-value="modelValue"
+        :convert-value="asText"
+        :display-value="labelOf"
+        delimiter=""
+        add-on-blur
+        @update:model-value="update"
+        @add-tag="reset"
+      >
+        <TagsInputItem
+          v-for="term in modelValue"
+          :key="term.id ?? `text:${term.label}`"
+          :value="term"
+          class="term"
+          :class="{ text: !term.id }"
+          :title="term.id ? undefined : 'Not an ontology term: kept as written'"
+        >
+          <TagsInputItemText />
+          <span v-if="term.id" class="id muted">{{ term.id }}</span>
+          <TagsInputItemDelete class="remove">×</TagsInputItemDelete>
+        </TagsInputItem>
+        <AutocompleteInput as-child>
+          <TagsInputInput
+            :name="name"
+            placeholder="Search or type a phenotype"
+            v-bind="closedList"
+          />
+        </AutocompleteInput>
+      </TagsInputRoot>
+      <AutocompleteContent class="suggestions">
+        <AutocompleteItem
+          v-for="s in suggestions"
           :key="s.id"
-          role="option"
-          :aria-selected="i === active"
-          :class="{ active: i === active }"
-          @mousedown.prevent="pick(s)"
+          :value="s.id"
+          :text-value="s.label"
+          class="suggestion"
+          @select="pick($event, s)"
         >
           {{ s.label }} <span class="id muted">{{ s.id }}</span>
           <span v-if="s.synonym" class="synonym muted">matched “{{ s.synonym }}”</span>
-        </li>
-      </ul>
+        </AutocompleteItem>
+      </AutocompleteContent>
     </div>
     <p v-if="unavailable" class="hint muted">
       Term lookup is unavailable; entries are kept as written.
@@ -185,7 +188,7 @@ function onKeydown(event: KeyboardEvent): void {
         <a :href="source.homepage" target="_blank" rel="noopener">{{ source.homepage }}</a>
       </template>
     </p>
-  </div>
+  </AutocompleteRoot>
 </template>
 
 <style scoped>
@@ -213,6 +216,10 @@ function onKeydown(event: KeyboardEvent): void {
   font-size: 0.85em;
 }
 
+.term .id {
+  margin-inline-start: 0.3em;
+}
+
 .remove {
   border: 0;
   background: none;
@@ -220,24 +227,28 @@ function onKeydown(event: KeyboardEvent): void {
   color: var(--muted);
 }
 
-.combo {
+.anchor {
   position: relative;
+}
+
+.terms input {
+  width: auto;
   flex: 1;
   min-width: 10rem;
 }
 
-.combo input {
-  width: 100%;
+.term[data-state='active'] {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
-.suggestions {
+.anchor :deep(.suggestions) {
   position: absolute;
   z-index: 10;
+  top: 100%;
   left: 0;
   right: 0;
   margin: 0.1rem 0 0;
-  padding: 0;
-  list-style: none;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -245,13 +256,12 @@ function onKeydown(event: KeyboardEvent): void {
   overflow-y: auto;
 }
 
-.suggestions li {
+.anchor :deep(.suggestion) {
   padding: 0.25rem 0.5rem;
   cursor: pointer;
 }
 
-.suggestions li.active,
-.suggestions li:hover {
+.anchor :deep(.suggestion[data-highlighted]) {
   background: var(--surface-2);
 }
 
@@ -261,8 +271,7 @@ function onKeydown(event: KeyboardEvent): void {
 }
 
 .hint {
-  flex-basis: 100%;
-  margin: 0;
+  margin: 0.3rem 0 0;
   font-size: 0.85em;
 }
 </style>

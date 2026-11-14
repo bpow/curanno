@@ -3,7 +3,7 @@
  * HTTP, with a cookie jar, through authorize, the sign-in interaction, the
  * code exchange with PKCE, refresh, and the API accepting the token.
  */
-import { createHash, randomBytes } from 'node:crypto';
+import { createCipheriv, createHash, hkdfSync, randomBytes } from 'node:crypto';
 import { createServer } from 'node:net';
 import {
   SignJWT,
@@ -29,12 +29,25 @@ const SECRET = 'a-test-secret-of-at-least-32-characters';
 const PASSWORD = 'correct horse battery staple';
 
 describe('secrets and passwords', () => {
-  it('seals a value so that only the same secret opens it', () => {
-    const sealed = seal(SECRET, 'private key material');
+  it('seals a value so that only the same secret opens it', async () => {
+    const sealed = await seal(SECRET, 'private key material');
     expect(sealed).not.toContain('private');
-    expect(unseal(SECRET, sealed)).toBe('private key material');
-    expect(() => unseal(`${SECRET}x`, sealed)).toThrow();
-    expect(() => unseal(SECRET, sealed.slice(0, -2) + 'AA')).toThrow();
+    expect(await unseal(SECRET, sealed)).toBe('private key material');
+    await expect(unseal(`${SECRET}x`, sealed)).rejects.toThrow();
+    await expect(unseal(SECRET, sealed.slice(0, -2) + 'AA')).rejects.toThrow();
+  });
+
+  it('still opens a value sealed in the earlier format, and only with its whole tag', async () => {
+    const key = Buffer.from(hkdfSync('sha256', SECRET, 'curanno', 'signing-keys', 32));
+    const iv = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', key, iv);
+    const body = Buffer.concat([cipher.update('private key material', 'utf8'), cipher.final()]);
+    const v1 = (tag: Buffer): string =>
+      ['v1', ...[iv, tag, body].map((part) => part.toString('base64url'))].join('.');
+    const tag = cipher.getAuthTag();
+    expect(await unseal(SECRET, v1(tag))).toBe('private key material');
+    await expect(unseal(SECRET, v1(tag.subarray(0, 4)))).rejects.toThrow();
+    await expect(unseal(`${SECRET}x`, v1(tag))).rejects.toThrow();
   });
 
   it('hashes passwords with argon2id, and answers false for a login that does not exist', async () => {
