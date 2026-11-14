@@ -87,6 +87,13 @@ const resolveTerms: ResolveTerms = async (ontology, labels) => {
   return found;
 };
 
+function untilAborted<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    signal.addEventListener('abort', () => reject(new Error('stopped')), { once: true });
+    promise.then(resolve, reject);
+  });
+}
+
 function messageOf(err: unknown): string {
   if (err instanceof EndpointError) {
     return err.status === undefined
@@ -134,8 +141,7 @@ export const useSuggestionsStore = defineStore('suggestions', () => {
     const { document, profile } = request;
     status.value = 'reading';
     try {
-      const scopes = await guest.requestText(document.uri);
-      if (own.signal.aborted) throw own.signal.reason;
+      const scopes = await untilAborted(guest.requestText(document.uri), own.signal);
       if (!scopes)
         throw new Error('This page cannot send its text. Reload it to update the guest.');
       status.value = 'asking';

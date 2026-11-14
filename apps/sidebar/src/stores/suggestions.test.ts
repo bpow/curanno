@@ -167,4 +167,22 @@ describe('suggestions store', () => {
     expect(store.status).toBe('cancelled');
     expect(store.items).toEqual([]);
   });
+
+  it('stops while the page is still reading out its text', async () => {
+    const guest = createFakeGuest({ document, text: [{ text: TEXT }] });
+    guest.requestText = () => new Promise(() => undefined);
+    const fake = model([]);
+    const store = useSuggestionsStore();
+    const running = store.run(guest, {
+      document,
+      profile: evidenceExcerptProfile,
+      endpoint,
+      model: 'm',
+    });
+    expect(store.status).toBe('reading');
+    store.cancel();
+    await running;
+    expect(store.status).toBe('cancelled');
+    expect(fake.requests).toHaveLength(0);
+  });
 });
