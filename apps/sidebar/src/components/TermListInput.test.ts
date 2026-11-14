@@ -2,6 +2,8 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Term } from '../profiles/schema';
+import { createApiClient } from '@curanno/api-client';
+import { setApiClient } from '../api/client';
 import { installFakeApi, json, problem, type FakeApi } from '../test/fake-api';
 import TermListInput from './TermListInput.vue';
 
@@ -55,6 +57,30 @@ describe('TermListInput', () => {
     ]);
     expect(options[1]?.find('.synonym').text()).toBe('matched “HCM”');
     expect(wrapper.find('input').attributes('aria-expanded')).toBe('true');
+  });
+
+  it('cancels a search that a newer one replaced', async () => {
+    const signals: AbortSignal[] = [];
+    setApiClient(
+      createApiClient({
+        baseUrl: 'http://api.test',
+        fetch: (input) => {
+          const { signal, url } = input as Request;
+          if (!url.includes('/terms')) return Promise.resolve(json([]));
+          signals.push(signal);
+          // The first search stays open until it is cancelled.
+          if (signals.length > 1) return Promise.resolve(json([hcm]));
+          return new Promise((_, reject) =>
+            signal.addEventListener('abort', () => reject(new DOMException('', 'AbortError'))),
+          );
+        },
+      }),
+    );
+    const wrapper = mountInput();
+    await type(wrapper, 'cardio');
+    await type(wrapper, 'hypertrophic');
+    expect(signals.map((s) => s.aborted)).toEqual([true, false]);
+    expect(wrapper.findAll('[role="option"]')).toHaveLength(1);
   });
 
   it('picks a suggestion with the keyboard and stores its ID and label', async () => {

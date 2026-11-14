@@ -14,6 +14,7 @@ An annotation system built on the [W3C Web Annotation Data Model](https://www.w3
 | --------------------- | ------------------- | ---------------------------------------------------------- |
 | `packages/model`      | `@curanno/model`      | Annotation types, text model, selectors, RPC message types |
 | `packages/api-client` | `@curanno/api-client` | Client generated from the OpenAPI document                 |
+| `packages/extract`    | `@curanno/extract`    | Annotation suggestions from a model behind an OpenAI-compatible endpoint ([plan](docs/extraction-plan.md)) |
 | `packages/guest`      | `@curanno/guest`      | Framework-free in-page guest, its bundle and bookmarklet   |
 | `apps/api`            | `@curanno/api`        | Fastify server                                             |
 | `apps/sidebar`        | `@curanno/sidebar`    | Vue sidebar app ([README](apps/sidebar/README.md))         |
@@ -52,6 +53,7 @@ Other scripts:
 | `pnpm --filter @curanno/extension test:browser` | Playwright test of the built extension in Chromium against the fake sidebar |
 | `pnpm --filter @curanno/web dev`            | Runs the management site on port 3001 (`WEB_PORT`), proxying the API and the sidebar (`apps/web/README.md`) |
 | `pnpm --filter @curanno/web e2e`            | Playwright test of the management site against Zitadel and the API    |
+| `pnpm --filter @curanno/extract eval -- --endpoint URL --model NAME` | Runs the suggestion pipeline over `packages/extract/corpus` against a real model and reports recall, precision and field agreement |
 | `pnpm openapi:lint`                       | Lints `apps/api/openapi.yaml` with Redocly                             |
 | `pnpm api-client:generate`                | Regenerates `packages/api-client/src/schema.ts` from the OpenAPI document |
 | `pnpm --filter @curanno/guest bundle`       | Builds the guest bundle `packages/guest/build/guest.js`                 |

@@ -11,10 +11,11 @@
 import type { AnchoringState } from '@curanno/model';
 import type { Ref } from 'vue';
 
-export type { DocumentLink, GuestDocument, GuestSelection } from '@curanno/model';
+export type { DocumentLink, GuestDocument, GuestScopeText, GuestSelection } from '@curanno/model';
 import type {
   AnchorRequest as WireAnchorRequest,
   GuestDocument,
+  GuestScopeText,
   GuestSelection,
 } from '@curanno/model';
 
@@ -55,6 +56,8 @@ export interface Guest {
   readonly withheld: Readonly<Ref<ReadonlyMap<string, Withheld>>>;
   /** Whether the pages show highlights; the user can hide them. */
   readonly highlightsVisible: Readonly<Ref<boolean>>;
+  /** URIs of the documents whose guest can report their text (ADR 0033). */
+  readonly textDocuments: Readonly<Ref<ReadonlySet<string>>>;
 
   /**
    * Asks the guests showing `documentUri` (every guest when omitted) to
@@ -62,6 +65,12 @@ export interface Guest {
    * same IRIs, and reaches guests that report the document later.
    */
   anchor(requests: AnchorRequest[], documentUri?: string): void;
+  /**
+   * The text of `documentUri`'s scopes, from a guest showing it that can
+   * report text; undefined when there is none. Rejects when the guest goes
+   * away or does not answer in time.
+   */
+  requestText(documentUri: string): Promise<GuestScopeText[] | undefined>;
   /** Removes highlights and results for these annotation IRIs everywhere. */
   unanchor(ids: string[]): void;
   /** Emphasises these annotations' highlights in the page (sidebar hover). */

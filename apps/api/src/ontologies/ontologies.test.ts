@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createTestContext, databaseUrl, type TestContext } from '../test/harness.js';
+import { alice, createTestContext, databaseUrl, type TestContext } from '../test/harness.js';
 import { hpoFixture } from '../test/hpo-fixture.js';
 import { parseOboGraph } from './obographs.js';
 import { importOntology } from './service.js';
@@ -49,6 +49,13 @@ describe.skipIf(!databaseUrl)('ontology term search', () => {
     const res = await ctx.as(null, { method: 'GET', url: `/x/ontologies/hp/terms?${query}` });
     return { status: res.statusCode, body: res.json<{ id: string; synonym?: string }[]>() };
   };
+
+  it('lets the browser keep term searches for a while, signed in or not', async () => {
+    for (const user of [null, alice]) {
+      const res = await ctx.as(user, { method: 'GET', url: '/x/ontologies/hp/terms?q=seiz' });
+      expect(res.headers['cache-control']).toBe('private, max-age=300');
+    }
+  });
 
   it('lists the loaded release', async () => {
     const res = await ctx.as(null, { method: 'GET', url: '/x/ontologies' });

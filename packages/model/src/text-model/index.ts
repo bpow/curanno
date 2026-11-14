@@ -41,3 +41,4 @@ export {
   type TextSelectors,
 } from './selectors.js';
 export { createDomAdapter, type DomAdapterOptions, type DomLikeNode } from './dom-adapter.js';
+export { BLOCK_ELEMENTS, blockStarts } from './blocks.js';

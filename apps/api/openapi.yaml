@@ -1642,6 +1642,12 @@ components:
         id:
           type: string
           format: uuid
+        iri:
+          description: >-
+            The IRI annotations name this user by as their creator. Only on `/x/me` for an
+            active user.
+          type: string
+          format: uri
         displayName:
           type: string
         email:
@@ -2332,6 +2338,12 @@ components:
             - type: string
               format: iri
             - $ref: '#/components/schemas/Agent'
+            - type: array
+              items:
+                anyOf:
+                  - type: string
+                    format: iri
+                  - $ref: '#/components/schemas/Agent'
         created:
           type: string
           format: date-time
@@ -2368,6 +2380,12 @@ components:
             - type: string
               format: iri
             - $ref: '#/components/schemas/Agent'
+            - type: array
+              items:
+                anyOf:
+                  - type: string
+                    format: iri
+                  - $ref: '#/components/schemas/Agent'
         created:
           type: string
           format: date-time

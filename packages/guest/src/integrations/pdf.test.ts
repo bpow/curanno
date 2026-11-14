@@ -147,6 +147,20 @@ describe('PdfIntegration', () => {
     expect((await local.document()).links).toEqual([{ uri: 'urn:x-pdf:abc123', relation: 'self' }]);
   });
 
+  it('reports the text of every page, rendered or not, as the text model has it', async () => {
+    const v = fakeViewer([PAGE_ITEMS, [{ str: 'Second page.', hasEOL: false }]]);
+    const pdf = new PdfIntegration({
+      viewer: v.viewerLike,
+      document: v.documentLike,
+      url: 'https://example.org/paper.pdf',
+    });
+    v.render(1);
+    expect(await pdf.text()).toEqual([
+      { text: pageTextScope(PAGE_ITEMS).map.text, page: 1 },
+      { text: 'Second page.', page: 2 },
+    ]);
+  });
+
   it('anchors a page that is not rendered in its text content, then draws it when it renders', async () => {
     const v = fakeViewer([PAGE_ITEMS, PAGE_ITEMS]);
     const pdf = new PdfIntegration({

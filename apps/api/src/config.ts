@@ -21,6 +21,15 @@ export interface UpstreamProvider {
 
 export type SignupPolicy = 'closed' | 'approval' | 'open';
 
+/** A model endpoint the sidebar may send document text to for suggestions (ADR 0032). */
+export interface ExtractEndpoint {
+  label: string;
+  /** Base URL of an OpenAI-compatible API, without a trailing slash. */
+  url: string;
+  /** Models to offer; empty lets the curator type one. */
+  models: string[];
+}
+
 export interface Config {
   databaseUrl: string;
   /**
@@ -72,6 +81,8 @@ export interface Config {
   pdfViewerOrigin: string | undefined;
   /** Whether `/metrics` is served. */
   metricsEnabled: boolean;
+  /** Endpoints for annotation suggestions; none turns the feature off (ADR 0032). */
+  extractEndpoints: ExtractEndpoint[];
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -127,7 +138,63 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       ? origin(env['PDF_VIEWER_ORIGIN'], 'PDF_VIEWER_ORIGIN')
       : undefined,
     metricsEnabled: env['METRICS_ENABLED'] !== 'false',
+    extractEndpoints: extractEndpoints(env['EXTRACT_ENDPOINTS'], env['EXTRACT_LOCAL_ONLY']),
   };
+}
+
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+function extractEndpoints(
+  value: string | undefined,
+  localOnly: string | undefined,
+): ExtractEndpoint[] {
+  if (
+    localOnly !== undefined &&
+    localOnly !== '' &&
+    localOnly !== 'true' &&
+    localOnly !== 'false'
+  ) {
+    throw new Error(`EXTRACT_LOCAL_ONLY must be "true" or "false", not "${localOnly}"`);
+  }
+  if (!value) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new Error('EXTRACT_ENDPOINTS must be a JSON array of {label, url, models?}');
+  }
+  if (!Array.isArray(parsed)) {
+    throw new Error('EXTRACT_ENDPOINTS must be a JSON array of {label, url, models?}');
+  }
+  return parsed.map((entry: unknown, i) => {
+    const e = (typeof entry === 'object' && entry !== null ? entry : {}) as Record<string, unknown>;
+    const where = `EXTRACT_ENDPOINTS[${i}]`;
+    if (typeof e['label'] !== 'string' || !e['label'])
+      throw new Error(`${where}: label is required`);
+    if (typeof e['url'] !== 'string') throw new Error(`${where}: url is required`);
+    let url: URL;
+    try {
+      url = new URL(e['url']);
+    } catch {
+      throw new Error(`${where}: not a URL: ${e['url']}`);
+    }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      throw new Error(`${where}: url must be http or https`);
+    }
+    if (url.search || url.hash || url.username || url.password) {
+      throw new Error(`${where}: url must not carry a query, fragment or credentials`);
+    }
+    if (localOnly === 'true' && !LOOPBACK.has(url.hostname)) {
+      throw new Error(
+        `${where}: EXTRACT_LOCAL_ONLY allows only loopback hosts, not ${url.hostname}`,
+      );
+    }
+    const models = e['models'] ?? [];
+    if (!Array.isArray(models) || !models.every((m) => typeof m === 'string' && m)) {
+      throw new Error(`${where}: models must be a list of model names`);
+    }
+    return { label: e['label'], url: url.href.replace(/\/+$/, ''), models: models as string[] };
+  });
 }
 
 function upstreamProviders(env: NodeJS.ProcessEnv): UpstreamProvider[] {

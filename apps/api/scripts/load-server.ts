@@ -45,6 +45,7 @@ const config: Config = {
   frameAncestors: ["'self'"],
   pdfViewerOrigin: undefined,
   metricsEnabled: true,
+  extractEndpoints: [],
 };
 const db = createDb(databaseUrl);
 const app = await buildServer({

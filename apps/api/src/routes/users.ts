@@ -4,7 +4,7 @@ import type { components } from '@curanno/api-client';
 import { requireAdmin, requireUser } from '../auth/plugin.js';
 import type { UserCaller } from '../auth/caller.js';
 import { AUTHENTICATED_PRINCIPAL_ID, PUBLIC_PRINCIPAL_ID, type Database } from '../db/index.js';
-import { isoDate } from '../annotations/serialize.js';
+import { isoDate, userIri } from '../annotations/serialize.js';
 import { conflict, notFound } from '../problems.js';
 import { revokeSessions } from '../auth/embedded/adapter.js';
 import type { AppContext, Handlers } from './context.js';
@@ -87,7 +87,8 @@ export function userHandlers(ctx: AppContext): Handlers {
         return loadUser(db, userId, { ...ownView, userId });
       }
       const user = requireUser(request);
-      return loadUser(db, user.userId, user);
+      const me = await loadUser(db, user.userId, user);
+      return { ...me, iri: userIri(ctx.config.publicUrl, me.id) };
     },
 
     async listUsers(request) {

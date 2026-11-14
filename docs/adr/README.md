@@ -43,3 +43,6 @@ An architecture decision record (ADR) captures one decision that shapes the syst
 | [0029](0029-extension-sign-in.md) | The extension runs the sidebar's sign-in window with `chrome.identity.launchWebAuthFlow` | Accepted |
 | [0030](0030-default-purpose.md) | A profile's default purpose is separate from its purpose mapping | Accepted |
 | [0031](0031-ontology-term-lookup.md) | Ontology terms for lookup are imported into Postgres and searched through the API | Accepted |
+| [0032](0032-suggestions-from-a-configured-endpoint.md) | Annotation suggestions come from an OpenAI-compatible endpoint the deployment configures | Accepted |
+| [0033](0033-guest-reports-document-text.md) | The guest reports its document's text when the sidebar asks | Accepted |
+| [0034](0034-provenance-of-suggested-bodies.md) | A suggested body names the model as its creator | Accepted |

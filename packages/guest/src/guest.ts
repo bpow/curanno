@@ -128,7 +128,7 @@ export class Guest {
     const doc = this.doc;
     const view = doc.defaultView as Window;
     this.renderer = createHighlightRenderer(doc, this.root);
-    const capabilities = { highlights: this.renderer.technique };
+    const capabilities = { highlights: this.renderer.technique, text: true };
     if (this.role === 'sub') {
       this.connection = new SubGuestConnection({
         window: view,
@@ -293,6 +293,14 @@ export class Guest {
         this.doc.getSelection()?.removeAllRanges();
         this.reportSelection(null);
         break;
+      case 'text.request': {
+        const { requestId } = message;
+        // After any anchoring pass already queued, so the text is that of the document it anchored in.
+        this.enqueue(async () => {
+          this.send({ type: 'text.report', requestId, scopes: await this.integration.text() });
+        });
+        break;
+      }
       case 'sidebar.open':
         this.openSidebar();
         break;
@@ -344,7 +352,9 @@ export class Guest {
   private draw(): void {
     const entries: HighlightEntry[] = [];
     for (const [id, { ranges }] of this.anchored) {
-      if (ranges.length > 0) entries.push({ id, ranges });
+      if (ranges.length === 0) continue;
+      const suggested = this.requests.get(id)?.style === 'suggested';
+      entries.push(suggested ? { id, ranges, suggested } : { id, ranges });
     }
     this.renderer?.set(entries);
     this.renderer?.focus(this.focused);

@@ -57,6 +57,28 @@ PDFs are annotated in the platform's own viewer, so that the annotations follow 
 
 In the viewer, select text and annotate as on a web page. Each annotation remembers its page; an annotation on a page not yet shown still appears in the sidebar, and its highlight is drawn when you scroll to the page. The viewer's toolbar has page navigation, zoom and a button to show or hide the annotations sidebar.
 
+## 3a. Suggested annotations
+
+Where the administrator has set up a language model, the sidebar can read the page or PDF for you and suggest annotations of one kind, such as case individuals. The model only suggests; nothing is saved until you review and save each suggestion.
+
+1. Press **Suggest annotations…**, choose the kind of annotation and the model, and add guidance if it helps (for example, "only individuals with a variant in MYH7").
+2. The form says where the document's text will be sent. The administrator chooses these servers; on some installations the only choice is a model on your own computer, and the text never leaves it.
+3. Press **Suggest**. Suggestions appear in the sidebar and are highlighted in the page with a dashed blue underline. A long document is read in parts; **Stop** ends the run.
+4. For each suggestion, check the passage and the values, then **Review and save** to edit and save it as your annotation, or **Discard**. Phenotypes the ontology lookup did not match are listed so that you can pick the right term.
+
+Each quote is checked against the page: a suggestion whose quote is not in the page word for word, or whose values do not fit the kind of annotation, is set aside and only counted. A saved annotation is yours. Its structured part records the model that suggested it, and you as well if you changed the values, so readers can tell which annotations started as suggestions.
+
+The page is the model's input, and a page can contain text meant to mislead it. Review every suggestion as you would a colleague's draft.
+
+### Running the model on your own computer
+
+If the administrator offers "This computer", run a model server on your machine:
+
+- **Ollama**: start it so that it accepts the sidebar's requests, with the sidebar's address in place of the example: `OLLAMA_ORIGINS=https://curanno.example ollama serve`, then `ollama pull llama3.1:8b` (or the model the form lists).
+- **LM Studio**: load the model, start the server (port 1234) and turn on **Enable CORS** in its server settings.
+
+If the sidebar says it could not reach the server, check that the server is running and allows the sidebar's origin. Chromium may ask once whether the sidebar may connect to devices on your local network; allow it.
+
 ## 4. Share
 
 Every annotation starts private to you. Sharing is per annotation:
@@ -104,3 +126,5 @@ Everything in the sidebar works from the keyboard and with a screen reader: the 
 ## 8. Privacy and what the page can see
 
 The page you annotate never sees your login, your annotations' text, tags or authors: the sidebar runs on the platform's own origin and the page gets only the location of each highlight. The page does see the text you select, which it could see anyway. Nothing in the bookmarklet or the page can sign you in or act as you.
+
+When you ask for suggestions, the page's text goes from the sidebar to the model server named in the form, and to no other: the sidebar's security policy allows only the servers the administrator listed. The model's answers stay in the sidebar; the page gets only where to draw each suggested highlight.

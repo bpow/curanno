@@ -28,6 +28,9 @@ describe.skipIf(!databaseUrl)('operational plumbing', () => {
         staticRoot: fakeClients(),
         frameAncestors: ["'self'", 'https://pages.example'],
         pdfViewerOrigin: 'https://pdf.annotations.test',
+        extractEndpoints: [
+          { label: 'This computer', url: 'http://localhost:11434', models: ['llama3.1:8b'] },
+        ],
       },
     });
   });
@@ -82,7 +85,8 @@ describe.skipIf(!databaseUrl)('operational plumbing', () => {
       "frame-ancestors 'self' https://pages.example https://pdf.annotations.test",
     );
     expect(policy).toContain("script-src 'self' 'unsafe-eval'");
-    expect(policy).toContain("connect-src 'self' https://idp.test");
+    // Document text can go to the configured endpoint and nowhere else (ADR 0032).
+    expect(policy).toContain("connect-src 'self' https://idp.test http://localhost:11434;");
     expect(policy).toContain('frame-src https://idp.test');
     const asset = await ctx.app.inject({ method: 'GET', url: '/sidebar/assets/app.js' });
     expect(asset.statusCode).toBe(200);
@@ -94,6 +98,9 @@ describe.skipIf(!databaseUrl)('operational plumbing', () => {
       oidcClientId: 'curanno-sidebar',
       apiUrl: '',
       pdfViewerOrigin: 'https://pdf.annotations.test',
+      extractEndpoints: [
+        { label: 'This computer', url: 'http://localhost:11434', models: ['llama3.1:8b'] },
+      ],
     });
     expect(config.headers['cache-control']).toBe('no-store');
   });

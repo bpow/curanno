@@ -97,6 +97,10 @@ export class FakeSidebar {
     this.send({ type: 'selection.clear' });
   }
 
+  requestText(requestId: string): void {
+    this.send({ type: 'text.request', requestId });
+  }
+
   /** Resolves with the next guest message of `type`. */
   next<T extends GuestMessage['type']>(type: T): Promise<Extract<GuestMessage, { type: T }>> {
     return new Promise((resolve) => {

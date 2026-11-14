@@ -4,11 +4,13 @@
  * annotations is in `@curanno/model`.
  */
 import type { AclEntry, Annotation, AnnotationInput } from '@curanno/api-client';
+import { stableStringify } from '@curanno/extract';
 import {
   commentOf,
   structuredBodies,
   tagsOf,
   targetsOf,
+  type Agent,
   type AnchoringRepair,
   type Body,
   type JsonValue,
@@ -36,6 +38,9 @@ export function isEdited(annotation: Annotation): boolean {
 export interface StructuredDraft {
   profile: string;
   value: JsonValue;
+  /** Who made the body (ADR 0034): the model for an accepted suggestion; kept through edits. */
+  creator?: OneOrMany<string | Agent>;
+  created?: string;
 }
 
 /** What the editors work on. */
@@ -47,6 +52,24 @@ export interface AnnotationDraft {
   acl?: AclEntry[];
 }
 
+/**
+ * A structured body after an edit (ADR 0034): one that names who made it
+ * gains the curator as a creator when they change its value.
+ */
+export async function withEditor(
+  before: StructuredDraft | undefined,
+  after: StructuredDraft,
+  curator: () => Promise<string | undefined>,
+): Promise<StructuredDraft> {
+  const { creator } = after;
+  if (creator === undefined || before?.profile !== after.profile) return after;
+  if (stableStringify(before.value) === stableStringify(after.value)) return after;
+  const id = await curator();
+  const all = Array.isArray(creator) ? creator : [creator];
+  if (!id || all.some((c) => (typeof c === 'string' ? c : c.id) === id)) return after;
+  return { ...after, creator: [...all, { type: 'Person', id }] };
+}
+
 export function emptyDraft(): AnnotationDraft {
   return { text: '', tags: [] };
 }
@@ -56,7 +79,16 @@ export function draftOf(annotation: Annotation): AnnotationDraft {
   return {
     text: commentOf(annotation),
     tags: tagsOf(annotation),
-    ...(structured ? { structured: { profile: structured.profile, value: structured.value } } : {}),
+    ...(structured
+      ? {
+          structured: {
+            profile: structured.profile,
+            value: structured.value,
+            ...(structured.creator !== undefined ? { creator: structured.creator } : {}),
+            ...(structured.created !== undefined ? { created: structured.created } : {}),
+          },
+        }
+      : {}),
   };
 }
 
@@ -65,11 +97,14 @@ function bodiesFrom(draft: AnnotationDraft, structuredPurpose?: Motivation): Bod
   const text = draft.text.trim();
   if (text) bodies.push({ type: 'TextualBody', value: text, purpose: 'commenting' });
   if (draft.structured) {
+    const { profile, value, creator, created } = draft.structured;
     bodies.push({
       type: 'StructuredBody',
-      profile: draft.structured.profile,
-      value: draft.structured.value,
+      profile,
+      value,
       ...(structuredPurpose ? { purpose: structuredPurpose } : {}),
+      ...(creator !== undefined ? { creator } : {}),
+      ...(created !== undefined ? { created } : {}),
     });
   }
   for (const tag of draft.tags) {

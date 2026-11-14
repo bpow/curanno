@@ -1,0 +1,25 @@
+{
+  "profile": "https://curanno.example/profiles/case-individual/1",
+  "expected": [
+    {
+      "quote": "Patient 1, a 14-year-old boy, presented with exertional dyspnea and syncope during sport.",
+      "value": {
+        "case": "Patient 1",
+        "casePresentingHpos": ["Exertional dyspnea", "Syncope", "Asymmetric septal hypertrophy"],
+        "genotypingMethod": "Exome sequencing",
+        "variants": [
+          { "geneName": "MYH7", "variant": "NM_000257.4:c.1208G>A", "clinVarId": "14089" }
+        ]
+      }
+    },
+    {
+      "quote": "Patient 2, his 11-year-old sister, was evaluated after her brother's diagnosis.",
+      "value": {
+        "case": "Patient 2",
+        "casePresentingHpos": ["Palpitations", "Left ventricular hypertrophy"],
+        "genotypingMethod": "Sanger sequencing",
+        "variants": [{ "geneName": "MYH7", "variant": "NM_000257.4:c.1208G>A" }]
+      }
+    }
+  ]
+}

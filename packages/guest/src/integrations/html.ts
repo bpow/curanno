@@ -3,7 +3,7 @@
  * by default), re-extracted before every anchoring pass, and a mutation
  * observer that asks for a pass whenever the page changes.
  */
-import type { Selector } from '@curanno/model';
+import { blockStarts, type GuestScopeText, type Selector } from '@curanno/model';
 import { anchor, type AnchorOptions } from '../anchoring/anchor.js';
 import { createScope, domRangeOf, type AnchoringScope } from '../anchoring/scope.js';
 import { collectDocument } from '../document-metadata.js';
@@ -43,6 +43,14 @@ export class HtmlIntegration implements DocumentIntegration {
 
   document(): Promise<ReturnType<typeof collectDocument>> {
     return Promise.resolve(collectDocument(this.doc));
+  }
+
+  text(): Promise<GuestScopeText[]> {
+    const scope = createScope(this.root);
+    this.scope = scope;
+    return Promise.resolve([
+      { text: scope.map.text, blockStarts: blockStarts(scope.root, scope.map) },
+    ]);
   }
 
   prepare(): void {

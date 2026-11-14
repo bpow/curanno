@@ -21,6 +21,7 @@ WORKDIR /src
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.json ./
 COPY packages/model/package.json packages/model/
 COPY packages/api-client/package.json packages/api-client/
+COPY packages/extract/package.json packages/extract/
 COPY packages/guest/package.json packages/guest/
 COPY apps/api/package.json apps/api/
 COPY apps/sidebar/package.json apps/sidebar/

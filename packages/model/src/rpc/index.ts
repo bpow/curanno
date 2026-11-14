@@ -30,6 +30,7 @@ export {
   type GuestHelloMessage,
   type GuestMessage,
   type GuestRole,
+  type GuestScopeText,
   type GuestSelection,
   type HighlightTechnique,
   type HighlightsActivatedMessage,
@@ -50,5 +51,7 @@ export {
   type SidebarToggleMessage,
   type SidebarVisibilityMessage,
   type TargetAnchoringResult,
+  type TextReportMessage,
+  type TextRequestMessage,
   type WindowMessage,
 } from './messages.js';

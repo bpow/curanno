@@ -35,7 +35,19 @@ const open = computed(() => suggestions.value.length > 0);
 
 let timer: ReturnType<typeof setTimeout> | undefined;
 let latest = 0;
-onBeforeUnmount(() => clearTimeout(timer));
+let inflight: AbortController | undefined;
+
+/** Any search still on its way is no longer wanted. */
+function supersede(): void {
+  latest++;
+  inflight?.abort();
+  inflight = undefined;
+}
+
+onBeforeUnmount(() => {
+  clearTimeout(timer);
+  supersede();
+});
 
 function close(): void {
   suggestions.value = [];
@@ -43,13 +55,17 @@ function close(): void {
 }
 
 async function lookup(q: string): Promise<void> {
-  const request = ++latest;
+  supersede();
+  const request = latest;
+  const controller = new AbortController();
+  inflight = controller;
   try {
     const { data, response } = await useApi().GET('/x/ontologies/{name}/terms', {
       params: {
         path: { name: props.ontology.name },
         query: { q, limit: 10, ...(props.ontology.root ? { root: props.ontology.root } : {}) },
       },
+      signal: controller.signal,
     });
     if (request !== latest) return;
     unavailable.value = !response.ok;
@@ -66,7 +82,7 @@ function onInput(): void {
   clearTimeout(timer);
   const q = pending.value.trim();
   if (q.length < MIN_QUERY) {
-    latest++;
+    supersede();
     close();
     return;
   }
@@ -80,7 +96,7 @@ function add(term: Term): void {
   if (!taken) emit('update:modelValue', [...props.modelValue, term]);
   pending.value = '';
   clearTimeout(timer);
-  latest++;
+  supersede();
   close();
 }
 

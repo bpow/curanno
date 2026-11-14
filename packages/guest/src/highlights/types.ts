@@ -4,6 +4,8 @@ import type { HighlightTechnique } from '@curanno/model';
 export interface HighlightEntry {
   id: string;
   ranges: Range[];
+  /** A suggestion not saved yet (ADR 0033), drawn with a dashed outline instead of a fill. */
+  suggested?: boolean;
 }
 
 export interface HighlightRenderer {

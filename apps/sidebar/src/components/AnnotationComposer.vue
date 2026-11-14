@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { buildInput, emptyDraft, type AnnotationDraft } from '../api/annotations';
+import { emptyDraft, type AnnotationDraft } from '../api/annotations';
 import { toProblem, type Problem } from '@curanno/api-client';
 import { useGuest } from '../guest';
+import { usePostAnnotation } from '../post-annotation';
 import { useAnnotationsStore } from '../stores/annotations';
-import { useProfilesStore } from '../stores/profiles';
 import AnnotationEditor from './AnnotationEditor.vue';
 import ProblemAlert from './ProblemAlert.vue';
 
 const guest = useGuest();
 const store = useAnnotationsStore();
-const profiles = useProfilesStore();
+const post = usePostAnnotation();
 
 type Kind = 'selection' | 'page';
 const open = ref<Kind>();
@@ -37,14 +37,7 @@ async function save(next: AnnotationDraft): Promise<void> {
   if (!target) return;
   busy.value = true;
   try {
-    await store.ensureDocument(doc);
-    const structuredPurpose = next.structured
-      ? profiles.purposeOf(next.structured.profile)
-      : undefined;
-    const created = await store.create(
-      buildInput(next, target, structuredPurpose ? { structuredPurpose } : {}),
-      doc.uri,
-    );
+    const created = await post(doc, next, target);
     if (open.value === 'selection') guest.clearSelection();
     // Closed before sharing so that a failed share cannot be retried as a second post.
     open.value = undefined;

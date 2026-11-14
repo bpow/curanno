@@ -49,6 +49,26 @@ describe('AnnotationEditor', () => {
     ]);
   });
 
+  it('keeps who made a structured body while it keeps its profile', async () => {
+    const creator = { type: 'Software' as const, name: 'curanno-extract' };
+    const draft = {
+      text: '',
+      tags: [],
+      structured: {
+        profile: profileIri,
+        value: { kind: 'case' },
+        creator,
+        created: '2026-11-13T12:00:00Z',
+      },
+    };
+    const wrapper = mount(AnnotationEditor, { props: { draft } });
+    await wrapper.find('select[name="kind"]').setValue('functional');
+    await wrapper.find('form').trigger('submit');
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({
+      structured: { value: { kind: 'functional' }, creator, created: '2026-11-13T12:00:00Z' },
+    });
+  });
+
   it('shows a conflict notice for a 412 and asks to reload', async () => {
     const wrapper = mount(AnnotationEditor, {
       props: {

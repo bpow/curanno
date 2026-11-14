@@ -94,7 +94,12 @@ The guest cannot start the conversation: the sidebar's frame sits in the host's 
   anchoring.results {changed results only} ─────►
                             ◄──────────────────      sidebar.close / sidebar.open / sidebar.toggle
   sidebar.visibility {open} ────────────────────►
+                            ◄──────────────────      text.request {requestId}   (curator asks for suggestions)
+  text.report {requestId, scopes} ──────────────►    run the model, then
+                            ◄──────────────────      annotations.anchor {requests: [{…, style: "suggested"}]}
 ```
+
+Suggestions ([ADR 0033](adr/0033-guest-reports-document-text.md)) are the one place text crosses the port: the guest sends its document's text to the sidebar, which the page already has, and the sidebar sends back only selectors under `urn:uuid:` identifiers. Neither the model's output nor the endpoint reaches the page.
 
 ## 5. Messages
 
@@ -109,13 +114,14 @@ The guest cannot start the conversation: the sidebar's frame sits in the host's 
 
 | Type                   | Fields                   | Notes                                                                                                        |
 | ---------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `guest.hello`          | `guestId`, `capabilities` | First message on a port. `capabilities.highlights` is `css-highlight` or `overlay`. (Version 1 also had `capabilities.role`; the sidebar now takes the role from the sender.) |
+| `guest.hello`          | `guestId`, `capabilities` | First message on a port. `capabilities.highlights` is `css-highlight` or `overlay`; `capabilities.text` is `true` when the guest answers `text.request`. (Version 1 also had `capabilities.role`; the sidebar now takes the role from the sender.) |
 | `document.report`      | `document`               | `{uri, title?, links}`; `links` are `{uri, relation}` exactly as found, from `deriveDocumentUris`.           |
 | `anchoring.results`    | `results`                | One `AnchoringResult` per annotation: `id`, overall `state`, and one `TargetAnchoringResult` per target.     |
 | `selection.changed`    | `selection` or `null`    | `{target, quote}`; `target` is a `SpecificResource` with the page URL as `source` and the three selectors.   |
 | `highlights.hovered`   | `ids`                    | Annotations under the pointer; `[]` when it leaves them.                                                     |
 | `highlights.activated` | `ids`                    | Annotations under a click.                                                                                   |
 | `sidebar.visibility`   | `open`                   | After any open, close or toggle, whoever asked.                                                              |
+| `text.report`          | `requestId`, `scopes`    | Answers `text.request`. One `{text, blockStarts?, page?}` per scope: the body's normalized text for a page, each page's for a PDF (`page` is 1-based). `blockStarts` are code point offsets where blocks begin, for presenting the text; selectors never use them. |
 | `guest.error`          | `message`, `inReplyTo?`  | A sidebar message could not be handled, or the version is unknown.                                           |
 
 `AnchoringResult.state` is `anchored` when any target anchored, otherwise `ambiguous` when any target was, otherwise `orphaned` ([ADR 0010](adr/0010-keep-original-selectors.md)). A target without text selectors (the whole page) anchors with no `range`. Per-target results carry the code point `range` ([ADR 0012](adr/0012-code-point-offsets.md)), how it was found (`via`: `range`, `position` or `quote`) and the quote match `score`, or the `candidates` of an ambiguous match, or the `reason` for an orphan. For a PDF target, whose selectors are scoped to the page a `FragmentSelector` names, `range` counts that page's text; when the text was found on another page of a revised file, `page` says which.
@@ -125,12 +131,13 @@ The guest cannot start the conversation: the sidebar's frame sits in the host's 
 | Type                    | Fields                  | Notes                                                                                                   |
 | ----------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------- |
 | `sidebar.hello`         | —                       | Acknowledges `guest.hello`.                                                                             |
-| `annotations.anchor`    | `requests`              | `{id, target}` each; `target` is the annotation's targets or a repair's. Replaces results for those IRIs. |
+| `annotations.anchor`    | `requests`              | `{id, target, style?}` each; `target` is the annotation's targets or a repair's. Replaces results for those IRIs. `style: "suggested"` marks a suggestion that is not saved, drawn dashed. |
 | `annotations.unanchor`  | `ids`                   | Removes highlights and results.                                                                         |
 | `highlights.focus`      | `ids`                   | Emphasises these highlights; `[]` clears.                                                               |
 | `highlights.visible`    | `visible`               | Hides (`false`) or shows every highlight. Hidden highlights stay anchored but are not hovered or clicked. Sent after `sidebar.hello` to a guest that connects while they are hidden. |
 | `scroll.to`             | `id`                    | Scrolls the page to the annotation's first highlight.                                                   |
 | `selection.clear`       | —                       | Drops the selection; the guest answers `selection.changed {null}`.                                      |
+| `text.request`          | `requestId`             | Asks for `text.report`. Sent only to a guest whose capabilities include `text`.                          |
 | `sidebar.open`, `sidebar.close`, `sidebar.toggle` | — | The guest shows or hides the frame and answers `sidebar.visibility`.                          |
 | `sidebar.error`         | `message`, `inReplyTo?` | A guest message could not be handled.                                                                   |
 
@@ -152,6 +159,8 @@ The sidebar's `Guest` interface (`apps/sidebar/src/guest/types.ts`) is a view of
 | `scrollTo(id)`                 | `scroll.to` to the guests that were asked to anchor it                                     |
 | `clearSelection()`             | `selection.clear` to the guest whose selection it is                                       |
 | `onActivate(handler)`          | `highlights.activated` from any guest                                                      |
+| `textDocuments`                | the documents whose guest advertised `capabilities.text`                                   |
+| `requestText(documentUri)`     | `text.request` to a guest showing that document; resolves with its `text.report`           |
 
 ## 7. Threats considered
 
@@ -162,4 +171,5 @@ The sidebar's `Guest` interface (`apps/sidebar/src/guest/types.ts`) is a view of
 - **Third-party frames hear the announcement.** `sidebar.ready` goes to every frame of the page, so a frame from another site learns that a sidebar is open and its instance id, and nothing more. It can connect as a guest on its own origin, as above.
 - **The page impersonates the sidebar.** The guest accepts `sidebar.ready` only from its own iframe's window at the configured origin, and port messages only on the port it created, so a page script cannot make the guest highlight or scroll on its behalf through this channel (it can through the DOM, which is outside the guest's control).
 - **The page hides or covers the frame.** Out of scope for the protocol; `frame-ancestors` and visibility checks are the sidebar's defences.
+- **The page lies about its text.** A `text.report` is the page's own content, which a hostile page can make anything. Suggestions made from it are shown only to the user who asked, on that page, and nothing is saved until they accept one; the quoted text becomes the selectors of an annotation on that page, as a selection would.
 - **Page-supplied configuration.** The guest reads only the sidebar origin and path from its injection; nothing in the protocol lets the page grant a login ([ADR 0007](adr/0007-guest-sidebar-split.md)).

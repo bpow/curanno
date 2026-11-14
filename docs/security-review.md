@@ -89,6 +89,19 @@ Added after the review above, for `AUTH_MODE=embedded`, where the platform stops
 | E9 | Low | **Account links in logs.** | Mitigated in the API's request log (`token=` is redacted); the ingress's log is the operator's to redact (operator guide, section 3a). |
 | E10 | Info | **Secure cookies behind a TLS-terminating ingress** were not exercised end to end. | Open: the provider is told to trust the proxy when `PUBLIC_URL` is https. Check once on a real installation that the issuer's cookies carry `Secure`. |
 
+## Suggested annotations (2026-11-13, ADR 0032, 0033, 0034)
+
+Added after the review above. The sidebar sends a document's text to a language model at an endpoint the deployment lists, and shows what comes back as suggestions for the curator to review.
+
+| # | Severity | Threat | Outcome |
+| --- | --- | --- | --- |
+| S1 | High | **Document text sent somewhere it should not go.** | Mitigated: the sidebar's `connect-src` lists only the configured endpoints, so neither a bug nor an injected script in the sidebar can send text elsewhere; `EXTRACT_LOCAL_ONLY` holds every endpoint to loopback; the form names the host before anything is sent. Tests: `config.test.ts`, `static.test.ts`. |
+| S2 | High | **Prompt injection from the page** (text that tells the model to suggest something false). | Mitigated, not prevented: the model has no tools and its output is data; a suggestion survives only if its quote is in the page verbatim and its value validates against the profile; nothing is saved until a person saves it, under their own name, with the model recorded as the body's creator. A hostile page can still steer the values suggested on that page. Tests: `extract.test.ts`, `locate.test.ts`. |
+| S3 | Medium | **The page reads the model's output or the endpoint.** | Mitigated: the page gets `urn:uuid:` identifiers and selectors with `style: "suggested"`, as for annotations (ADR 0007); bodies, values and the endpoint stay in the sidebar. Tests: `e2e/guest/suggestions.spec.ts` checks that a value from the model never appears in the page. |
+| S4 | Medium | **The page lies about its text** in `text.report`. | Accepted: the text is the page's own content, so a lie only affects suggestions on that page, which the curator reviews. The sidebar takes a report only from the guest it asked, for the request it made. Tests: `rpc.test.ts`. |
+| S5 | Low | **Provenance is the client's claim.** The body's `creator` is stored as the sidebar sent it. | Accepted (ADR 0034): the annotation's own creator is still the server's; nothing grants access by the body's creator. |
+| S6 | Info | **Loopback from an https page.** Browsers treat `http://localhost` as potentially trustworthy, and Chromium's Local Network Access may prompt. | Open: tested in Chromium with the sidebar on loopback only, not behind the prompt or in Safari (plan, step 1). |
+
 ## Open items and accepted limits
 
 - A page may attach its own URL to an existing document through a canonical link (finding 3 stops merges, not additions). A reader of that page then sees the linked document's annotations in the sidebar, marked with the site they were made on. The page is sent only the public ones until the reader allows that site (finding 22, ADR 0025). Hypothesis has the same property without the consent step; a stricter rule (same registrable domain) would break DOI and publisher links. Revisit if it is abused.

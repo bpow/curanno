@@ -7,6 +7,14 @@
  * issuer, the client or the API.
  */
 
+/** An endpoint the sidebar may send document text to for suggestions (ADR 0032). */
+export interface ExtractEndpoint {
+  label: string;
+  url: string;
+  /** Models to offer; empty lets the curator type one. */
+  models: string[];
+}
+
 /** The shape of `config.json`; every field is optional. */
 export interface RuntimeConfig {
   oidcIssuer?: string;
@@ -15,6 +23,8 @@ export interface RuntimeConfig {
   apiUrl?: string;
   /** The PDF viewer's origin, whose guest reports the PDF it shows rather than its own page (ADR 0021). */
   pdfViewerOrigin?: string;
+  /** Endpoints for suggestions; the sidebar's CSP allows these and no others. */
+  extractEndpoints?: unknown;
 }
 
 export const config = {
@@ -25,7 +35,36 @@ export const config = {
     clientId: import.meta.env.VITE_OIDC_CLIENT_ID ?? '',
   },
   pdfViewerOrigin: import.meta.env.VITE_PDF_VIEWER_ORIGIN ?? 'http://localhost:5174',
+  extractEndpoints: parseEndpoints(devEndpoints()),
 };
+
+function devEndpoints(): unknown {
+  try {
+    return JSON.parse(import.meta.env.VITE_EXTRACT_ENDPOINTS ?? '[]');
+  } catch {
+    return [];
+  }
+}
+
+/** The well-formed entries of a list of endpoints; anything else is left out. */
+export function parseEndpoints(value: unknown): ExtractEndpoint[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry: unknown) => {
+    const e = (typeof entry === 'object' && entry !== null ? entry : {}) as Record<string, unknown>;
+    const { label, url, models } = e;
+    if (typeof label !== 'string' || !label || typeof url !== 'string') return [];
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return [];
+    } catch {
+      return [];
+    }
+    const names = Array.isArray(models)
+      ? models.filter((m): m is string => typeof m === 'string' && !!m)
+      : [];
+    return [{ label, url: url.replace(/\/+$/, ''), models: names }];
+  });
+}
 
 /** The URL of `config.json` relative to the app's base. */
 export function configUrl(): string {
@@ -59,6 +98,9 @@ export function applyConfig(runtime: RuntimeConfig | undefined): void {
     config.oidc.clientId = runtime.oidcClientId;
   }
   if (typeof runtime.apiUrl === 'string') config.apiUrl = runtime.apiUrl.replace(/\/$/, '');
+  if (runtime.extractEndpoints !== undefined) {
+    config.extractEndpoints = parseEndpoints(runtime.extractEndpoints);
+  }
   if (typeof runtime.pdfViewerOrigin === 'string') {
     try {
       config.pdfViewerOrigin = runtime.pdfViewerOrigin

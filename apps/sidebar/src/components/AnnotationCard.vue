@@ -17,9 +17,11 @@ import {
   isEdited,
   rebuildInput,
   repairInput,
+  withEditor,
   type AnnotationDraft,
 } from '../api/annotations';
 import { useAuthStore } from '../auth/store';
+import { currentUserIri } from '../current-user';
 import { useGuest } from '../guest';
 import { useAnnotationsStore } from '../stores/annotations';
 import { useProfilesStore } from '../stores/profiles';
@@ -106,9 +108,16 @@ async function saveEdit(draft: AnnotationDraft): Promise<void> {
     const structuredPurpose = draft.structured
       ? profiles.purposeOf(draft.structured.profile)
       : undefined;
-    const input = rebuildInput(props.annotation, draft, {
-      ...(structuredPurpose ? { structuredPurpose } : {}),
-    });
+    const structured =
+      draft.structured &&
+      (await withEditor(draftOf(props.annotation).structured, draft.structured, currentUserIri));
+    const input = rebuildInput(
+      props.annotation,
+      { ...draft, ...(structured ? { structured } : {}) },
+      {
+        ...(structuredPurpose ? { structuredPurpose } : {}),
+      },
+    );
     await store.update(props.annotation.id, input, etag.value);
     mode.value = 'view';
     problem.value = undefined;

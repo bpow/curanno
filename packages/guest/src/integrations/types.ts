@@ -5,7 +5,12 @@
  * the document). The guest owns the requests, results and highlights; the
  * integration answers where text is and when it changed.
  */
-import type { GuestDocument, Selector, TargetAnchoringResult } from '@curanno/model';
+import type {
+  GuestDocument,
+  GuestScopeText,
+  Selector,
+  TargetAnchoringResult,
+} from '@curanno/model';
 
 /** What anchoring one target produced: the result to report and the ranges to draw. */
 export interface AnchoredTarget {
@@ -33,6 +38,8 @@ export interface DocumentIntegration {
   source(): string;
   /** The document's identity for `document.report`. */
   document(): Promise<GuestDocument>;
+  /** The text of every scope, for `text.report` (ADR 0033). */
+  text(): Promise<GuestScopeText[]>;
   /** Called before a batch of `anchor` calls; integrations refresh what they cache. */
   prepare(): void;
   /** Anchor one target's selectors. */
