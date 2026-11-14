@@ -55,9 +55,11 @@ async function save(next: AnnotationDraft): Promise<void> {
       { ...next, ...(structured ? { structured } : {}) },
       props.item.target,
     );
-    // The saved annotation is highlighted in its own right from now on.
+    // The saved annotation is highlighted in its own right from now on, and this card goes, so
+    // the panel reports a failed share, which cannot then be retried as a second post.
     suggestions.discard(guest, props.item.id);
-    if (next.acl) await store.share(created.annotation.id, next.acl);
+    if (next.acl)
+      await store.share(created.annotation.id, next.acl).catch(suggestions.sharingFailed);
   } catch (err) {
     problem.value = toProblem(err);
   } finally {

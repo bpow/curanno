@@ -5,6 +5,7 @@
  * each one. Nothing here is saved: suggestions live in memory, one run at
  * a time, and go when the page or the session does.
  */
+import { toProblem, type Problem } from '@curanno/api-client';
 import {
   EndpointError,
   exactTerm,
@@ -109,6 +110,8 @@ export const useSuggestionsStore = defineStore('suggestions', () => {
   const progress = ref<{ done: number; total: number }>();
   const error = ref<string>();
   const rejected = ref(0);
+  /** An accepted suggestion was saved, but its sharing was not. */
+  const shareProblem = shallowRef<Problem>();
   let controller: AbortController | undefined;
 
   function withdraw(guest: Guest, ids: string[]): void {
@@ -128,6 +131,7 @@ export const useSuggestionsStore = defineStore('suggestions', () => {
     progress.value = undefined;
     error.value = undefined;
     rejected.value = 0;
+    shareProblem.value = undefined;
   }
 
   function cancel(): void {
@@ -189,6 +193,10 @@ export const useSuggestionsStore = defineStore('suggestions', () => {
     }
   }
 
+  function sharingFailed(err: unknown): void {
+    shareProblem.value = toProblem(err);
+  }
+
   /** Drop a suggestion once it was saved as an annotation, or the curator discarded it. */
   function discard(guest: Guest, id: string): void {
     withdraw(guest, [id]);
@@ -200,6 +208,8 @@ export const useSuggestionsStore = defineStore('suggestions', () => {
     progress,
     error,
     rejected,
+    shareProblem,
+    sharingFailed,
     run,
     cancel,
     clear,

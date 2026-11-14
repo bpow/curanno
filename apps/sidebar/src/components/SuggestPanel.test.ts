@@ -9,6 +9,7 @@ import { GUEST_KEY } from '../guest';
 import { createFakeGuest, type FakeGuest } from '../guest/fake';
 import { useProfilesStore } from '../stores/profiles';
 import { installFakeApi, json, type FakeApi } from '../test/fake-api';
+import AnnotationEditor from './AnnotationEditor.vue';
 import SuggestPanel from './SuggestPanel.vue';
 
 const PAGE = 'https://example.org/article';
@@ -28,6 +29,9 @@ beforeEach(async () => {
       return json([{ ...evidenceExcerptProfile, builtin: true, enabled: true }]);
     }
     if (url.pathname === '/x/documents') return json({ id: 'd1' }, { status: 201 });
+    if (method === 'PUT' && url.pathname.endsWith('/acl')) {
+      return json({ status: 403, title: 'Forbidden' }, { status: 403 });
+    }
     if (method === 'POST' && url.pathname === '/annotations/') {
       const created: Annotation = {
         ...(body as Annotation),
@@ -125,5 +129,20 @@ describe('SuggestPanel', () => {
     await discard!.trigger('click');
     expect(wrapper.findAll('li.suggestion')).toHaveLength(1);
     expect(guest.anchoring.value.size).toBe(1);
+  });
+  it('still says so when a saved suggestion could not be shared', async () => {
+    const wrapper = mountPanel();
+    await wrapper.find('button').trigger('click');
+    await wrapper.find('form').trigger('submit');
+    await vi.waitFor(() => expect(wrapper.findAll('li.suggestion')).toHaveLength(2));
+    await wrapper.findAll('li.suggestion')[0]!.find('button.primary').trigger('click');
+    wrapper.findComponent(AnnotationEditor).vm.$emit('save', {
+      text: '',
+      tags: [],
+      structured: { profile: evidenceExcerptProfile.iri, value: { kind: 'functional' } },
+      acl: [{ principal: { kind: 'group', id: 'g1', name: 'Curators' }, permission: 'read' }],
+    });
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Saved, but not shared'));
+    expect(wrapper.findAll('li.suggestion')).toHaveLength(1);
   });
 });

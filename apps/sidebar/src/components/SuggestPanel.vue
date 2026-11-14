@@ -5,6 +5,7 @@ import { config } from '../config';
 import { useGuest } from '../guest';
 import { useProfilesStore } from '../stores/profiles';
 import { useSuggestionsStore } from '../stores/suggestions';
+import ProblemAlert from './ProblemAlert.vue';
 import SuggestionCard from './SuggestionCard.vue';
 
 const guest = useGuest();
@@ -197,6 +198,7 @@ function start(): void {
       >.
     </p>
 
+    <ProblemAlert :problem="suggestions.shareProblem" />
     <ul v-if="suggestions.items.length" class="list">
       <SuggestionCard v-for="item in suggestions.items" :key="item.id" :item="item" />
     </ul>
