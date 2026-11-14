@@ -783,7 +783,16 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
     ]);
 
     run('getCurrentUser', [
-      { name: 'me', as: alice, status: 200, request: () => ({ method: 'GET', url: '/x/me' }) },
+      {
+        name: 'me',
+        as: alice,
+        status: 200,
+        request: () => ({ method: 'GET', url: '/x/me' }),
+        then: (res) =>
+          expect(res.json<{ iri: string }>().iri).toMatch(
+            new RegExp(`^https?://.+/x/users/${state['aliceId']}$`),
+          ),
+      },
       { name: '401', as: null, status: 401, request: () => ({ method: 'GET', url: '/x/me' }) },
     ]);
     run('listUsers', [

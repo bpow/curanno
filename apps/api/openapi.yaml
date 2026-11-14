@@ -1642,6 +1642,12 @@ components:
         id:
           type: string
           format: uuid
+        iri:
+          description: >-
+            The IRI annotations name this user by as their creator. Only on `/x/me` for an
+            active user.
+          type: string
+          format: uri
         displayName:
           type: string
         email:
