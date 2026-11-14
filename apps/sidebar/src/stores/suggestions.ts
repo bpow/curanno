@@ -110,6 +110,8 @@ export const useSuggestionsStore = defineStore('suggestions', () => {
   const progress = ref<{ done: number; total: number }>();
   const error = ref<string>();
   const rejected = ref(0);
+  /** The document of the current or last run. */
+  const documentUri = ref<string>();
   /** An accepted suggestion was saved, but its sharing was not. */
   const shareProblem = shallowRef<Problem>();
   let controller: AbortController | undefined;
@@ -131,6 +133,7 @@ export const useSuggestionsStore = defineStore('suggestions', () => {
     progress.value = undefined;
     error.value = undefined;
     rejected.value = 0;
+    documentUri.value = undefined;
     shareProblem.value = undefined;
   }
 
@@ -143,6 +146,7 @@ export const useSuggestionsStore = defineStore('suggestions', () => {
     const own = new AbortController();
     controller = own;
     const { document, profile } = request;
+    documentUri.value = document.uri;
     status.value = 'reading';
     try {
       const scopes = await untilAborted(guest.requestText(document.uri), own.signal);
@@ -208,6 +212,7 @@ export const useSuggestionsStore = defineStore('suggestions', () => {
     progress,
     error,
     rejected,
+    documentUri,
     shareProblem,
     sharingFailed,
     run,

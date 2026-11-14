@@ -145,4 +145,31 @@ describe('SuggestPanel', () => {
     await vi.waitFor(() => expect(wrapper.text()).toContain('Saved, but not shared'));
     expect(wrapper.findAll('li.suggestion')).toHaveLength(1);
   });
+
+  it('drops a run whose page went away before the model answered', async () => {
+    let release: () => void = () => undefined;
+    const fake = createFakeEndpoint(
+      () =>
+        new Promise<string>(
+          (resolve) =>
+            (release = () =>
+              resolve(
+                answer([
+                  { quote: 'The variant was absent from gnomAD.', value: { kind: 'population' } },
+                ]),
+              )),
+        ),
+    );
+    vi.stubGlobal('fetch', fake.fetch);
+    const wrapper = mountPanel();
+    await wrapper.find('button').trigger('click');
+    await wrapper.find('form').trigger('submit');
+    await vi.waitFor(() => expect(fake.requests).toHaveLength(1));
+    guest.setDocument('https://example.org/elsewhere');
+    await flushPromises();
+    release();
+    await flushPromises();
+    expect(wrapper.findAll('li.suggestion')).toHaveLength(0);
+    expect(guest.anchoring.value.size).toBe(0);
+  });
 });

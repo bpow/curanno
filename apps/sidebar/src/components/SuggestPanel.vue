@@ -91,11 +91,13 @@ watch(
   { immediate: true },
 );
 
-// Suggestions belong to the page they were made on.
+// Suggestions, and a run still under way, belong to the page they were made on.
 watch(
   () => guest.documents.value.map((d) => d.uri),
   (uris) => {
-    if (suggestions.items.some((i) => !uris.includes(i.documentUri))) suggestions.clear(guest);
+    if (suggestions.documentUri && !uris.includes(suggestions.documentUri)) {
+      suggestions.clear(guest);
+    }
   },
 );
 
