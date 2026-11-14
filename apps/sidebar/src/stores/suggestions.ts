@@ -5,7 +5,6 @@
  * each one. Nothing here is saved: suggestions live in memory, one run at
  * a time, and go when the page or the session does.
  */
-import { unwrap } from '@curanno/api-client';
 import {
   EndpointError,
   exactTerm,
@@ -27,7 +26,8 @@ import {
 import { defineStore } from 'pinia';
 import { ref, shallowRef } from 'vue';
 import { useApi } from '../api/client';
-import { config, type ExtractEndpoint } from '../config';
+import type { ExtractEndpoint } from '../config';
+import { currentUserIri } from '../current-user';
 import type { Guest, GuestDocument } from '../guest';
 import { useProfilesStore } from './profiles';
 
@@ -107,7 +107,6 @@ export const useSuggestionsStore = defineStore('suggestions', () => {
   const error = ref<string>();
   const rejected = ref(0);
   let controller: AbortController | undefined;
-  let userIri: Promise<string | undefined> | undefined;
 
   function withdraw(guest: Guest, ids: string[]): void {
     if (ids.length) guest.unanchor(ids);
@@ -186,20 +185,6 @@ export const useSuggestionsStore = defineStore('suggestions', () => {
     } finally {
       if (controller === own) controller = undefined;
     }
-  }
-
-  /** The signed-in user's IRI on this server, as annotations name their creator. */
-  function currentUserIri(): Promise<string | undefined> {
-    userIri ??= (async () => {
-      try {
-        const me = unwrap(await useApi().GET('/x/me'));
-        return `${config.apiUrl || window.location.origin}/x/users/${me.id}`;
-      } catch {
-        userIri = undefined;
-        return undefined;
-      }
-    })();
-    return userIri;
   }
 
   /**
