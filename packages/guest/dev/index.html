@@ -70,7 +70,7 @@
       document.getElementById('load').addEventListener('click', load);
       document.getElementById('bookmarklet').href =
         'javascript:' +
-        encodeURIComponent(`(${load.toString().replace('config', JSON.stringify(config))})()`);
+        encodeURIComponent(`(${load.toString().replace(/\bconfig\b/g, JSON.stringify(config))})()`);
       document.getElementById('mutate').addEventListener('click', () => {
         const p = document.querySelector('article p');
         p.innerHTML = p.innerHTML.replace('crash on startup', 'crash at startup');
