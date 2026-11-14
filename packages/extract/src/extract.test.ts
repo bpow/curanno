@@ -271,6 +271,18 @@ describe('extract', () => {
     ).rejects.toThrow();
   });
 
+  it('sends nothing when the caller aborted before it started', async () => {
+    const fake = createFakeEndpoint(() => answer([]));
+    await expect(
+      extract(
+        { scopes: [{ key: 'body', text: TEXT }], profile: evidenceExcerptProfile },
+        endpoint,
+        options(fake, { signal: AbortSignal.abort() }),
+      ),
+    ).rejects.toThrow();
+    expect(fake.requests).toHaveLength(0);
+  });
+
   it('names the model in the body creator', () => {
     expect(softwareAgent('llama3.1:8b')).toEqual({
       type: 'Software',

@@ -148,6 +148,7 @@ export async function extract(
   endpoint: Endpoint,
   options: ExtractOptions,
 ): Promise<ExtractionResult> {
+  options.signal?.throwIfAborted();
   const { profile } = input;
   const { schema, valueSchema, ontologyFields } = outputSchema(profile);
   const jobs: Job[] = input.scopes.flatMap((scope) => {
