@@ -16,8 +16,8 @@ import { devPort } from '../../dev-ports.ts';
  * VITE_OIDC_* fall back to OIDC_ISSUER and OIDC_CLIENT_ID from the
  * repository .env, then from deploy/zitadel/.bootstrap/oidc.env, which the
  * compose stack's provisioner writes, so the API and the sidebar name the
- * same client. VITE_EXTRACT_ENDPOINTS falls back to EXTRACT_ENDPOINTS there,
- * which the API reads too. The ports come from dev-ports.ts.
+ * same client. VITE_EXTRACT_ENDPOINTS and VITE_FRAME_ANCESTORS fall back to
+ * EXTRACT_ENDPOINTS and FRAME_ANCESTORS there, which the API reads too. The ports come from dev-ports.ts.
  */
 function provisionedEnv(): Record<string, string | undefined> {
   try {
@@ -34,6 +34,7 @@ export default defineConfig(({ mode }) => {
   const own = loadEnv(mode, fileURLToPath(new URL('../..', import.meta.url)), [
     'OIDC_',
     'EXTRACT_ENDPOINTS',
+    'FRAME_ANCESTORS',
     'AUTH_MODE',
     'PUBLIC_URL',
   ]);
@@ -56,7 +57,9 @@ export default defineConfig(({ mode }) => {
   }
   const apiTarget = env['VITE_API_PROXY_TARGET'] || `http://localhost:${devPort('PORT')}`;
   const frameAncestors =
-    env['VITE_FRAME_ANCESTORS'] || "'self' http://localhost:* http://127.0.0.1:*";
+    env['VITE_FRAME_ANCESTORS'] ||
+    own['FRAME_ANCESTORS'] ||
+    "'self' http://localhost:* http://127.0.0.1:*";
   const headers = { 'Content-Security-Policy': `frame-ancestors ${frameAncestors}` };
   const proxy = Object.fromEntries(
     ['/annotations', '/x'].map((prefix) => [prefix, { target: apiTarget, changeOrigin: false }]),
