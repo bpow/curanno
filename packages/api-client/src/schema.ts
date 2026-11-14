@@ -749,6 +749,11 @@ export interface components {
         User: {
             /** Format: uuid */
             id: string;
+            /**
+             * Format: uri
+             * @description The IRI annotations name this user by as their creator. Only on `/x/me` for an active user.
+             */
+            iri?: string;
             displayName?: string;
             email?: string;
             isAdmin: boolean;
