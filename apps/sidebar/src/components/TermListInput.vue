@@ -11,7 +11,8 @@ import {
   TagsInputItemText,
   TagsInputRoot,
 } from 'reka-ui';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue';
+import { computedAsync, promiseTimeout } from '@vueuse/core';
+import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { useApi } from '../api/client';
 import type { Term } from '../profiles/schema';
 import { useOntologiesStore } from '../stores/ontologies';
@@ -35,7 +36,39 @@ const DEBOUNCE_MS = 200;
 
 /** The text in the input. */
 const pending = ref('');
-const suggestions = ref<Suggestion[]>([]);
+/**
+ * The answer for the latest text only, once typing pauses: typing again cancels a
+ * lookup still waiting or in flight, and text too short to look up clears the list at once.
+ */
+const lookup = computedAsync(
+  async (onCancel): Promise<{ q: string; suggestions: Suggestion[]; unavailable?: boolean }> => {
+    const q = pending.value.trim();
+    if (q.length < MIN_QUERY) return { q, suggestions: [] };
+    const { name, root: under } = props.ontology;
+    const abort = new AbortController();
+    onCancel(() => abort.abort());
+    await promiseTimeout(DEBOUNCE_MS);
+    if (abort.signal.aborted) return { q, suggestions: [] };
+    try {
+      const { data, response } = await useApi().GET('/x/ontologies/{name}/terms', {
+        params: { path: { name }, query: { q, limit: 10, ...(under ? { root: under } : {}) } },
+        signal: abort.signal,
+      });
+      return { q, suggestions: data ?? [], unavailable: !response.ok };
+    } catch {
+      return { q, suggestions: [], unavailable: true };
+    }
+  },
+  { q: '', suggestions: [] },
+);
+/**
+ * None while the answer is for earlier text: Enter then keeps what is typed rather than
+ * taking a suggestion for what was typed before.
+ */
+const suggestions = computed(() =>
+  lookup.value.q === pending.value.trim() ? lookup.value.suggestions : [],
+);
+/** Whether the last lookup made went unanswered; text too short to look up leaves it as it was. */
 const unavailable = ref(false);
 /** Whether the list would show if it had anything in it: typing opens it, Escape and a pick close it. */
 const wanted = ref(false);
@@ -49,41 +82,11 @@ const ontologies = useOntologiesStore();
 const source = computed(() => ontologies.byName(props.ontology.name));
 onMounted(() => void ontologies.ensureLoaded());
 
-let timer: ReturnType<typeof setTimeout> | undefined;
-let latest = 0;
-onBeforeUnmount(() => clearTimeout(timer));
-
-async function lookup(q: string): Promise<void> {
-  const request = ++latest;
-  try {
-    const { data, response } = await useApi().GET('/x/ontologies/{name}/terms', {
-      params: {
-        path: { name: props.ontology.name },
-        query: { q, limit: 10, ...(props.ontology.root ? { root: props.ontology.root } : {}) },
-      },
-    });
-    if (request !== latest) return;
-    unavailable.value = !response.ok;
-    suggestions.value = data ?? [];
-  } catch {
-    if (request !== latest) return;
-    unavailable.value = true;
-    suggestions.value = [];
-  }
+watch(lookup, async (result) => {
+  if (result.unavailable !== undefined) unavailable.value = result.unavailable;
   // Enter takes the first suggestion unless another is chosen, whichever list just arrived.
   await nextTick();
   root.value?.highlightFirstItem?.();
-}
-
-watch(pending, (text) => {
-  clearTimeout(timer);
-  const q = text.trim();
-  if (q.length < MIN_QUERY) {
-    latest++;
-    suggestions.value = [];
-    return;
-  }
-  timer = setTimeout(() => void lookup(q), DEBOUNCE_MS);
 });
 
 /** The list without repeats: a term once per ID, text once whatever its case, nothing empty. */

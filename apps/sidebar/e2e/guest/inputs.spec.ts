@@ -157,6 +157,16 @@ test('Enter takes the highlighted term, and typed text is kept once the list is 
   await expect(terms.nth(2)).toHaveClass(/text/);
   await expect(terms.nth(2)).toHaveText('cardiac flutter×');
 
+  // Enter before the list for newer text arrives keeps the text, not an earlier suggestion.
+  await input.pressSequentially('cardio');
+  await expect(options).toHaveCount(2);
+  await input.pressSequentially(' xyz');
+  await input.press('Enter');
+  await expect(terms).toHaveCount(4);
+  await expect(terms.nth(3)).toHaveText('cardio xyz×');
+  await page.getByRole('button', { name: 'cardio xyz' }).click();
+  await expect(terms).toHaveCount(3);
+
   // Text that matches nothing is kept on Enter and on leaving the field.
   await input.pressSequentially('exertional chest pain');
   await input.press('Enter');
@@ -201,7 +211,14 @@ test('the principal search picks with Enter and does not post the form', async (
   const input = page.getByLabel('Share with');
   const options = page.locator('.candidates [role="option"]');
 
-  await input.pressSequentially('rev');
+  // Enter before the matches for newer text arrive picks nothing.
+  await input.pressSequentially('re');
+  await expect(options).toHaveCount(2);
+  await input.pressSequentially('v');
+  await input.press('Enter');
+  await expect(input).toHaveValue('rev');
+  await expect(page.getByLabel('read for Bob Reviewer')).toHaveCount(0);
+
   await expect(options).toHaveText(['Bob Reviewer', 'Group: reviewers']);
   await expect
     .poll(() => input.getAttribute('aria-activedescendant'))

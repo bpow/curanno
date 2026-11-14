@@ -13,7 +13,8 @@ import {
   AutocompleteItem,
   AutocompleteRoot,
 } from 'reka-ui';
-import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue';
+import { computedAsync, promiseTimeout } from '@vueuse/core';
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue';
 import { useApi } from '../api/client';
 import ProblemAlert from './ProblemAlert.vue';
 
@@ -33,9 +34,6 @@ const emit = defineEmits<{
 
 const api = useApi();
 const query = ref('');
-const candidates = ref<PrincipalRef[]>([]);
-const searching = ref(false);
-const problem = ref<Problem>();
 /** Whether the list would show if it had anything in it: typing opens it, Escape and a pick close it. */
 const wanted = ref(false);
 const open = computed(() => wanted.value && candidates.value.length > 0);
@@ -85,38 +83,55 @@ function isLocked(principal: PrincipalRef): boolean {
   return principal.kind === 'user' && principal.id === props.lockedId;
 }
 
-let searchTimer: ReturnType<typeof setTimeout> | undefined;
-let latest = 0;
-onBeforeUnmount(() => clearTimeout(searchTimer));
-watch(query, (q) => {
-  clearTimeout(searchTimer);
-  if (!q.trim()) {
-    latest++;
-    candidates.value = [];
-    searching.value = false;
-    return;
-  }
-  searchTimer = setTimeout(() => void search(q.trim()), 200);
-});
+const loading = ref(false);
+/**
+ * The answer for the latest query only, once typing pauses: typing again cancels a
+ * search still waiting or in flight, and an empty query clears the list at once.
+ */
+const result = computedAsync(
+  async (onCancel): Promise<{ q: string; found: PrincipalRef[]; problem?: Problem }> => {
+    const q = query.value.trim();
+    if (!q) return { q, found: [] };
+    const abort = new AbortController();
+    onCancel(() => abort.abort());
+    await promiseTimeout(200);
+    if (abort.signal.aborted) return { q, found: [] };
+    try {
+      return {
+        q,
+        found: unwrap(
+          await api.GET('/x/principals', {
+            params: { query: { q, limit: 10 } },
+            signal: abort.signal,
+          }),
+        ),
+      };
+    } catch (err) {
+      return { q, found: [], problem: toProblem(err) };
+    }
+  },
+  { q: '', found: [] },
+  { evaluating: loading },
+);
+const searching = computed(
+  () => query.value.trim() !== '' && (loading.value || result.value.q !== query.value.trim()),
+);
+const problem = computed(() => (searching.value ? undefined : result.value.problem));
+/**
+ * Principals already in the table are not offered again, and nothing is offered while the
+ * answer is for earlier text, so Enter cannot take a match for what was typed before.
+ */
+const candidates = computed(() =>
+  searching.value
+    ? []
+    : result.value.found.filter((p) => !rows.value.some((r) => r.principal.id === p.id)),
+);
 
-async function search(q: string): Promise<void> {
-  const request = ++latest;
-  searching.value = true;
-  try {
-    const found = unwrap(await api.GET('/x/principals', { params: { query: { q, limit: 10 } } }));
-    if (request !== latest) return;
-    const present = new Set(rows.value.map((r) => r.principal.id));
-    candidates.value = found.filter((p) => !present.has(p.id));
-    problem.value = undefined;
-  } catch (err) {
-    if (request === latest) problem.value = toProblem(err);
-  } finally {
-    if (request === latest) searching.value = false;
-  }
-  // There is no free-text case, so Enter takes the first match unless another is chosen.
+// There is no free-text case, so Enter takes the first match unless another is chosen.
+watch(result, async () => {
   await nextTick();
   root.value?.highlightFirstItem?.();
-}
+});
 
 function add(event: Event, principal: PrincipalRef): void {
   // The pick becomes a row in the table; the input is not filled with it.

@@ -6,7 +6,8 @@ import {
   AutocompleteItem,
   AutocompleteRoot,
 } from 'reka-ui';
-import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue';
+import { computedAsync, promiseTimeout } from '@vueuse/core';
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue';
 import { useApi } from '../api/client';
 
 /** A search for users, groups and pseudo-principals; a pick that is added clears it for the next. */
@@ -24,10 +25,43 @@ const props = defineProps<{
 
 const api = useApi();
 const query = ref('');
-const candidates = ref<PrincipalRef[]>([]);
-const searching = ref(false);
+const loading = ref(false);
+/**
+ * The answer for the latest query only, once typing pauses: typing again cancels a
+ * search still waiting or in flight, and an empty query clears the list at once.
+ */
+const result = computedAsync(
+  async (onCancel) => {
+    const q = query.value.trim();
+    if (!q) return { q, found: [], failed: false };
+    const abort = new AbortController();
+    onCancel(() => abort.abort());
+    await promiseTimeout(200);
+    if (abort.signal.aborted) return { q, found: [], failed: false };
+    try {
+      const { data } = await api.GET('/x/principals', {
+        params: { query: { q, limit: 10 } },
+        signal: abort.signal,
+      });
+      return { q, found: data ?? [], failed: data === undefined };
+    } catch {
+      return { q, found: [], failed: true };
+    }
+  },
+  { q: '', found: [] as PrincipalRef[], failed: false },
+  { evaluating: loading },
+);
+const typed = computed(() => query.value.trim() !== '');
+/** Until the answer for what is typed arrives, no-match is not claimed. */
+const searching = computed(
+  () => typed.value && (loading.value || result.value.q !== query.value.trim()),
+);
 /** The last search got no answer: the request failed or the API refused it. */
-const failed = ref(false);
+const failed = computed(() => typed.value && !searching.value && result.value.failed);
+/** Nothing is offered while the answer is for earlier text, so Enter cannot take a stale match. */
+const candidates = computed(() =>
+  searching.value ? [] : result.value.found.filter((p) => props.offer(p)),
+);
 /** Whether the list would show if it had anything in it: typing opens it, Escape and a pick close it. */
 const wanted = ref(false);
 const open = computed(() => wanted.value && candidates.value.length > 0);
@@ -37,43 +71,11 @@ const root = useTemplateRef<{ highlightFirstItem?: () => void }>('root');
 
 const nameOf = (p: PrincipalRef): string => p.name ?? p.kind;
 
-const DEBOUNCE_MS = 200;
-let timer: ReturnType<typeof setTimeout> | undefined;
-let latest = 0;
-onBeforeUnmount(() => clearTimeout(timer));
-
-watch(query, (text) => {
-  clearTimeout(timer);
-  const q = text.trim();
-  if (!q) {
-    latest++;
-    candidates.value = [];
-    searching.value = false;
-    failed.value = false;
-    return;
-  }
-  // Waiting out the debounce counts as searching, so no-match is not claimed early.
-  searching.value = true;
-  failed.value = false;
-  timer = setTimeout(() => void search(q), DEBOUNCE_MS);
-});
-
-async function search(q: string): Promise<void> {
-  const request = ++latest;
-  let found: PrincipalRef[] | undefined;
-  try {
-    found = (await api.GET('/x/principals', { params: { query: { q, limit: 10 } } })).data;
-  } catch {
-    found = undefined;
-  }
-  if (request !== latest) return;
-  searching.value = false;
-  failed.value = found === undefined;
-  candidates.value = (found ?? []).filter((p) => props.offer(p));
-  // There is no free-text case, so Enter takes the first match unless another is chosen.
+// There is no free-text case, so Enter takes the first match unless another is chosen.
+watch(result, async () => {
   await nextTick();
   root.value?.highlightFirstItem?.();
-}
+});
 
 async function pick(event: Event, principal: PrincipalRef): Promise<void> {
   // The pick is handed on; the input is not filled with it.
@@ -111,7 +113,7 @@ async function pick(event: Event, principal: PrincipalRef): Promise<void> {
         </AutocompleteItem>
       </AutocompleteContent>
       <span v-if="failed" class="muted">The search failed; try again.</span>
-      <span v-else-if="query.trim() && !searching && candidates.length === 0" class="muted">
+      <span v-else-if="typed && !searching && candidates.length === 0" class="muted">
         {{ noMatch }}
       </span>
     </div>

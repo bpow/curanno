@@ -14,6 +14,7 @@
     "e2e:guest": "playwright test -c playwright.guest.config.ts"
   },
   "dependencies": {
+    "@vueuse/core": "^14.4.0",
     "@curanno/api-client": "workspace:*",
     "@curanno/model": "workspace:*",
     "ajv": "^8.20.0",
