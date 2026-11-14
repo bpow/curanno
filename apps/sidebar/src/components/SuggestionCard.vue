@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { toProblem, type Problem } from '@curanno/api-client';
 import { computed, ref } from 'vue';
-import type { AnnotationDraft } from '../api/annotations';
+import { withEditor, type AnnotationDraft } from '../api/annotations';
+import { currentUserIri } from '../current-user';
 import { useGuest } from '../guest';
 import { usePostAnnotation } from '../post-annotation';
 import { useAnnotationsStore } from '../stores/annotations';
@@ -47,12 +48,8 @@ async function save(next: AnnotationDraft): Promise<void> {
   busy.value = true;
   try {
     const structured =
-      next.structured?.profile === props.item.profile
-        ? {
-            ...next.structured,
-            creator: await suggestions.creatorFor(props.item, next.structured.value),
-          }
-        : next.structured;
+      next.structured &&
+      (await withEditor(draft.value.structured, next.structured, currentUserIri));
     const created = await post(
       doc,
       { ...next, ...(structured ? { structured } : {}) },

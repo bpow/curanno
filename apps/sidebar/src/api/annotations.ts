@@ -4,6 +4,7 @@
  * annotations is in `@curanno/model`.
  */
 import type { AclEntry, Annotation, AnnotationInput } from '@curanno/api-client';
+import { stableStringify } from '@curanno/extract';
 import {
   commentOf,
   structuredBodies,
@@ -49,6 +50,24 @@ export interface AnnotationDraft {
   structured?: StructuredDraft;
   /** Grants to make once a new annotation is saved; editing an existing one leaves this unset. */
   acl?: AclEntry[];
+}
+
+/**
+ * A structured body after an edit (ADR 0034): one that names who made it
+ * gains the curator as a creator when they change its value.
+ */
+export async function withEditor(
+  before: StructuredDraft | undefined,
+  after: StructuredDraft,
+  curator: () => Promise<string | undefined>,
+): Promise<StructuredDraft> {
+  const { creator } = after;
+  if (creator === undefined || before?.profile !== after.profile) return after;
+  if (stableStringify(before.value) === stableStringify(after.value)) return after;
+  const id = await curator();
+  const all = Array.isArray(creator) ? creator : [creator];
+  if (!id || all.some((c) => (typeof c === 'string' ? c : c.id) === id)) return after;
+  return { ...after, creator: [...all, { type: 'Person', id }] };
 }
 
 export function emptyDraft(): AnnotationDraft {

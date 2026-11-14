@@ -9,7 +9,6 @@ import {
   EndpointError,
   exactTerm,
   extract,
-  stableStringify,
   type ResolveTerms,
   type ScopeText,
   type Suggestion,
@@ -17,17 +16,14 @@ import {
 } from '@curanno/extract';
 import {
   pageFragmentSelector,
-  type Agent,
   type BodyProfile,
   type GuestScopeText,
-  type JsonValue,
   type SpecificResource,
 } from '@curanno/model';
 import { defineStore } from 'pinia';
 import { ref, shallowRef } from 'vue';
 import { useApi } from '../api/client';
 import type { ExtractEndpoint } from '../config';
-import { currentUserIri } from '../current-user';
 import type { Guest, GuestDocument } from '../guest';
 import { useProfilesStore } from './profiles';
 
@@ -187,16 +183,6 @@ export const useSuggestionsStore = defineStore('suggestions', () => {
     }
   }
 
-  /**
-   * The body creator for an accepted suggestion (ADR 0034): the model, and
-   * the curator too when they changed the value before saving.
-   */
-  async function creatorFor(item: SuggestionItem, value: JsonValue): Promise<Agent | Agent[]> {
-    if (stableStringify(value) === stableStringify(item.value)) return item.creator;
-    const id = await currentUserIri();
-    return id ? [item.creator, { type: 'Person', id }] : item.creator;
-  }
-
   /** Drop a suggestion once it was saved as an annotation, or the curator discarded it. */
   function discard(guest: Guest, id: string): void {
     withdraw(guest, [id]);
@@ -212,6 +198,5 @@ export const useSuggestionsStore = defineStore('suggestions', () => {
     cancel,
     clear,
     discard,
-    creatorFor,
   };
 });

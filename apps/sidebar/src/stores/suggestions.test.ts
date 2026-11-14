@@ -2,7 +2,6 @@ import { answer, createFakeEndpoint } from '@curanno/extract/testing';
 import { caseIndividualProfile, evidenceExcerptProfile } from '@curanno/model';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { forgetCurrentUser } from '../current-user';
 import { createFakeGuest } from '../guest/fake';
 import { installFakeApi, json } from '../test/fake-api';
 import { useProfilesStore } from './profiles';
@@ -13,12 +12,8 @@ const TEXT = 'Patient 1 had seizures and ataxia.Patient 2 was unaffected.';
 const endpoint = { label: 'Local', url: 'http://127.0.0.1:1234', models: ['m'] };
 const document = { uri: PAGE, title: 'Article', links: [{ uri: PAGE, relation: 'self' as const }] };
 
-let meId = 'u-1';
-
 beforeEach(async () => {
   setActivePinia(createPinia());
-  forgetCurrentUser();
-  meId = 'u-1';
   installFakeApi(({ url }) => {
     if (url.pathname === '/x/profiles') {
       return json(
@@ -35,13 +30,6 @@ beforeEach(async () => {
         q === 'Seizures' ? [{ id: 'HP:0001250', label: 'Seizure', synonym: 'Seizures' }] : [],
       );
     }
-    if (url.pathname === '/x/me')
-      return json({
-        id: meId,
-        iri: `https://annotations.test/curanno/x/users/${meId}`,
-        isAdmin: false,
-        created: '2026-01-01T00:00:00Z',
-      });
     return undefined;
   });
   await useProfilesStore().load();
@@ -124,25 +112,6 @@ describe('suggestions store', () => {
         ],
       },
     ]);
-  });
-
-  it('names the curator, as the server names them, as a creator too when they changed the value', async () => {
-    const guest = createFakeGuest({ document, text: [{ text: TEXT }] });
-    model([{ quote: 'Patient 2 was unaffected.', value: { kind: 'case' } }]);
-    const store = useSuggestionsStore();
-    await store.run(guest, { document, profile: evidenceExcerptProfile, endpoint, model: 'm' });
-    const item = store.items[0]!;
-    expect(await store.creatorFor(item, { kind: 'case' })).toEqual(item.creator);
-    expect(await store.creatorFor(item, { kind: 'other' })).toEqual([
-      item.creator,
-      { type: 'Person', id: 'https://annotations.test/curanno/x/users/u-1' },
-    ]);
-    forgetCurrentUser();
-    meId = 'u-2';
-    expect(await store.creatorFor(item, { kind: 'other' })).toContainEqual({
-      type: 'Person',
-      id: 'https://annotations.test/curanno/x/users/u-2',
-    });
   });
 
   it('withdraws suggestions when discarded or cleared', async () => {
