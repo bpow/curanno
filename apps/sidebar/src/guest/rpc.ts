@@ -80,7 +80,10 @@ export interface RpcGuestOptions {
    * that start later, and frames that went away are forgotten. Default 1 s.
    */
   announceIntervalMs?: number;
-  /** How long `requestText` waits for the guest's report. Default 30 s. */
+  /**
+   * How long `requestText` waits for the guest's report. Default 5 min: a PDF reads out every
+   * page first, and the curator can stop a run that is waiting.
+   */
   textTimeoutMs?: number;
   /** Which origins' annotations the user allowed on which pages. Default: the session's. */
   consent?: ConsentStore;
@@ -512,7 +515,7 @@ export function createRpcGuest(options: RpcGuestOptions = {}): RpcGuest {
       return new Promise<GuestScopeText[]>((resolve, reject) => {
         const timer = setTimeout(() => {
           settleText(requestId)?.reject(new Error('the page did not report its text'));
-        }, options.textTimeoutMs ?? 30_000);
+        }, options.textTimeoutMs ?? 300_000);
         pendingText.set(requestId, { entry, resolve, reject, timer });
         send(entry, { type: 'text.request', requestId });
       });
