@@ -52,7 +52,15 @@ const FACT_FIELDS = new Map<string, readonly string[]>([
   [caseDiseaseProfile.iri, ['diseaseAssertion']],
 ]);
 const INDIVIDUAL_FIELDS = ['case', 'previouslyPublished', 'supplementalData'];
-const VARIANT_FIELDS = ['geneName', 'variant', 'clinVarId', 'caid', 'gnomad', 'variantEvidence'];
+const VARIANT_FIELDS = [
+  'geneName',
+  'variant',
+  'clinVarId',
+  'caid',
+  'gnomad',
+  'idSource',
+  'variantEvidence',
+];
 const TEXT_SEPARATOR = '; ';
 
 function recordOf(body: StructuredBody): Value | undefined {

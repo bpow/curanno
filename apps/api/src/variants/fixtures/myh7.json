@@ -1,0 +1,1063 @@
+{
+  "https://reg.genome.network/allele?hgvs=NM_000257.4%3Ac.1208G%3EA": {
+    "status": 200,
+    "body": {
+      "@context": "http://reg.genome.network/schema/allele.jsonld",
+      "@id": "http://reg.genome.network/allele/CA010365",
+      "communityStandardTitle": ["NM_000257.4(MYH7):c.1208G>A (p.Arg403Gln)"],
+      "externalRecords": {
+        "ClinVarAlleles": [
+          {
+            "@id": "http://www.ncbi.nlm.nih.gov/clinvar/?term=29126[alleleid]",
+            "alleleId": 29126,
+            "preferredName": "NM_000257.4(MYH7):c.1208G>A (p.Arg403Gln)"
+          }
+        ],
+        "ClinVarVariations": [
+          {
+            "@id": "http://www.ncbi.nlm.nih.gov/clinvar/variation/14087",
+            "RCV": [
+              "RCV000015143",
+              "RCV000035708",
+              "RCV000199447",
+              "RCV000158788",
+              "RCV001798006",
+              "RCV002345242",
+              "RCV002504790",
+              "RCV004532355"
+            ],
+            "variationId": 14087
+          }
+        ],
+        "dbSNP": [
+          {
+            "@id": "http://www.ncbi.nlm.nih.gov/snp/121913624",
+            "rs": 121913624
+          }
+        ],
+        "gnomAD_4": [
+          {
+            "@id": "http://gnomad.broadinstitute.org/variant/14-23429278-C-T?dataset=gnomad_r4",
+            "id": "14-23429278-C-T",
+            "variant": "14:23429278 C / T"
+          }
+        ]
+      },
+      "genomicAlleles": [
+        {
+          "chromosome": "14",
+          "coordinates": [
+            {
+              "allele": "T",
+              "end": 23429278,
+              "referenceAllele": "C",
+              "start": 23429277
+            }
+          ],
+          "hgvs": ["NC_000014.9:g.23429278C>T", "CM000676.2:g.23429278C>T"],
+          "referenceGenome": "GRCh38",
+          "referenceSequence": "http://reg.genome.network/refseq/RS000062"
+        },
+        {
+          "chromosome": "14",
+          "coordinates": [
+            {
+              "allele": "T",
+              "end": 23898487,
+              "referenceAllele": "C",
+              "start": 23898486
+            }
+          ],
+          "hgvs": ["NC_000014.8:g.23898487C>T", "CM000676.1:g.23898487C>T"],
+          "referenceGenome": "GRCh37",
+          "referenceSequence": "http://reg.genome.network/refseq/RS000038"
+        }
+      ],
+      "transcriptAlleles": [
+        {
+          "coordinates": [
+            {
+              "allele": "A",
+              "end": 1313,
+              "referenceAllele": "G",
+              "start": 1312
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["ENST00000355349.4:c.1208G>A"],
+          "proteinEffect": {
+            "hgvs": "ENSP00000347507.3:p.Arg403Gln",
+            "hgvsWellDefined": "ENSP00000347507.3:p.Arg403Gln"
+          },
+          "referenceSequence": "http://reg.genome.network/refseq/RS748658",
+          "MANE": {
+            "maneVersion": "1.3",
+            "maneStatus": "MANE Select",
+            "nucleotide": {
+              "Ensembl": {
+                "hgvs": "ENST00000355349.4:c.1208G>A"
+              },
+              "RefSeq": {
+                "hgvs": "NM_000257.4:c.1208G>A"
+              }
+            },
+            "protein": {
+              "Ensembl": {
+                "hgvs": "ENSP00000347507.3:p.Arg403Gln"
+              },
+              "RefSeq": {
+                "hgvs": "NP_000248.2:p.Arg403Gln"
+              }
+            }
+          }
+        },
+        {
+          "@id": "http://reg.genome.network/allele/PA097607",
+          "coordinates": [
+            {
+              "allele": "A",
+              "end": 1313,
+              "referenceAllele": "G",
+              "start": 1312
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["NM_000257.4:c.1208G>A"],
+          "proteinEffect": {
+            "hgvs": "NP_000248.2:p.Arg403Gln",
+            "hgvsWellDefined": "NP_000248.2:p.Arg403Gln"
+          },
+          "referenceSequence": "http://reg.genome.network/refseq/RS662372",
+          "MANE": {
+            "maneVersion": "1.3",
+            "maneStatus": "MANE Select",
+            "nucleotide": {
+              "Ensembl": {
+                "hgvs": "ENST00000355349.4:c.1208G>A"
+              },
+              "RefSeq": {
+                "hgvs": "NM_000257.4:c.1208G>A"
+              }
+            },
+            "protein": {
+              "Ensembl": {
+                "hgvs": "ENSP00000347507.3:p.Arg403Gln"
+              },
+              "RefSeq": {
+                "hgvs": "NP_000248.2:p.Arg403Gln"
+              }
+            }
+          }
+        },
+        {
+          "@id": "http://reg.genome.network/allele/PA097607",
+          "coordinates": [
+            {
+              "allele": "A",
+              "end": 1339,
+              "referenceAllele": "G",
+              "start": 1338
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["NM_000257.3:c.1208G>A"],
+          "proteinEffect": {
+            "hgvs": "NP_000248.2:p.Arg403Gln",
+            "hgvsWellDefined": "NP_000248.2:p.Arg403Gln"
+          },
+          "referenceSequence": "http://reg.genome.network/refseq/RS006319"
+        }
+      ],
+      "type": "nucleotide"
+    }
+  },
+  "https://reg.genome.network/allele?hgvs=NM_000257.4%3Ac.1209G%3ET": {
+    "status": 200,
+    "body": {
+      "@context": "http://reg.genome.network/schema/allele.jsonld",
+      "@id": "http://reg.genome.network/allele/CA485625782",
+      "communityStandardTitle": ["NM_000257.4(MYH7):c.1209G>T (p.Arg403=)"],
+      "externalRecords": {},
+      "genomicAlleles": [
+        {
+          "chromosome": "14",
+          "coordinates": [
+            {
+              "allele": "A",
+              "end": 23429277,
+              "referenceAllele": "C",
+              "start": 23429276
+            }
+          ],
+          "hgvs": ["NC_000014.9:g.23429277C>A", "CM000676.2:g.23429277C>A"],
+          "referenceGenome": "GRCh38",
+          "referenceSequence": "http://reg.genome.network/refseq/RS000062"
+        },
+        {
+          "chromosome": "14",
+          "coordinates": [
+            {
+              "allele": "A",
+              "end": 23898486,
+              "referenceAllele": "C",
+              "start": 23898485
+            }
+          ],
+          "hgvs": ["NC_000014.8:g.23898486C>A", "CM000676.1:g.23898486C>A"],
+          "referenceGenome": "GRCh37",
+          "referenceSequence": "http://reg.genome.network/refseq/RS000038"
+        }
+      ],
+      "transcriptAlleles": [
+        {
+          "coordinates": [
+            {
+              "allele": "T",
+              "end": 1314,
+              "referenceAllele": "G",
+              "start": 1313
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["ENST00000355349.4:c.1209G>T"],
+          "proteinEffect": {
+            "hgvs": "ENSP00000347507.3:p.Arg403="
+          },
+          "referenceSequence": "http://reg.genome.network/refseq/RS748658",
+          "MANE": {
+            "maneVersion": "1.3",
+            "maneStatus": "MANE Select",
+            "nucleotide": {
+              "Ensembl": {
+                "hgvs": "ENST00000355349.4:c.1209G>T"
+              },
+              "RefSeq": {
+                "hgvs": "NM_000257.4:c.1209G>T"
+              }
+            },
+            "protein": {
+              "Ensembl": {
+                "hgvs": "ENSP00000347507.3:p.Arg403="
+              },
+              "RefSeq": {
+                "hgvs": "NP_000248.2:p.Arg403="
+              }
+            }
+          }
+        },
+        {
+          "@id": "http://reg.genome.network/allele/PA3081099777",
+          "coordinates": [
+            {
+              "allele": "T",
+              "end": 1314,
+              "referenceAllele": "G",
+              "start": 1313
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["NM_000257.4:c.1209G>T"],
+          "proteinEffect": {
+            "hgvs": "NP_000248.2:p.Arg403="
+          },
+          "referenceSequence": "http://reg.genome.network/refseq/RS662372",
+          "MANE": {
+            "maneVersion": "1.3",
+            "maneStatus": "MANE Select",
+            "nucleotide": {
+              "Ensembl": {
+                "hgvs": "ENST00000355349.4:c.1209G>T"
+              },
+              "RefSeq": {
+                "hgvs": "NM_000257.4:c.1209G>T"
+              }
+            },
+            "protein": {
+              "Ensembl": {
+                "hgvs": "ENSP00000347507.3:p.Arg403="
+              },
+              "RefSeq": {
+                "hgvs": "NP_000248.2:p.Arg403="
+              }
+            }
+          }
+        },
+        {
+          "@id": "http://reg.genome.network/allele/PA3081099777",
+          "coordinates": [
+            {
+              "allele": "T",
+              "end": 1340,
+              "referenceAllele": "G",
+              "start": 1339
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["NM_000257.3:c.1209G>T"],
+          "proteinEffect": {
+            "hgvs": "NP_000248.2:p.Arg403="
+          },
+          "referenceSequence": "http://reg.genome.network/refseq/RS006319"
+        }
+      ],
+      "type": "nucleotide"
+    }
+  },
+  "https://reg.genome.network/allele?hgvs=NM_000257.4%3Ac.1208_1210del": {
+    "status": 200,
+    "body": {
+      "@context": "http://reg.genome.network/schema/allele.jsonld",
+      "@id": "_:CA",
+      "communityStandardTitle": ["NM_000257.4(MYH7):c.1208_1210del (p.Arg403_Val404delinsLeu)"],
+      "genomicAlleles": [
+        {
+          "chromosome": "14",
+          "coordinates": [
+            {
+              "allele": "",
+              "end": 23429278,
+              "referenceAllele": "CCC",
+              "start": 23429275
+            }
+          ],
+          "hgvs": ["NC_000014.9:g.23429276_23429278del", "CM000676.2:g.23429276_23429278del"],
+          "referenceGenome": "GRCh38",
+          "referenceSequence": "http://reg.genome.network/refseq/RS000062"
+        },
+        {
+          "chromosome": "14",
+          "coordinates": [
+            {
+              "allele": "",
+              "end": 23898487,
+              "referenceAllele": "CCC",
+              "start": 23898484
+            }
+          ],
+          "hgvs": ["NC_000014.8:g.23898485_23898487del", "CM000676.1:g.23898485_23898487del"],
+          "referenceGenome": "GRCh37",
+          "referenceSequence": "http://reg.genome.network/refseq/RS000038"
+        }
+      ],
+      "transcriptAlleles": [
+        {
+          "coordinates": [
+            {
+              "allele": "",
+              "end": 1315,
+              "referenceAllele": "GGG",
+              "start": 1312
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["ENST00000355349.4:c.1208_1210del"],
+          "proteinEffect": {
+            "hgvs": "ENSP00000347507.3:p.Arg403_Val404delinsLeu"
+          },
+          "referenceSequence": "http://reg.genome.network/refseq/RS748658",
+          "MANE": {
+            "maneVersion": "1.3",
+            "maneStatus": "MANE Select",
+            "nucleotide": {
+              "Ensembl": {
+                "hgvs": "ENST00000355349.4:c.1208_1210del"
+              },
+              "RefSeq": {
+                "hgvs": "NM_000257.4:c.1208_1210del"
+              }
+            },
+            "protein": {
+              "Ensembl": {
+                "hgvs": "ENSP00000347507.3:p.Arg403_Val404delinsLeu"
+              },
+              "RefSeq": {
+                "hgvs": "NP_000248.2:p.Arg403_Val404delinsLeu"
+              }
+            }
+          }
+        },
+        {
+          "coordinates": [
+            {
+              "allele": "",
+              "end": 1315,
+              "referenceAllele": "GGG",
+              "start": 1312
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["NM_000257.4:c.1208_1210del"],
+          "proteinEffect": {
+            "hgvs": "NP_000248.2:p.Arg403_Val404delinsLeu"
+          },
+          "referenceSequence": "http://reg.genome.network/refseq/RS662372",
+          "MANE": {
+            "maneVersion": "1.3",
+            "maneStatus": "MANE Select",
+            "nucleotide": {
+              "Ensembl": {
+                "hgvs": "ENST00000355349.4:c.1208_1210del"
+              },
+              "RefSeq": {
+                "hgvs": "NM_000257.4:c.1208_1210del"
+              }
+            },
+            "protein": {
+              "Ensembl": {
+                "hgvs": "ENSP00000347507.3:p.Arg403_Val404delinsLeu"
+              },
+              "RefSeq": {
+                "hgvs": "NP_000248.2:p.Arg403_Val404delinsLeu"
+              }
+            }
+          }
+        },
+        {
+          "coordinates": [
+            {
+              "allele": "",
+              "end": 1341,
+              "referenceAllele": "GGG",
+              "start": 1338
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["NM_000257.3:c.1208_1210del"],
+          "proteinEffect": {
+            "hgvs": "NP_000248.2:p.Arg403_Val404delinsLeu"
+          },
+          "referenceSequence": "http://reg.genome.network/refseq/RS006319"
+        }
+      ],
+      "type": "nucleotide"
+    }
+  },
+  "https://reg.genome.network/allele?hgvs=NM_000257.4%3Ac.1208C%3EA": {
+    "status": 400,
+    "body": {
+      "actualAllele": "G",
+      "description": "Given allele from reference sequence is incorrect. It does not match actual sequence at given position.",
+      "errorType": "IncorrectReferenceAllele",
+      "givenAllele": "C",
+      "message": "Reference allele does not match for NM_000257.4[6382-0,6383+0), given=C, found=G.",
+      "referenceSequence": "NM_000257.4",
+      "region": "[6382-0,6383+0)"
+    }
+  },
+  "https://reg.genome.network/allele?hgvs=NM_000257.2%3Ac.1208G%3EA": {
+    "status": 500,
+    "body": {
+      "description": "Internal error occurred. Please, report it as an error.",
+      "errorType": "InternalServerError",
+      "message": "Unknown reference: NM_000257.2"
+    }
+  },
+  "https://reg.genome.network/allele?hgvs=NP_000248.2%3Ap.Arg403Gln": {
+    "status": 200,
+    "body": {
+      "@context": "http://reg.genome.network/schema/allele.jsonld",
+      "@id": "http://reg.genome.network/allele/PA097607",
+      "aminoAcidAlleles": [
+        {
+          "coordinates": [
+            {
+              "allele": "Q",
+              "end": 403,
+              "referenceAllele": "R",
+              "start": 402
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["NP_000248.2:p.Arg403Gln"],
+          "matchingRegisteredTranscripts": [
+            {
+              "@id": "http://reg.genome.network/allele/CA010365",
+              "hgvs": "NM_000257.4:c.1208G>A"
+            }
+          ],
+          "referenceSequence": "http://reg.genome.network/refseq/RS146804"
+        }
+      ],
+      "externalRecords": {
+        "ClinVarAlleles": [
+          {
+            "@id": "http://www.ncbi.nlm.nih.gov/clinvar/?term=29126[alleleid]",
+            "alleleId": 29126,
+            "preferredName": "NM_000257.4(MYH7):c.1208G>A (p.Arg403Gln)"
+          }
+        ],
+        "ClinVarVariations": [
+          {
+            "@id": "http://www.ncbi.nlm.nih.gov/clinvar/variation/14087",
+            "RCV": [
+              "RCV000015143",
+              "RCV000035708",
+              "RCV000199447",
+              "RCV000158788",
+              "RCV001798006",
+              "RCV002345242",
+              "RCV002504790",
+              "RCV004532355"
+            ],
+            "variationId": 14087
+          }
+        ]
+      },
+      "type": "amino-acid"
+    }
+  },
+  "https://reg.genome.network/allele?hgvs=NC_000014.9%3Ag.23429278C%3ET": {
+    "status": 200,
+    "body": {
+      "@context": "http://reg.genome.network/schema/allele.jsonld",
+      "@id": "http://reg.genome.network/allele/CA010365",
+      "communityStandardTitle": ["NM_000257.4(MYH7):c.1208G>A (p.Arg403Gln)"],
+      "externalRecords": {
+        "ClinVarAlleles": [
+          {
+            "@id": "http://www.ncbi.nlm.nih.gov/clinvar/?term=29126[alleleid]",
+            "alleleId": 29126,
+            "preferredName": "NM_000257.4(MYH7):c.1208G>A (p.Arg403Gln)"
+          }
+        ],
+        "ClinVarVariations": [
+          {
+            "@id": "http://www.ncbi.nlm.nih.gov/clinvar/variation/14087",
+            "RCV": [
+              "RCV000015143",
+              "RCV000035708",
+              "RCV000199447",
+              "RCV000158788",
+              "RCV001798006",
+              "RCV002345242",
+              "RCV002504790",
+              "RCV004532355"
+            ],
+            "variationId": 14087
+          }
+        ],
+        "dbSNP": [
+          {
+            "@id": "http://www.ncbi.nlm.nih.gov/snp/121913624",
+            "rs": 121913624
+          }
+        ],
+        "gnomAD_4": [
+          {
+            "@id": "http://gnomad.broadinstitute.org/variant/14-23429278-C-T?dataset=gnomad_r4",
+            "id": "14-23429278-C-T",
+            "variant": "14:23429278 C / T"
+          }
+        ]
+      },
+      "genomicAlleles": [
+        {
+          "chromosome": "14",
+          "coordinates": [
+            {
+              "allele": "T",
+              "end": 23429278,
+              "referenceAllele": "C",
+              "start": 23429277
+            }
+          ],
+          "hgvs": ["NC_000014.9:g.23429278C>T", "CM000676.2:g.23429278C>T"],
+          "referenceGenome": "GRCh38",
+          "referenceSequence": "http://reg.genome.network/refseq/RS000062"
+        },
+        {
+          "chromosome": "14",
+          "coordinates": [
+            {
+              "allele": "T",
+              "end": 23898487,
+              "referenceAllele": "C",
+              "start": 23898486
+            }
+          ],
+          "hgvs": ["NC_000014.8:g.23898487C>T", "CM000676.1:g.23898487C>T"],
+          "referenceGenome": "GRCh37",
+          "referenceSequence": "http://reg.genome.network/refseq/RS000038"
+        }
+      ],
+      "transcriptAlleles": [
+        {
+          "coordinates": [
+            {
+              "allele": "A",
+              "end": 1313,
+              "referenceAllele": "G",
+              "start": 1312
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["ENST00000355349.4:c.1208G>A"],
+          "proteinEffect": {
+            "hgvs": "ENSP00000347507.3:p.Arg403Gln",
+            "hgvsWellDefined": "ENSP00000347507.3:p.Arg403Gln"
+          },
+          "referenceSequence": "http://reg.genome.network/refseq/RS748658",
+          "MANE": {
+            "maneVersion": "1.3",
+            "maneStatus": "MANE Select",
+            "nucleotide": {
+              "Ensembl": {
+                "hgvs": "ENST00000355349.4:c.1208G>A"
+              },
+              "RefSeq": {
+                "hgvs": "NM_000257.4:c.1208G>A"
+              }
+            },
+            "protein": {
+              "Ensembl": {
+                "hgvs": "ENSP00000347507.3:p.Arg403Gln"
+              },
+              "RefSeq": {
+                "hgvs": "NP_000248.2:p.Arg403Gln"
+              }
+            }
+          }
+        },
+        {
+          "@id": "http://reg.genome.network/allele/PA097607",
+          "coordinates": [
+            {
+              "allele": "A",
+              "end": 1313,
+              "referenceAllele": "G",
+              "start": 1312
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["NM_000257.4:c.1208G>A"],
+          "proteinEffect": {
+            "hgvs": "NP_000248.2:p.Arg403Gln",
+            "hgvsWellDefined": "NP_000248.2:p.Arg403Gln"
+          },
+          "referenceSequence": "http://reg.genome.network/refseq/RS662372",
+          "MANE": {
+            "maneVersion": "1.3",
+            "maneStatus": "MANE Select",
+            "nucleotide": {
+              "Ensembl": {
+                "hgvs": "ENST00000355349.4:c.1208G>A"
+              },
+              "RefSeq": {
+                "hgvs": "NM_000257.4:c.1208G>A"
+              }
+            },
+            "protein": {
+              "Ensembl": {
+                "hgvs": "ENSP00000347507.3:p.Arg403Gln"
+              },
+              "RefSeq": {
+                "hgvs": "NP_000248.2:p.Arg403Gln"
+              }
+            }
+          }
+        },
+        {
+          "@id": "http://reg.genome.network/allele/PA097607",
+          "coordinates": [
+            {
+              "allele": "A",
+              "end": 1339,
+              "referenceAllele": "G",
+              "start": 1338
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["NM_000257.3:c.1208G>A"],
+          "proteinEffect": {
+            "hgvs": "NP_000248.2:p.Arg403Gln",
+            "hgvsWellDefined": "NP_000248.2:p.Arg403Gln"
+          },
+          "referenceSequence": "http://reg.genome.network/refseq/RS006319"
+        }
+      ],
+      "type": "nucleotide"
+    }
+  },
+  "https://reg.genome.network/allele?hgvs=R403Q": {
+    "status": 400,
+    "body": {
+      "description": "Given HGVS expressions cannot be parsed. It is incorrect or not supported.",
+      "errorType": "HgvsParsingError",
+      "hgvs": "R403Q",
+      "message": "Unexpected end of expression. The character ':' was not found",
+      "position": "5"
+    }
+  },
+  "https://reg.genome.network/allele/CA010365": {
+    "status": 200,
+    "body": {
+      "@context": "http://reg.genome.network/schema/allele.jsonld",
+      "@id": "http://reg.genome.network/allele/CA010365",
+      "communityStandardTitle": ["NM_000257.4(MYH7):c.1208G>A (p.Arg403Gln)"],
+      "externalRecords": {
+        "ClinVarAlleles": [
+          {
+            "@id": "http://www.ncbi.nlm.nih.gov/clinvar/?term=29126[alleleid]",
+            "alleleId": 29126,
+            "preferredName": "NM_000257.4(MYH7):c.1208G>A (p.Arg403Gln)"
+          }
+        ],
+        "ClinVarVariations": [
+          {
+            "@id": "http://www.ncbi.nlm.nih.gov/clinvar/variation/14087",
+            "RCV": [
+              "RCV000015143",
+              "RCV000035708",
+              "RCV000199447",
+              "RCV000158788",
+              "RCV001798006",
+              "RCV002345242",
+              "RCV002504790",
+              "RCV004532355"
+            ],
+            "variationId": 14087
+          }
+        ],
+        "dbSNP": [
+          {
+            "@id": "http://www.ncbi.nlm.nih.gov/snp/121913624",
+            "rs": 121913624
+          }
+        ],
+        "gnomAD_4": [
+          {
+            "@id": "http://gnomad.broadinstitute.org/variant/14-23429278-C-T?dataset=gnomad_r4",
+            "id": "14-23429278-C-T",
+            "variant": "14:23429278 C / T"
+          }
+        ]
+      },
+      "genomicAlleles": [
+        {
+          "chromosome": "14",
+          "coordinates": [
+            {
+              "allele": "T",
+              "end": 23429278,
+              "referenceAllele": "C",
+              "start": 23429277
+            }
+          ],
+          "hgvs": ["NC_000014.9:g.23429278C>T", "CM000676.2:g.23429278C>T"],
+          "referenceGenome": "GRCh38",
+          "referenceSequence": "http://reg.genome.network/refseq/RS000062"
+        },
+        {
+          "chromosome": "14",
+          "coordinates": [
+            {
+              "allele": "T",
+              "end": 23898487,
+              "referenceAllele": "C",
+              "start": 23898486
+            }
+          ],
+          "hgvs": ["NC_000014.8:g.23898487C>T", "CM000676.1:g.23898487C>T"],
+          "referenceGenome": "GRCh37",
+          "referenceSequence": "http://reg.genome.network/refseq/RS000038"
+        }
+      ],
+      "transcriptAlleles": [
+        {
+          "coordinates": [
+            {
+              "allele": "A",
+              "end": 1313,
+              "referenceAllele": "G",
+              "start": 1312
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["ENST00000355349.4:c.1208G>A"],
+          "proteinEffect": {
+            "hgvs": "ENSP00000347507.3:p.Arg403Gln",
+            "hgvsWellDefined": "ENSP00000347507.3:p.Arg403Gln"
+          },
+          "referenceSequence": "http://reg.genome.network/refseq/RS748658",
+          "MANE": {
+            "maneVersion": "1.3",
+            "maneStatus": "MANE Select",
+            "nucleotide": {
+              "Ensembl": {
+                "hgvs": "ENST00000355349.4:c.1208G>A"
+              },
+              "RefSeq": {
+                "hgvs": "NM_000257.4:c.1208G>A"
+              }
+            },
+            "protein": {
+              "Ensembl": {
+                "hgvs": "ENSP00000347507.3:p.Arg403Gln"
+              },
+              "RefSeq": {
+                "hgvs": "NP_000248.2:p.Arg403Gln"
+              }
+            }
+          }
+        },
+        {
+          "@id": "http://reg.genome.network/allele/PA097607",
+          "coordinates": [
+            {
+              "allele": "A",
+              "end": 1313,
+              "referenceAllele": "G",
+              "start": 1312
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["NM_000257.4:c.1208G>A"],
+          "proteinEffect": {
+            "hgvs": "NP_000248.2:p.Arg403Gln",
+            "hgvsWellDefined": "NP_000248.2:p.Arg403Gln"
+          },
+          "referenceSequence": "http://reg.genome.network/refseq/RS662372",
+          "MANE": {
+            "maneVersion": "1.3",
+            "maneStatus": "MANE Select",
+            "nucleotide": {
+              "Ensembl": {
+                "hgvs": "ENST00000355349.4:c.1208G>A"
+              },
+              "RefSeq": {
+                "hgvs": "NM_000257.4:c.1208G>A"
+              }
+            },
+            "protein": {
+              "Ensembl": {
+                "hgvs": "ENSP00000347507.3:p.Arg403Gln"
+              },
+              "RefSeq": {
+                "hgvs": "NP_000248.2:p.Arg403Gln"
+              }
+            }
+          }
+        },
+        {
+          "@id": "http://reg.genome.network/allele/PA097607",
+          "coordinates": [
+            {
+              "allele": "A",
+              "end": 1339,
+              "referenceAllele": "G",
+              "start": 1338
+            }
+          ],
+          "gene": "http://reg.genome.network/gene/GN007577",
+          "geneNCBI_id": 4625,
+          "geneSymbol": "MYH7",
+          "hgvs": ["NM_000257.3:c.1208G>A"],
+          "proteinEffect": {
+            "hgvs": "NP_000248.2:p.Arg403Gln",
+            "hgvsWellDefined": "NP_000248.2:p.Arg403Gln"
+          },
+          "referenceSequence": "http://reg.genome.network/refseq/RS006319"
+        }
+      ],
+      "type": "nucleotide"
+    }
+  },
+  "https://reg.genome.network/gene?HGNC.symbol=MYH7": {
+    "status": 200,
+    "body": {
+      "@context": "http://reg.genome.network/schema/gene.jsonld",
+      "@id": "http://reg.genome.network/gene/GN007577",
+      "locus": "NC_000014.9:23412737-23435718",
+      "externalRecords": {
+        "HGNC": {
+          "@id": "http://www.genenames.org/cgi-bin/gene_symbol_report?hgnc_id=HGNC:7577",
+          "id": "HGNC:7577",
+          "name": "myosin heavy chain 7",
+          "symbol": "MYH7"
+        },
+        "NCBI": {
+          "@id": "http://www.ncbi.nlm.nih.gov/gene/4625",
+          "id": 4625
+        },
+        "MANE": [
+          {
+            "maneVersion": "1.3",
+            "maneStatus": "MANE Select",
+            "nucleotide": {
+              "Ensembl": {
+                "@id": "https://www.ensembl.org/id/ENST00000355349.4",
+                "id": "ENST00000355349.4"
+              },
+              "RefSeq": {
+                "@id": "https://www.ncbi.nlm.nih.gov/nuccore/NM_000257.4",
+                "id": "NM_000257.4"
+              }
+            },
+            "protein": {
+              "Ensembl": {
+                "@id": "https://www.ensembl.org/id/ENSP00000347507.3",
+                "id": "ENSP00000347507.3"
+              },
+              "RefSeq": {
+                "@id": "https://www.ncbi.nlm.nih.gov/protein/NP_000248.2",
+                "id": "NP_000248.2"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "https://reg.genome.network/gene?HGNC.symbol=NOTAGENE": {
+    "status": 404,
+    "body": {
+      "description": "The system does not contain any data about requested resource.",
+      "errorType": "NotFound"
+    }
+  },
+  "https://rest.variantvalidator.org/VariantValidator/variantvalidator/GRCh38/NM_000257.2%3Ac.1208G%3EA/mane_select?content-type=application%2Fjson": {
+    "status": 200,
+    "body": {
+      "NM_000257.2:c.1208G>A": {
+        "alt_genomic_loci": [],
+        "annotations": {
+          "chromosome": "14",
+          "db_xref": {
+            "CCDS": "CCDS9601.1",
+            "ensemblgene": null,
+            "hgnc": "HGNC:7577",
+            "ncbigene": "4625",
+            "select": false
+          },
+          "ensembl_select": false,
+          "mane_plus_clinical": false,
+          "mane_select": false,
+          "map": "14q11.2",
+          "note": "myosin heavy chain 7",
+          "refseq_select": false,
+          "variant": "0"
+        },
+        "gene_ids": {
+          "ccds_ids": ["CCDS9601"],
+          "ensembl_gene_id": "ENSG00000092054",
+          "entrez_gene_id": "4625",
+          "hgnc_id": "HGNC:7577",
+          "omim_id": ["160760"],
+          "ucsc_id": "uc001wjx.4"
+        },
+        "gene_symbol": "MYH7",
+        "genome_context_intronic_sequence": "",
+        "hgvs_lrg_transcript_variant": "LRG_384t1:c.1208G>A",
+        "hgvs_lrg_variant": "LRG_384:g.11384G>A",
+        "hgvs_predicted_protein_consequence": {
+          "lrg_slr": "LRG_384p1:p.(R403Q)",
+          "lrg_tlr": "LRG_384p1:p.(Arg403Gln)",
+          "slr": "NP_000248.2:p.(R403Q)",
+          "tlr": "NP_000248.2:p.(Arg403Gln)"
+        },
+        "hgvs_refseqgene_variant": "NG_007884.1:g.11384G>A",
+        "hgvs_transcript_variant": "NM_000257.2:c.1208G>A",
+        "lovd_corrections": null,
+        "lovd_messages": null,
+        "primary_assembly_loci": {
+          "grch37": {
+            "hgvs_genomic_description": "NC_000014.8:g.23898487C>T",
+            "vcf": {
+              "alt": "T",
+              "chr": "14",
+              "pos": "23898487",
+              "ref": "C"
+            }
+          },
+          "grch38": {
+            "hgvs_genomic_description": "NC_000014.9:g.23429278C>T",
+            "vcf": {
+              "alt": "T",
+              "chr": "14",
+              "pos": "23429278",
+              "ref": "C"
+            }
+          },
+          "hg19": {
+            "hgvs_genomic_description": "NC_000014.8:g.23898487C>T",
+            "vcf": {
+              "alt": "T",
+              "chr": "chr14",
+              "pos": "23898487",
+              "ref": "C"
+            }
+          },
+          "hg38": {
+            "hgvs_genomic_description": "NC_000014.9:g.23429278C>T",
+            "vcf": {
+              "alt": "T",
+              "chr": "chr14",
+              "pos": "23429278",
+              "ref": "C"
+            }
+          }
+        },
+        "refseqgene_context_intronic_sequence": "",
+        "rna_variant_descriptions": null,
+        "selected_assembly": "GRCh38",
+        "submitted_variant": "NM_000257.2:c.1208G>A",
+        "transcript_description": "Homo sapiens myosin, heavy chain 7, cardiac muscle, beta (MYH7), mRNA",
+        "validation_warnings": [
+          "TranscriptVersionWarning: A more recent version of the selected reference sequence NM_000257.2 is available for genome build GRCh38 (NM_000257.4)"
+        ],
+        "variant_exonic_positions": {
+          "NC_000014.8": {
+            "end_exon": "12",
+            "start_exon": "12"
+          },
+          "NC_000014.9": {
+            "end_exon": "12",
+            "start_exon": "12"
+          },
+          "NG_007884.1": {
+            "end_exon": "13",
+            "start_exon": "13"
+          }
+        }
+      },
+      "flag": "gene_variant",
+      "metadata": {
+        "variantvalidator_hgvs_version": "4.0.0",
+        "variantvalidator_version": "4.0.1.dev7+gbdab9c72f",
+        "vvdb_version": "vvdb_2025_3",
+        "vvseqrepo_db": "VV_SR_2025_02/master",
+        "vvta_version": "vvta_2025_02"
+      }
+    }
+  }
+}

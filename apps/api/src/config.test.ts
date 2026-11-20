@@ -157,4 +157,37 @@ describe('loadConfig', () => {
       );
     });
   });
+  describe('variant lookup', () => {
+    const external = { ...base, OIDC_ISSUER: 'https://idp.example', OIDC_CLIENT_ID: 'sidebar' };
+
+    it('is on by default, against the public services', () => {
+      expect(loadConfig(external).variantLookup).toEqual({
+        enabled: true,
+        registryUrl: 'https://reg.genome.network',
+        variantValidatorUrl: 'https://rest.variantvalidator.org',
+        timeoutMs: 20_000,
+      });
+    });
+
+    it('can be turned off or pointed elsewhere', () => {
+      const config = loadConfig({
+        ...external,
+        VARIANT_LOOKUP: 'off',
+        VARIANT_REGISTRY_URL: 'https://registry.lab.example/',
+        VARIANT_LOOKUP_TIMEOUT_MS: '5000',
+      });
+      expect(config.variantLookup).toMatchObject({
+        enabled: false,
+        registryUrl: 'https://registry.lab.example',
+        timeoutMs: 5000,
+      });
+    });
+
+    it('refuses values it cannot read', () => {
+      expect(() => loadConfig({ ...external, VARIANT_LOOKUP: 'yes' })).toThrow(/VARIANT_LOOKUP/);
+      expect(() => loadConfig({ ...external, VARIANT_REGISTRY_URL: 'nowhere' })).toThrow(
+        /VARIANT_REGISTRY_URL/,
+      );
+    });
+  });
 });

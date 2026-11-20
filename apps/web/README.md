@@ -38,6 +38,7 @@ With `AUTH_MODE=embedded` (ADR 0028) the site is also the issuer's front: the de
 | `/groups/:id`  | signed in    | Rename, describe and delete the group, manage members and roles                               |
 | `/browse`      | signed in    | Search over `/x/search` with every documented filter, paging and the total                    |
 | `/browse/:id`  | signed in    | One annotation: targets, bodies, the caller's permissions, the sharing panel for `share` holders |
+| `/variants`    | signed in    | Case variants without a CAID or ClinVar ID, grouped by the variant as written: look one up in the Allele Registry and save its IDs to every annotation the caller may edit, or mark it unresolvable (ADR 0039) |
 
 The page routes avoid `/annotations` and `/x`, which belong to the API on the shared origin.
 

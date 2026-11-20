@@ -37,7 +37,7 @@ These rules come from ClinGen's *Hypothes.is Annotation Overview* and its *Basel
 - Use HGVS nomenclature as the article gives it, with its transcript where stated.
 - "For autosomal recessive inheritance of compound mutations, you will need to separate variant entries." Compound heterozygous variants are therefore separate `case-variant` facts.
 - "If mutations in other genes are listed, please annotate all variants in the report." A variant in another gene is a `case-variant` fact with that gene's `geneName`.
-- **ClinVar and CAID.** Record a ClinVar ID or a CAID only if the article states it. ClinGen curators look these up or register the variant; you do not. Leave the fields out.
+- **ClinVar and CAID.** Record a ClinVar ID or a CAID yourself only if the article states it, with `idSource: "stated"`. Never look one up yourself or write one from memory. The `resolve` step looks the rest up in the Allele Registry and fills only unambiguous answers; curators choose among the others, or register the variant.
 - **gnomAD.** "The highest minor allele frequency … and the link." Record it only if the article states a gnomAD frequency or ID.
 
 ## Tags ClinGen uses that have no CurAnno field yet

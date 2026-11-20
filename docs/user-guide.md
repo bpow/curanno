@@ -96,6 +96,38 @@ If loading or sharing a saved annotation fails, its suggestion still leaves the 
 
 The **Individuals** section above the annotations brings each individual's facts together in the **Case individual** form's shape, with a link from each value to the passage it came from. It is computed from the annotations you can see and is not saved, so it changes as facts are added, edited or deleted. "Incomplete" means that the summary is still missing something the form requires, such as a variant. **Case individual** is no longer offered for new annotations; existing ones can still be edited.
 
+### Variant IDs
+
+ClinGen asks for a ClinVar ID or an Allele Registry ID (CAID) for each variant. Record the variant in a **Case variant** annotation as the article gives it, then let the platform find the IDs in the ClinGen Allele Registry. The variant itself is never changed: it keeps what the article says.
+
+1. Fill **Variant**, and **GeneName** if the article gives the change without a transcript (`c.1208G>A`) or only the protein change (`p.Arg403Gln`, `R403Q`). The lookup then uses the gene's MANE Select transcript.
+2. Press **Look up IDs** under the variant. The sidebar lists what it found: one card per allele, with its CAID, ClinVar variation, gnomAD ID, genomic position and protein change, and links to the registry and ClinVar.
+3. Read the notes above and on the cards before choosing. They say what the lookup had to assume and what looks wrong:
+
+   | The note says | What to do |
+   | --- | --- |
+   | No transcript was given, so the MANE Select transcript was used | Check that the article numbers against that transcript, for instance from its methods or the protein change it gives. |
+   | VariantValidator mapped it, or the two versions number this position differently | The article names an older transcript. The lookup offers the change both as numbered on that version and on the current one; the article's protein change usually tells which it means. |
+   | Only a protein change was given | Each card is a cDNA change that produces it. Pick the one the article means, or leave the IDs empty. |
+   | The reference allele does not match | The article's reference base is wrong at that position. Check the article, and consider a note on the annotation. |
+   | The article gives p.…, but on the MANE Select transcript this change is p.… | The cDNA and protein changes disagree. This card is probably not the variant the article means. |
+   | This allele is in another gene | The variant may be on the wrong transcript, or reported for another gene. |
+   | Nobody has registered it | The allele is valid but has no CAID. A curator with an Allele Registry account can register it; then look it up again. |
+   | Not understood | Legacy names such as `IVS4+1G>A` or "exon 13 deletion" cannot be looked up. Find the HGVS form in the article or its supplement, or mark the variant unresolvable. |
+
+4. Press **Use these IDs** on the right card. It fills **CAID**, **ClinVarID** (when ClinVar has a single variation for the allele) and **gnomAD**, and sets **IDSource** to *looked up*. Save the annotation as usual.
+5. If there are no IDs to find, as for a deletion described only by its exons or a copy-number change, press **Mark unresolvable**. This clears CAID and ClinVarID and sets **IDSource** to *unresolvable*, so the variant no longer counts as missing its IDs.
+
+When the article itself states the IDs, type them in and set **IDSource** to *stated*.
+
+Looked-up IDs belong to the variant as it was written then: editing **Variant** afterwards clears them and **IDSource**, so look the variant up again. Editing the variant of one marked *unresolvable*, or typing an ID into it, clears that mark.
+
+Suggestions made with the `curanno-suggest` skill look variants up the same way, but fill IDs only when there is nothing to choose: a single registered allele, nothing found wrong, and, if no transcript was given, a protein change in the article that confirms the one assumed. Those suggestions arrive with **IDSource** *looked up*; check them in review like any other value. The skill's report lists the variants it left for you, with their candidates.
+
+The management site's **Variants** page gathers the case variants still without IDs from every article you can read, grouped by the variant as written. Look a variant up there once, and **Use for N annotations** saves its IDs to every annotation of that variant you may edit; **Mark unresolvable** marks them all. Annotations you may only read are listed but left as they are.
+
+If the lookup says it is not available, the administrator has turned it off. Type the IDs by hand, as before.
+
 ### Running the model on your own computer
 
 If the administrator offers "This computer", run a model server on your machine:
@@ -138,11 +170,13 @@ Sharing an annotation with a group grants the chosen rights to its members for a
 
 ## 6. The management site
 
-The platform address is also the management site (`/me`, `/groups`, `/browse`):
+The platform address is also the management site (`/me`, `/groups`, `/browse`, `/suggestions`, `/variants`):
 
 - **Me** shows your account and groups.
 - **Groups** lists your groups, lets you create one and manage those you administer.
 - **Annotations** browses and searches the annotations you may read, across every document, and shows each annotation's sharing.
+- **Suggestions** lists, for each of your groups, the documents with suggestions still to review.
+- **Variants** lists the case variants still without a CAID or ClinVar ID, and fills them in for every article at once (see [Variant IDs](#variant-ids)).
 - **Users** (administrators) lists every user and lets administrators rename them.
 
 ## 7. Accessibility
@@ -154,3 +188,5 @@ Everything in the sidebar works from the keyboard and with a screen reader: the 
 The page you annotate never sees your login, your annotations' text, tags or authors: the sidebar runs on the platform's own origin and the page gets only the location of each highlight. The page does see the text you select, which it could see anyway. Nothing in the bookmarklet or the page can sign you in or act as you.
 
 When you ask for suggestions, the page's text goes from the sidebar to the model server named in the form, and to no other: the sidebar's security policy allows only the servers the administrator listed. The model's answers stay in the sidebar; the page gets only where to draw each suggested highlight.
+
+When you look up variant IDs, the platform sends the variant as written and its gene symbol to the ClinGen Allele Registry, and for older transcript versions to VariantValidator. Nothing else about the article or your annotations is sent.

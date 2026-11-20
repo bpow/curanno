@@ -74,6 +74,7 @@ export const unprocessable = (detail: string, errors?: ValidationIssue[]): Probl
   new Problem(422, 'Unprocessable Content', detail, errors);
 export const serviceUnavailable = (detail: string): Problem =>
   new Problem(503, 'Service Unavailable', detail);
+export const badGateway = (detail: string): Problem => new Problem(502, 'Bad Gateway', detail);
 
 const TITLES: Record<number, string> = {
   400: 'Bad Request',

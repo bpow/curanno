@@ -6,7 +6,7 @@ export interface Call {
   body: unknown;
 }
 
-export type Route = (call: Call) => Response | undefined;
+export type Route = (call: Call) => Response | Promise<Response> | undefined;
 
 export interface FakeApi {
   client: ApiClient;

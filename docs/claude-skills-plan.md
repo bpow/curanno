@@ -33,7 +33,7 @@ From the Template Protocol Review:
   - Where ClinGen fills a field with "n/a", a CurAnno value leaves the field out.
   - The disease assertion is the authors' ("annotate based on the assertion given by the authors").
   - Inheritance and de novo status are "based solely on the assertions of the author".
-- **Which cases count.** A case report is "an individual asserted to have a variant in the gene of interest". The skill therefore needs the gene of interest as an input, and leaves out individuals without a variant in it.
+- **Which cases count.** A case report is "an individual asserted to have a variant in the gene of interest". The skill therefore needs the gene of interest as an input, and leaves out individuals without a variant in it. Asked for all genes, it lists the genes the article reports, and once the user has chosen among them it writes one draft per gene, each with that gene as the gene of interest.
 - **One record per individual.** "Each Case report listed in an article should be curated as a separate annotation." In CurAnno this is one `individual/1` per individual, with their facts linked to it (ADR 0035). A fact may name several individuals where a passage covers them all.
 - **Phenotypes.** Present and absent phenotypes are kept apart: "HPOs presenting specifically in the proband" versus "HPOs that were noted not to manifest". Phenotypes without a fitting HPO term are kept as text. The CaseHPOFreeText and CaseNOTHPOFreeText fields correspond to a term-list entry with no id.
 - **Variants.**
@@ -205,7 +205,7 @@ On `feat/claude-skills`:
 ## 8. Open
 
 - **Profiles for the protocol's tags.** Zygosity, inheritance, germline or somatic, mutation type and testing status as enum fields would need `case-variant/2` and `case-testing/2`. Profiles are versioned, so this is a choice for the curators. The skill records these in words until then.
-- **Looking up variant IDs.** ClinGen asks curators to register variants without a ClinVar ID in the Allele Registry and record the CAID. A `variant` subcommand could look a variant up in the Allele Registry by HGVS and record the CAID with a note that it was looked up, not stated. This sends variant descriptions, which are public, to an outside service.
+- **Looking up variant IDs.** Done as the `resolve` subcommand (ADR 0039, docs/variant-ids-plan.md). It fills IDs only for unambiguous answers, with `idSource: looked up`, and lists the rest under `notInBatch`.
 - **Article-level findings.** "NoEvidence" and "InsufficientEvidence" belong to the article, not an individual. A page-level note would need a target without a quote, which batches do not allow yet.
 - **Several articles per run,** as one subagent per article, once single articles pass `check` without many rounds.
 

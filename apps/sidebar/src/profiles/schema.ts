@@ -13,6 +13,7 @@ import {
   type AnnotationLink,
   type JsonSchema,
   type OntologyLookup,
+  type FieldLookup,
 } from '@curanno/model';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
@@ -68,6 +69,8 @@ export interface SchemaField {
   /** For an annotation link: which annotations it may name, and whether it names several. */
   link?: AnnotationLink;
   multiple?: boolean;
+  /** For text an authority gives IDs to: the resolver, and the sibling fields it reads and fills (ADR 0039). */
+  lookup?: FieldLookup;
 }
 
 interface PropertySchema {
@@ -82,6 +85,7 @@ interface PropertySchema {
   required?: string[];
   ontology?: OntologyLookup;
   annotation?: AnnotationLink;
+  lookup?: FieldLookup;
 }
 
 function kindOf(schema: PropertySchema): FieldKind {
@@ -115,6 +119,7 @@ export function fieldsOf(schema: JsonSchema): SchemaField[] {
       ...(property.enum ? { options: property.enum.map(String) } : {}),
       ...(pattern !== undefined ? { pattern } : {}),
       ...(kind === 'term-list' && property.ontology ? { ontology: property.ontology } : {}),
+      ...(kind === 'text' && property.lookup ? { lookup: property.lookup } : {}),
       ...(kind === 'annotation' && property.annotation
         ? { link: property.annotation, multiple: property.type === 'array' }
         : {}),

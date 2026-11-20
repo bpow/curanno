@@ -13,6 +13,7 @@ import type { Config } from '../config.js';
 import { createDb, migrate, type Database } from '../db/index.js';
 import type { Kysely } from 'kysely';
 import { buildServer } from '../server.js';
+import { fixtureFetch } from '../variants/fixture-fetch.js';
 
 export const ISSUER = 'https://idp.test';
 export const CLIENT_ID = 'curanno-sidebar';
@@ -74,7 +75,12 @@ export interface TestContextOptions {
   config?: Partial<
     Pick<
       Config,
-      'staticRoot' | 'frameAncestors' | 'pdfViewerOrigin' | 'metricsEnabled' | 'extractEndpoints'
+      | 'staticRoot'
+      | 'frameAncestors'
+      | 'pdfViewerOrigin'
+      | 'metricsEnabled'
+      | 'extractEndpoints'
+      | 'variantLookup'
     >
   >;
   /**
@@ -125,6 +131,12 @@ export async function createTestContext(options: TestContextOptions = {}): Promi
     pdfViewerOrigin: undefined,
     metricsEnabled: true,
     extractEndpoints: [],
+    variantLookup: {
+      enabled: true,
+      registryUrl: 'https://reg.genome.network',
+      variantValidatorUrl: 'https://rest.variantvalidator.org',
+      timeoutMs: 1000,
+    },
     ...options.config,
   };
   const db = createDb(testUrl);
@@ -135,6 +147,8 @@ export async function createTestContext(options: TestContextOptions = {}): Promi
     keepaliveMs: options.keepaliveMs ?? 30_000,
     ...(options.replayPageSize !== undefined ? { replayPageSize: options.replayPageSize } : {}),
     authCacheMs: 0,
+    // Variant lookup answers from recordings, never from the real services.
+    variantFetch: fixtureFetch(),
   });
   await app.ready();
 

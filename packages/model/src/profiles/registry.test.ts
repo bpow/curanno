@@ -203,6 +203,14 @@ describe('case fact profiles', () => {
     ]);
   });
 
+  it('says where the IDs of a variant come from', () => {
+    const variant = (value: Record<string, string>) =>
+      paths(caseVariantProfile.iri, { individuals: [individual], variant: 'c.1208G>A', ...value });
+    expect(variant({ idSource: 'unresolvable' })).toEqual([]);
+    expect(variant({ idSource: 'looked up', caid: 'CA010365', clinVarId: '14087' })).toEqual([]);
+    expect(variant({ idSource: 'guessed' })).toEqual(['/value/idSource']);
+  });
+
   it('needs a fact to state something beyond whom it is about', () => {
     expect(paths(casePhenotypesProfile.iri, { individuals: [individual] })).toEqual(['/value']);
   });

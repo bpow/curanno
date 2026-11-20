@@ -15,6 +15,9 @@
  *          a draft batch checked against the article and the profiles (JSON); exit 1 on problems
  *   summarize DRAFT [same article options as check]
  *          the whole-individual records the draft's facts add up to (JSON)
+ *   resolve DRAFT [--out FILE]
+ *          fill the IDs of the draft's items, such as its variants, through CurAnno's lookups,
+ *          writing the draft back (or to FILE) and listing what is left for a curator under notInBatch
  *   post   DRAFT --group ID [same article options as check]
  *          check, then post the batch
  *
@@ -39,6 +42,7 @@ import {
 } from './profiles.ts';
 import { runKey, suggestFor } from './run.ts';
 import { State } from './state.ts';
+import { LookupUnavailable, resolveDraft } from './resolve.ts';
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -220,6 +224,38 @@ const commands: Record<string, () => Promise<number>> = {
       })),
       unlinked,
     });
+    return 0;
+  },
+
+  /** IDs for the draft's items, such as its variants (ADR 0039); left alone where a curator must choose. */
+  async resolve() {
+    const file = positionals[1];
+    if (!file) throw new Error('usage: resolve DRAFT [--out FILE]');
+    const draft = JSON.parse(await readFile(file, 'utf8')) as Draft;
+    const api = client(true);
+    const { all } = await profiles(api);
+    const { draft: next, outcomes } = await resolveDraft(draft, {
+      profiles: all,
+      resolve: async (resolver, q, context) => {
+        try {
+          return unwrap(
+            await api.GET('/x/resolve/{resolver}', {
+              params: { path: { resolver }, query: { ...context, q } },
+            }),
+          );
+        } catch (err) {
+          if (err instanceof ApiError && [401, 403, 404].includes(err.problem.status)) {
+            throw new LookupUnavailable(
+              `${resolver} lookup is not available at ${values.api}: ${err.problem.detail ?? err.problem.title}`,
+            );
+          }
+          throw err instanceof ApiError ? new Error(err.problem.detail ?? err.problem.title) : err;
+        }
+      },
+    });
+    await writeFile(values.out ?? file, `${JSON.stringify(next, null, 2)}\n`);
+    const count = (o: string) => outcomes.filter((x) => x.outcome === o).length;
+    print({ filled: count('filled'), left: count('left'), failed: count('failed'), outcomes });
     return 0;
   },
 

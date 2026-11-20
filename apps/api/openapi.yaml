@@ -43,6 +43,8 @@ tags:
     description: Ontologies loaded for term lookup, such as HPO (docs/ontologies.md)
   - name: tokens
     description: Access tokens the API issues, for engines and scripts (ADR 0038)
+  - name: resolve
+    description: IDs for something an article names, such as a variant's in the ClinGen Allele Registry (ADR 0039, docs/variant-ids-plan.md)
   - name: suggestions
     description: Suggested annotations waiting for review, in batches that belong to a group (ADR 0037)
 security:
@@ -657,6 +659,73 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+  /x/resolve/{resolver}:
+    get:
+      operationId: resolve
+      tags: [resolve]
+      summary: Look up the IDs of something an article names
+      description: |
+        Reads a mention as an article gives it and asks the resolver's outside services for it.
+        Answers with every candidate and what the lookup had to assume or found wrong, and never
+        chooses for the caller. A result with no candidates and a warning is a successful lookup.
+        Each warning's `code` is part of this contract; its `message` is for people.
+
+        The `variant` resolver reads HGVS, a ClinVar-style name, or a cDNA or protein change on its
+        own, and asks the ClinGen Allele Registry, and VariantValidator when the registry does not
+        know the reference sequence. Its context is `gene`. Its candidates fill `caid`,
+        `clinVarId` (only when ClinVar has a single variation) and `gnomad`. Its warning codes
+        are `not-understood`, `gene-needed`, `gene-unknown`, `transcript-assumed`,
+        `version-assumed`, `version-needed`, `mapped`, `numbering-differs`, `not-mapped`,
+        `reference-mismatch`, `protein-only`, `several-candidates`, `not-registered`, `no-clinvar`,
+        `several-clinvar`, `gene-differs` and `protein-differs`. Results are cached for a day.
+      parameters:
+        - name: resolver
+          in: path
+          required: true
+          description: The resolver, for example `variant`.
+          schema:
+            type: string
+            pattern: '^[a-z][a-z0-9-]{0,49}$'
+        - name: q
+          in: query
+          required: true
+          description: The mention, for example the variant `NM_000257.4:c.1208G>A` or `p.R403Q`.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 500
+        - name: gene
+          in: query
+          description: >-
+            Context for `variant`: the HGNC symbol of the gene of interest. A cDNA or protein change
+            on its own is looked up on its MANE Select transcript, and candidates in other genes
+            are flagged.
+          schema:
+            type: string
+            pattern: '^[A-Za-z0-9-]{1,50}$'
+      responses:
+        '200':
+          description: The candidates, with warnings and the requests made
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resolution'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: There is no such resolver, or it is turned off on this server (`VARIANT_LOOKUP=off`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: An outside service is unavailable, is throttling requests, or gave an answer that cannot be read
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /x/documents:
     post:
       operationId: registerDocument
@@ -1863,6 +1932,95 @@ components:
         synonym:
           description: The synonym that matched, when it was not the label.
           type: string
+    ResolutionWarning:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          description: Part of the contract. Each resolver lists its codes under `resolve`.
+          type: string
+        message:
+          type: string
+    ResolutionCandidate:
+      type: object
+      required: [label, fill, facts, warnings]
+      properties:
+        label:
+          description: The authority's name for the candidate, for example `NM_000257.4(MYH7):c.1208G>A (p.Arg403Gln)`.
+          type: string
+        fill:
+          description: >-
+            The values this candidate gives, under names the resolver documents. A profile's
+            `lookup` keyword maps them to its fields.
+          type: object
+          additionalProperties:
+            type: string
+        facts:
+          description: What an editor shows about the candidate, in order. A fact with no values reads as none.
+          type: array
+          items:
+            type: object
+            required: [label, values]
+            properties:
+              label:
+                type: string
+              values:
+                type: array
+                items:
+                  type: object
+                  required: [text]
+                  properties:
+                    text:
+                      type: string
+                    url:
+                      type: string
+                      format: uri
+        autoFill:
+          description: >-
+            Present on the one candidate a program may fill without asking a curator. For
+            `variant`: the only candidate, registered, with no warning but `no-clinvar`, and, if
+            the lookup assumed the MANE Select transcript or its version, a protein change in the
+            query that agrees.
+          type: boolean
+          enum: [true]
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResolutionWarning'
+    Resolution:
+      type: object
+      required: [query, context, candidates, warnings, steps]
+      properties:
+        query:
+          type: string
+        context:
+          description: The context as the resolver used it, for example a gene symbol in its approved case.
+          type: object
+          additionalProperties:
+            type: string
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResolutionCandidate'
+        warnings:
+          description: What the lookup assumed or found about the query as a whole.
+          type: array
+          items:
+            $ref: '#/components/schemas/ResolutionWarning'
+        steps:
+          description: Each request made to an outside service, in order.
+          type: array
+          items:
+            type: object
+            required: [service, request, outcome]
+            properties:
+              service:
+                description: The service, named for people.
+                type: string
+              request:
+                type: string
+              outcome:
+                type: string
     DocumentUriRelation:
       description: How a URI relates to the page that reported it (docs/document-identity.md).
       type: string

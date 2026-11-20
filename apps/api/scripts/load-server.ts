@@ -46,6 +46,13 @@ const config: Config = {
   pdfViewerOrigin: undefined,
   metricsEnabled: true,
   extractEndpoints: [],
+  // The load test never looks variants up; keep it from reaching outside services.
+  variantLookup: {
+    enabled: false,
+    registryUrl: 'https://reg.genome.network',
+    variantValidatorUrl: 'https://rest.variantvalidator.org',
+    timeoutMs: 20_000,
+  },
 };
 const db = createDb(databaseUrl);
 const app = await buildServer({

@@ -50,3 +50,4 @@ An architecture decision record (ADR) captures one decision that shapes the syst
 | [0036](0036-individual-summaries-are-computed.md) | Whole-individual summaries are computed from the facts, not stored | Proposed |
 | [0037](0037-suggestion-batches.md) | Suggestions are stored as batches that belong to a group, and their items may link to each other | Proposed |
 | [0038](0038-access-tokens-and-service-accounts.md) | The API issues scoped access tokens, and service accounts post suggestions for groups | Proposed |
+| [0039](0039-variant-lookup-through-the-api.md) | Variant IDs are looked up through the API in the ClinGen Allele Registry | Proposed |

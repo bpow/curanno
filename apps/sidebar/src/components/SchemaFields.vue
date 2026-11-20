@@ -1,5 +1,15 @@
 <script setup lang="ts">
-import { linkedIris, type JsonValue, type ValidationError } from '@curanno/model';
+import type { components } from '@curanno/api-client';
+import {
+  idFieldsOf,
+  linkedIris,
+  lookupContext,
+  withLookedUp,
+  withUnresolvable,
+  type FieldLookup,
+  type JsonValue,
+  type ValidationError,
+} from '@curanno/model';
 import { computed, inject } from 'vue';
 import {
   EXTRA_LINKS,
@@ -13,6 +23,9 @@ import { useProfilesStore } from '../stores/profiles';
 import LinkInput from './LinkInput.vue';
 import TagInput from './TagInput.vue';
 import TermListInput from './TermListInput.vue';
+import LookupPanel from './LookupPanel.vue';
+
+type Candidate = components['schemas']['ResolutionCandidate'];
 
 const props = defineProps<{
   fields: SchemaField[];
@@ -61,7 +74,44 @@ function set(name: string, next: JsonValue | undefined): void {
   const copy: Record<string, JsonValue> = { ...value.value };
   if (next === undefined || next === '') delete copy[name];
   else copy[name] = next;
+  keepIdSourceTrue(copy, name);
   emit('update:modelValue', copy);
+}
+
+// Looked-up IDs belong to the text and context they were looked up for. Changing
+// either, or typing an ID, also makes an unresolvable marker obsolete.
+function keepIdSourceTrue(copy: Record<string, JsonValue>, edited: string): void {
+  for (const field of props.fields) {
+    const source = field.lookup?.source;
+    if (!field.lookup || !source) continue;
+    const queryChanged =
+      edited === field.name || Object.values(field.lookup.context ?? {}).includes(edited);
+    if (queryChanged && copy[source] === 'looked up') {
+      for (const name of [...Object.values(field.lookup.fill), source]) delete copy[name];
+    } else if (
+      copy[source] === 'unresolvable' &&
+      (queryChanged || idFieldsOf(field.lookup).includes(edited))
+    ) {
+      delete copy[source];
+    }
+  }
+}
+
+function text(name: string): string | undefined {
+  const current = value.value[name];
+  return typeof current === 'string' ? current : undefined;
+}
+
+function isUnresolvable(lookup: FieldLookup): boolean {
+  return !!lookup.source && value.value[lookup.source] === 'unresolvable';
+}
+
+function useCandidate(lookup: FieldLookup, candidate: Candidate): void {
+  emit('update:modelValue', withLookedUp(value.value, lookup, candidate.fill));
+}
+
+function markUnresolvable(lookup: FieldLookup): void {
+  emit('update:modelValue', withUnresolvable(value.value, lookup));
 }
 
 function strings(name: string): string[] {
@@ -246,6 +296,16 @@ function removeItem(name: string, index: number): void {
       <p v-for="(message, i) in errorsFor(field)" :key="i" class="error" role="alert">
         {{ message }}
       </p>
+      <LookupPanel
+        v-if="field.lookup"
+        :lookup="field.lookup"
+        :text="text(field.name)"
+        :context="lookupContext(value, field.lookup)"
+        :unresolvable="isUnresolvable(field.lookup)"
+        :id-prefix="`field-${nameOf(field)}-`"
+        @use="useCandidate(field.lookup, $event)"
+        @unresolvable="markUnresolvable(field.lookup)"
+      />
     </template>
   </div>
   <p v-for="(message, i) in generalErrors" :key="i" class="error" role="alert">{{ message }}</p>

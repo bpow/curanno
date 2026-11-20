@@ -111,10 +111,20 @@ const fields = {
 
 const variantProperties = {
   geneName: text('GeneName', 'HGNC gene symbol, for example MYH7.', 50),
-  variant: text(
-    'Variant',
-    'The variant as reported, preferably HGVS, for example NM_000257.4:c.1208G>A.',
-  ),
+  variant: {
+    ...text(
+      'Variant',
+      'The variant as reported, preferably HGVS, for example NM_000257.4:c.1208G>A.',
+    ),
+    // A gnomAD ID alone does not satisfy the ClinGen template, so it is not one of the IDs.
+    lookup: {
+      resolver: 'variant',
+      context: { gene: 'geneName' },
+      fill: { caid: 'caid', clinVarId: 'clinVarId', gnomad: 'gnomad' },
+      ids: ['caid', 'clinVarId'],
+      source: 'idSource',
+    },
+  },
   clinVarId: {
     title: 'ClinVarID',
     description: 'The numeric ClinVar Variation ID.',
@@ -135,6 +145,14 @@ const variantProperties = {
     'Evidence about the variant itself, such as functional studies.',
     2000,
   ),
+  // Added to version 1 because it is optional: every stored body still validates (ADR 0039).
+  idSource: {
+    title: 'IDSource',
+    description:
+      'Where the ClinVarID and CAID come from: stated in the article, looked up in the Allele Registry, or unresolvable when there are none to find.',
+    type: 'string',
+    enum: ['stated', 'looked up', 'unresolvable'],
+  },
 };
 
 /**

@@ -244,6 +244,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/x/resolve/{resolver}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Look up the IDs of something an article names
+         * @description Reads a mention as an article gives it and asks the resolver's outside services for it.
+         *     Answers with every candidate and what the lookup had to assume or found wrong, and never
+         *     chooses for the caller. A result with no candidates and a warning is a successful lookup.
+         *     Each warning's `code` is part of this contract; its `message` is for people.
+         *
+         *     The `variant` resolver reads HGVS, a ClinVar-style name, or a cDNA or protein change on its
+         *     own, and asks the ClinGen Allele Registry, and VariantValidator when the registry does not
+         *     know the reference sequence. Its context is `gene`. Its candidates fill `caid`,
+         *     `clinVarId` (only when ClinVar has a single variation) and `gnomad`. Its warning codes
+         *     are `not-understood`, `gene-needed`, `gene-unknown`, `transcript-assumed`,
+         *     `version-assumed`, `version-needed`, `mapped`, `numbering-differs`, `not-mapped`,
+         *     `reference-mismatch`, `protein-only`, `several-candidates`, `not-registered`, `no-clinvar`,
+         *     `several-clinvar`, `gene-differs` and `protein-differs`. Results are cached for a day.
+         */
+        get: operations["resolve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/x/documents": {
         parameters: {
             query?: never;
@@ -844,6 +876,63 @@ export interface components {
             label: string;
             /** @description The synonym that matched, when it was not the label. */
             synonym?: string;
+        } & {
+            [key: string]: unknown;
+        };
+        ResolutionWarning: {
+            /** @description Part of the contract. Each resolver lists its codes under `resolve`. */
+            code: string;
+            message: string;
+        } & {
+            [key: string]: unknown;
+        };
+        ResolutionCandidate: {
+            /** @description The authority's name for the candidate, for example `NM_000257.4(MYH7):c.1208G>A (p.Arg403Gln)`. */
+            label: string;
+            /** @description The values this candidate gives, under names the resolver documents. A profile's `lookup` keyword maps them to its fields. */
+            fill: {
+                [key: string]: string;
+            };
+            /** @description What an editor shows about the candidate, in order. A fact with no values reads as none. */
+            facts: ({
+                label: string;
+                values: ({
+                    text: string;
+                    /** Format: uri */
+                    url?: string;
+                } & {
+                    [key: string]: unknown;
+                })[];
+            } & {
+                [key: string]: unknown;
+            })[];
+            /**
+             * @description Present on the one candidate a program may fill without asking a curator. For `variant`: the only candidate, registered, with no warning but `no-clinvar`, and, if the lookup assumed the MANE Select transcript or its version, a protein change in the query that agrees.
+             * @enum {boolean}
+             */
+            autoFill?: true;
+            warnings: components["schemas"]["ResolutionWarning"][];
+        } & {
+            [key: string]: unknown;
+        };
+        Resolution: {
+            query: string;
+            /** @description The context as the resolver used it, for example a gene symbol in its approved case. */
+            context: {
+                [key: string]: string;
+            };
+            candidates: components["schemas"]["ResolutionCandidate"][];
+            /** @description What the lookup assumed or found about the query as a whole. */
+            warnings: components["schemas"]["ResolutionWarning"][];
+            /** @description Each request made to an outside service, in order. */
+            steps: ({
+                /** @description The service, named for people. */
+                service: string;
+                request: string;
+                outcome: string;
+            } & {
+                [key: string]: unknown;
+            })[];
         } & {
             [key: string]: unknown;
         };
@@ -1590,6 +1679,9 @@ export type BodyProfileInput = components['schemas']['BodyProfileInput'];
 export type BodyProfile = components['schemas']['BodyProfile'];
 export type Ontology = components['schemas']['Ontology'];
 export type OntologyTermMatch = components['schemas']['OntologyTermMatch'];
+export type ResolutionWarning = components['schemas']['ResolutionWarning'];
+export type ResolutionCandidate = components['schemas']['ResolutionCandidate'];
+export type Resolution = components['schemas']['Resolution'];
 export type DocumentUriRelation = components['schemas']['DocumentUriRelation'];
 export type DocumentLink = components['schemas']['DocumentLink'];
 export type DocumentMetadata = components['schemas']['DocumentMetadata'];
@@ -2185,6 +2277,54 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    resolve: {
+        parameters: {
+            query: {
+                /** @description The mention, for example the variant `NM_000257.4:c.1208G>A` or `p.R403Q`. */
+                q: string;
+                /** @description Context for `variant`: the HGNC symbol of the gene of interest. A cDNA or protein change on its own is looked up on its MANE Select transcript, and candidates in other genes are flagged. */
+                gene?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The resolver, for example `variant`. */
+                resolver: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The candidates, with warnings and the requests made */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resolution"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            /** @description There is no such resolver, or it is turned off on this server (`VARIANT_LOOKUP=off`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description An outside service is unavailable, is throttling requests, or gave an answer that cannot be read */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
         };
     };
     lookupDocument: {

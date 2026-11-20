@@ -782,6 +782,52 @@ export function describeContract(name: string, open: () => Promise<TestContext>)
       },
     ]);
 
+    run('resolve', [
+      {
+        name: 'finds candidates',
+        as: alice,
+        status: 200,
+        request: () => ({
+          method: 'GET',
+          url: `/x/resolve/variant?q=${encodeURIComponent('c.1208G>A')}&gene=MYH7`,
+        }),
+        then: (res) =>
+          expect(
+            res.json<{ candidates: { fill: Record<string, string> }[] }>().candidates[0]?.fill,
+          ).toMatchObject({ caid: 'CA010365' }),
+      },
+      {
+        name: 'answers text it cannot read with a warning',
+        as: alice,
+        status: 200,
+        request: () => ({ method: 'GET', url: '/x/resolve/variant?q=IVS4%2B1G%3EA' }),
+      },
+      {
+        name: '400 without a query',
+        as: alice,
+        status: 400,
+        request: () => ({ method: 'GET', url: '/x/resolve/variant' }),
+      },
+      {
+        name: '404 for a resolver there is not',
+        as: alice,
+        status: 404,
+        request: () => ({ method: 'GET', url: '/x/resolve/chemical?q=aspirin' }),
+      },
+      {
+        name: '401 for anonymous callers',
+        as: null,
+        status: 401,
+        request: () => ({ method: 'GET', url: '/x/resolve/variant?q=c.1A%3EG' }),
+      },
+      {
+        name: '502 when the registry cannot be reached',
+        as: alice,
+        status: 502,
+        request: () => ({ method: 'GET', url: '/x/resolve/variant?q=NM_999999.1%3Ac.1A%3EG' }),
+      },
+    ]);
+
     run('getCurrentUser', [
       {
         name: 'me',

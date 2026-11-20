@@ -83,6 +83,15 @@ export interface Config {
   metricsEnabled: boolean;
   /** Endpoints for annotation suggestions; none turns the feature off (ADR 0032). */
   extractEndpoints: ExtractEndpoint[];
+  /** Variant ID lookup in the ClinGen Allele Registry (ADR 0039); `enabled: false` turns it off. */
+  variantLookup: VariantLookupConfig;
+}
+
+export interface VariantLookupConfig {
+  enabled: boolean;
+  registryUrl: string;
+  variantValidatorUrl: string;
+  timeoutMs: number;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -139,6 +148,28 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       : undefined,
     metricsEnabled: env['METRICS_ENABLED'] !== 'false',
     extractEndpoints: extractEndpoints(env['EXTRACT_ENDPOINTS'], env['EXTRACT_LOCAL_ONLY']),
+    variantLookup: variantLookup(env),
+  };
+}
+
+function variantLookup(env: NodeJS.ProcessEnv): VariantLookupConfig {
+  const value = env['VARIANT_LOOKUP'] || 'on';
+  if (value !== 'on' && value !== 'off') {
+    throw new Error(`VARIANT_LOOKUP must be "on" or "off", not "${value}"`);
+  }
+  const url = (name: string, fallback: string): string => {
+    const raw = env[name] || fallback;
+    try {
+      return new URL(raw).href.replace(/\/$/, '');
+    } catch {
+      throw new Error(`${name} must be a URL, not "${raw}"`);
+    }
+  };
+  return {
+    enabled: value === 'on',
+    registryUrl: url('VARIANT_REGISTRY_URL', 'https://reg.genome.network'),
+    variantValidatorUrl: url('VARIANT_VALIDATOR_URL', 'https://rest.variantvalidator.org'),
+    timeoutMs: positive(env['VARIANT_LOOKUP_TIMEOUT_MS'], 20_000, 'VARIANT_LOOKUP_TIMEOUT_MS'),
   };
 }
 

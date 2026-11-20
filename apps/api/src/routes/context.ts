@@ -7,6 +7,7 @@ import type { EventBridge } from '../events/bridge.js';
 import type { Metrics } from '../metrics.js';
 import type { ProfileService } from '../profiles/service.js';
 import type { SuggestionStore } from '../suggestions/store.js';
+import type { Resolver } from '../resolvers.js';
 
 /** Mail about accounts, available when the embedded issuer can send it. */
 export interface AccountMail {
@@ -30,6 +31,8 @@ export interface AppContext {
   /** Events fetched per query when an event stream replays from `Last-Event-ID`. */
   replayPageSize: number;
   accountMail?: AccountMail | undefined;
+  /** The lookups `GET /x/resolve/{resolver}` serves, by name; one turned off is absent (ADR 0039). */
+  resolvers: ReadonlyMap<string, Resolver>;
 }
 
 /** One handler per operationId; fastify-openapi-glue binds them by name (ADR 0011). */
